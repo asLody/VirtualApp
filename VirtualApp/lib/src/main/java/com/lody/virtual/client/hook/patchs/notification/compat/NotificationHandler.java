@@ -3,13 +3,14 @@ package com.lody.virtual.client.hook.patchs.notification.compat;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.content.Context;
-import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.View;
 import android.view.View.MeasureSpec;
 import android.view.ViewGroup;
@@ -18,7 +19,6 @@ import android.widget.RemoteViews;
 
 import com.lody.virtual.R;
 import com.lody.virtual.client.core.VirtualCore;
-import com.lody.virtual.helper.proto.AppInfo;
 import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.XLog;
 
@@ -38,7 +38,7 @@ public class NotificationHandler {
     private int notification_padding;
     private final NotificationLayoutCompat mNotificationLayoutCompat;
     private final NotificationActionCompat mNotificationActionCompat;
-    private static final String TAG = NotificationHandler.class.getName();
+    private static final String TAG = NotificationHandler.class.getSimpleName();
 
     private void init(Context context) {
         mNotificationActionCompat.init(context);
@@ -89,20 +89,39 @@ public class NotificationHandler {
     }
 
     private int getDimem(Context context, Context sysContext, String name, int defId) {
-        if (sysContext == null) {
-            Log.w("kk", "get my");
-            return defId == 0 ? 0 : Math.round(context.getResources().getDimension(defId));
+        if (sysContext != null) {
+            int id = sysContext.getResources().getIdentifier(name, "dimen", "com.android.systemui");
+            if (id != 0) {
+                try {
+                    int i = Math.round(sysContext.getResources().getDimension(id));
+                } catch (Exception e) {
+
+                }
+            }
         }
-        int id = sysContext.getResources().getIdentifier(name, "dimen", "com.android.systemui");
-        if (id != 0) {
-            return Math.round(sysContext.getResources().getDimension(id));
-        } else {
-            Log.w("kk", "get my 2");
-            return defId == 0 ? 0 : Math.round(context.getResources().getDimension(defId));
+        Log.w("kk", "get my 2");
+        return defId == 0 ? 0 : Math.round(context.getResources().getDimension(defId));
+    }
+
+    public void dealNotificationIcon(int iconId, String packageName, Object... args) throws Exception {
+        for (int i = 0; i < args.length; i++) {
+            if (args[i] instanceof Notification) {
+                Notification notification = (Notification) args[i];//nobug
+                final Context pluginContext = VirtualCore.getCore().getContext().createPackageContext(packageName, Context.CONTEXT_IGNORE_SECURITY | Context.CONTEXT_INCLUDE_CODE);
+                args[i] = new NotificationCompat(pluginContext, mNotificationActionCompat, notification).getNotification();
+                break;
+            }
         }
     }
 
-    public boolean dealNotification(Context hostContext, String packageName, Object... args) throws Exception {
+    /***
+     * @param hostContext
+     * @param packageName
+     * @param args
+     * @return -1 失败，>=0是成功。>0是系统样式（通知栏的icon），0是自定义样式
+     * @throws Exception
+     */
+    public int dealNotification(Context hostContext, String packageName, Object... args) throws Exception {
         init(hostContext);
         for (int i = 0; i < args.length; i++) {
             if (args[i] instanceof Notification) {
@@ -114,24 +133,35 @@ public class NotificationHandler {
 //                        //双开模式，貌似icon不太对
 //                        notification.icon = hostContext.getApplicationInfo().icon;
 //                        //23的icon
-//                        mNotificationActionCompat.builderNotificationIcon(notification);
+//                        mNotificationActionCompat.builderNotificationIcon(notification, notification.icon, VirtualCore.getCore().getResources(packageName));
+//                        return 0;
 //                    }else {
+                        //    args[i] = replaceNotification(hostContext, packageName, notification);
 
-                        //直接处理了
-                        args[i] = replaceNotification(hostContext, packageName, notification);
-//                    if (mNotificationActionCompat.shouldBlock(notification)) {
-////                        //自定义布局通知栏
-//                        args[i] = replaceNotification(hostContext, packageName, notification);
-//                    } else {
-////                        //这里要修改原生的通知，是否也和上面一样的处理？
-//                        mNotificationActionCompat.hackNotification(notification);
-//                    }
+                        if (mNotificationActionCompat.shouldBlock(notification)) {
+//                        //自定义布局通知栏
+                            Notification notification1 = replaceNotification(hostContext, packageName, notification, false);
+                            if (notification1 == null) {
+                                return -1;
+                            }
+                            args[i] = notification1;
+                            return 0;
+                        } else {
+//                        //这里要修改原生的通知，是否也和上面一样的处理？
+                            final int icon = notification.icon;
+                            Notification notification1 = replaceNotification(hostContext, packageName, notification, true);
+                            if (notification1 != null) {
+                                args[i] = notification1;
+                            } else {
+                                mNotificationActionCompat.hackNotification(notification);
+                            }
+                            return icon;
+                        }
                     }
-                    return true;
                 }
             }
         }
-        return false;
+        return -1;
     }
 
     private boolean isPluginNotification(Notification notification) {
@@ -140,37 +170,39 @@ public class NotificationHandler {
         }
 
 
-        if (notification.contentView != null && !VirtualCore.getCore().isHostPackageName(notification.contentView.getPackage())) {
+        if (notification.contentView != null && !isHostPackageName(notification.contentView.getPackage())) {
             return true;
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-            if (notification.tickerView != null && !VirtualCore.getCore().isHostPackageName(notification.tickerView.getPackage())) {
+            if (notification.tickerView != null && !isHostPackageName(notification.tickerView.getPackage())) {
                 return true;
             }
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-            if (notification.bigContentView != null && !VirtualCore.getCore().isHostPackageName(notification.bigContentView.getPackage())) {
+            if (notification.bigContentView != null && !isHostPackageName(notification.bigContentView.getPackage())) {
                 return true;
             }
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            if (notification.headsUpContentView != null && !VirtualCore.getCore().isHostPackageName(notification.headsUpContentView.getPackage())) {
+            if (notification.headsUpContentView != null && !isHostPackageName(notification.headsUpContentView.getPackage())) {
                 return true;
             }
-            if (notification.publicVersion != null && notification.publicVersion.contentView != null && !VirtualCore.getCore().isHostPackageName(notification.publicVersion.contentView.getPackage())) {
+            if (notification.publicVersion != null && notification.publicVersion.contentView != null && !isHostPackageName(notification.publicVersion.contentView.getPackage())) {
                 return true;
             }
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
+
+        {
             android.graphics.drawable.Icon icon = notification.getSmallIcon();
             if (icon != null) {
                 try {
                     Object mString1Obj = Reflect.on(icon).get("mString1");
                     if (mString1Obj instanceof String) {
                         String mString1 = ((String) mString1Obj);
-                        if (!VirtualCore.getCore().isHostPackageName(mString1)) {
+                        if (!isHostPackageName(mString1)) {
                             return true;
                         }
                     }
@@ -179,14 +211,16 @@ public class NotificationHandler {
             }
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
+
+        {
             android.graphics.drawable.Icon icon = notification.getLargeIcon();
             if (icon != null) {
                 try {
                     Object mString1Obj = Reflect.on(icon).get("mString1");
                     if (mString1Obj instanceof String) {
                         String mString1 = ((String) mString1Obj);
-                        if (!VirtualCore.getCore().isHostPackageName(mString1)) {
+                        if (!isHostPackageName(mString1)) {
                             return true;
                         }
                     }
@@ -195,95 +229,104 @@ public class NotificationHandler {
             }
         }
 
-        try {
+        try
+
+        {
             Bundle mExtras = Reflect.on(notification).get("extras");
             for (String s : mExtras.keySet()) {
                 if (mExtras.get(s) != null && mExtras.get(s) instanceof ApplicationInfo) {
                     ApplicationInfo applicationInfo = (ApplicationInfo) mExtras.get(s);
                     if (applicationInfo != null) {
-                        return !VirtualCore.getCore().isHostPackageName(applicationInfo.packageName);
+                        return !isHostPackageName(applicationInfo.packageName);
                     }
                 }
             }
-        } catch (Exception e) {
+        } catch (
+                Exception e
+                )
+
+        {
             e.printStackTrace();
         }
 
         return false;
     }
 
-    private Notification replaceNotification(Context context, String packageName, Notification notification) throws PackageManager.NameNotFoundException {
-        final Context pluginContext = VirtualCore.getCore().getContext().createPackageContext(packageName, Context.CONTEXT_IGNORE_SECURITY | Context.CONTEXT_INCLUDE_CODE);
-        Context inflationContext = new ContextWrapperCompat(context, pluginContext);
+    private boolean isHostPackageName(String pkg) {
+        return VirtualCore.getCore().isHostPackageName(pkg);
+    }
+
+    private Notification replaceNotification(Context context, String packageName, Notification notification, boolean systemId) throws PackageManager.NameNotFoundException {
+        final Context pluginContext = context.createPackageContext(packageName, Context.CONTEXT_IGNORE_SECURITY | Context.CONTEXT_INCLUDE_CODE);
         //build
         Notification.Builder builder = new Notification.Builder(context);
         //icon
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            mNotificationActionCompat.builderNotificationIcon(notification, builder);
+            builder.setSmallIcon(context.getApplicationInfo().icon);
+            mNotificationActionCompat.builderNotificationIcon(pluginContext, notification, builder);
         } else {
             builder.setSmallIcon(context.getApplicationInfo().icon);
         }
-//        if (!DRAW_NOTIFICATION) {
-//            //只是显示个简单通知栏
-//            ApplicationInfo applicationInfo = null;
-//            try {
-//                applicationInfo = VirtualCore.getCore().getPackageManager().getApplicationInfo(packageName, 0);
-//            } catch (PackageManager.NameNotFoundException e) {
-//            }
-//            if (applicationInfo != null) {
-//                Drawable icon = VirtualCore.getCore().getPackageManager().getApplicationIcon(applicationInfo);
-//                CharSequence title = VirtualCore.getCore().getPackageManager().getApplicationLabel(applicationInfo);
-//                if (icon instanceof BitmapDrawable) {
-//                    builder.setLargeIcon(((BitmapDrawable) icon).getBitmap());
-//                }
-//                builder.setContentTitle(title);
-//            }
-//        } else {
-
-        RemoteViews contentView;
+//        builder.setSmallIcon(context.getApplicationInfo().icon);
+        NotificationCompat notificationCompat = new NotificationCompat(pluginContext, mNotificationActionCompat, notification);
+        RemoteViews contentView = notificationCompat.getRemoteViews();
         //大通知栏
-        boolean isBig;
-        if (notification.contentView != null) {
-            isBig = false;
-            contentView = notification.contentView;
-        } else {
-            isBig = true;
-            if (Build.VERSION.SDK_INT >= 16) {
-                contentView = notification.bigContentView;
-            } else {
-                contentView = null;
-            }
+        boolean isBig = notificationCompat.isBigRemoteViews();
+        if (contentView == null) {
+            return null;
         }
-
-
-        //双开模式下,直接调用原来的
-        AppInfo appInfo = VirtualCore.getCore().findApp(packageName);
-
-        if (appInfo != null && appInfo.isInstalled() && contentView != null) {
-            try {
-                ApplicationInfo applicationInfo = VirtualCore.getCore().getUnHookPackageManager().getApplicationInfo(packageName, 0);
-                applicationInfo.packageName = VirtualCore.getCore().getHostPkg();
-                Reflect.on(contentView).set("mApplication", applicationInfo);
-                return notification;
-            } catch (Exception e) {
-                XLog.e(TAG, "error:" + e);
-            }
-        }
+//        //双开模式下,直接调用原来的
+//        AppInfo appInfo = VirtualCore.getCore().findApp(packageName);
+//
+//        if (appInfo != null && appInfo.isInstalled() && contentView != null) {
+//            try {
+//                ApplicationInfo applicationInfo = VirtualCore.getCore().getUnHookPackageManager().getApplicationInfo(packageName, 0);
+//                applicationInfo.packageName = VirtualCore.getCore().getHostPkg();
+//                Reflect.on(contentView).set("mApplication", applicationInfo);
+//                return notification;
+//            } catch (Exception e) {
+//                XLog.e(TAG, "error:" + e);
+//            }
+//        }
 
         Map<Integer, PendingIntent> clickIntents = getClickIntents(contentView);
         //如果就一个点击事件，没必要用复杂view
-        int layoutId = (clickIntents == null || clickIntents.size() == 0) ?
-                R.layout.custom_notification_lite :
-                R.layout.custom_notification;
+        final int layoutId;
+        if (systemId) {
+            layoutId = R.layout.custom_notification_lite_datetime;
+        } else if (clickIntents == null || clickIntents.size() == 0) {
+            layoutId = R.layout.custom_notification_lite;
+        } else {
+            layoutId = R.layout.custom_notification;
+        }
         RemoteViews remoteViews = new RemoteViews(context.getPackageName(), layoutId);
+        if (systemId) {
+            if (notificationCompat.hasDateTime()) {
+                int color = notificationCompat.getColor();
+                float size = notificationCompat.getSize();
+                if (color != 0) {
+                    remoteViews.setTextColor(R.id.time, color);
+                } else {
+                    remoteViews.setTextColor(R.id.time, Color.GREEN);
+                }
+                if (Build.VERSION.SDK_INT >= 16) {
+                    if (size > 0) {
+                        remoteViews.setTextViewTextSize(R.id.time, TypedValue.COMPLEX_UNIT_PX, size);
+                    }
+                    if (notificationCompat.getPaddingRight() >= 0) {
+                        remoteViews.setViewPadding(R.id.time, 0, 0, notificationCompat.getPaddingRight(), 0);
+                    }
+                }
+                remoteViews.setLong(R.id.time, "setTime", notification.when);
+            } else {
+                remoteViews.setViewVisibility(R.id.time, View.INVISIBLE);
+            }
+        }
         //绘制图
-        Bitmap bmp = createBitmap(inflationContext, contentView, isBig);
-        //测试用代码
-//        Canvas canvas=new Canvas(bmp);
-//        Paint paint=new Paint();
-//        paint.setStyle(Paint.Style.FILL_AND_STROKE);
-//        paint.setColor(Color.RED);
-//        canvas.drawRect(0,0,50,50,paint);
+        Bitmap bmp = createBitmap(pluginContext, contentView, isBig, systemId);
+        if (bmp == null) {
+            Log.e("kk", "bmp is null,contentView=" + contentView);
+        }
         remoteViews.setImageViewBitmap(R.id.im_main, bmp);
         builder.setContent(remoteViews);
 //        }
@@ -292,7 +335,7 @@ public class NotificationHandler {
         builder.setDeleteIntent(notification.deleteIntent);
         builder.setFullScreenIntent(notification.fullScreenIntent,
                 (notification.flags & Notification.FLAG_HIGH_PRIORITY) != 0);
-
+        //icon
         Notification notification1;
         if (Build.VERSION.SDK_INT >= 16) {
             notification1 = builder.build();
@@ -307,6 +350,7 @@ public class NotificationHandler {
      * id和点击事件intent
      */
     private Map<Integer, PendingIntent> getClickIntents(RemoteViews remoteViews) {
+        if (remoteViews == null) return null;
         Object mActionsObj = Reflect.on(remoteViews).get("mActions");
         Map<Integer, PendingIntent> map = new HashMap<>();
         if (mActionsObj instanceof Collection) {
@@ -315,7 +359,12 @@ public class NotificationHandler {
             while (iterable.hasNext()) {
                 Object object = iterable.next();
                 if (object != null) {
-                    String action = Reflect.on(object).call("getActionName").get();
+                    String action = null;
+                    try {
+                        action = Reflect.on(object).call("getActionName").get();
+                    } catch (Exception e) {
+                        action = object.getClass().getSimpleName();
+                    }
                     if ("SetOnClickPendingIntent".equalsIgnoreCase(action)) {
                         int id = Reflect.on(object).get("viewId");
                         PendingIntent intent = Reflect.on(object).get("pendingIntent");
@@ -327,7 +376,7 @@ public class NotificationHandler {
         return map;
     }
 
-    private Bitmap createBitmap(final Context context, RemoteViews remoteViews, boolean isBig) {
+    private Bitmap createBitmap(final Context context, RemoteViews remoteViews, boolean isBig, boolean systemId) {
         if (remoteViews == null) return null;
         //notification_min_height 64
         //notification_max_height 256
@@ -338,23 +387,20 @@ public class NotificationHandler {
         //notification_side_padding 8
         //notification_padding 4
         //TODO 需要适配
-        int sp = (Build.VERSION.SDK_INT >= 21) ? notification_side_padding : 0;// + notification_padding);
         int height = isBig ? notification_max_height : notification_min_height;
-        int width = mNotificationLayoutCompat.getNotificationWidth(context, notification_panel_width - sp * 2, height);
+        int width = mNotificationLayoutCompat.getNotificationWidth(context, notification_panel_width, height, notification_side_padding);
         ViewGroup frameLayout = new FrameLayout(context);
-        View view1 = remoteViews.apply(context, frameLayout, new RemoteViews.OnClickHandler() {
-            @Override
-            public boolean onClickHandler(View view, PendingIntent pendingIntent, Intent fillInIntent) {
-                //点击事件得另外处理，采用天气通的区域点击
-                XLog.i(TAG, "click=" + pendingIntent.getIntent());
-                return super.onClickHandler(view, pendingIntent, fillInIntent);
-            }
-        });
-        XLog.i(TAG, "sp=" + sp + ",w=" + width + ",h=" + height);
+        View view1 = remoteViews.apply(context, frameLayout);
+        XLog.i(TAG, "sp=" + notification_side_padding + ",w=" + width + ",h=" + height);
         Bitmap bmp;
         View mCache;
         if (Build.VERSION.SDK_INT >= 23) {
-            mCache = view1;
+            if (!systemId) {
+                mCache = view1;
+            } else {
+                mCache = frameLayout;
+                frameLayout.addView(view1);
+            }
         } else {
             mCache = frameLayout;
             frameLayout.addView(view1);
@@ -362,11 +408,11 @@ public class NotificationHandler {
         mCache.setDrawingCacheEnabled(true);
         mCache.buildDrawingCache(true);
         if (!isBig) {
-            frameLayout.measure(MeasureSpec.makeMeasureSpec(width, MeasureSpec.AT_MOST), MeasureSpec.makeMeasureSpec(height, MeasureSpec.AT_MOST));
-            frameLayout.layout(0, 0, width, height);
+            mCache.measure(MeasureSpec.makeMeasureSpec(width, MeasureSpec.AT_MOST), MeasureSpec.makeMeasureSpec(height, MeasureSpec.AT_MOST));
+            mCache.layout(0, 0, width, height);
         } else {
-            frameLayout.measure(MeasureSpec.makeMeasureSpec(width, MeasureSpec.AT_MOST), MeasureSpec.makeMeasureSpec(height, MeasureSpec.AT_MOST));
-            frameLayout.layout(0, 0, width, height);
+            mCache.measure(MeasureSpec.makeMeasureSpec(width, MeasureSpec.AT_MOST), MeasureSpec.makeMeasureSpec(height, MeasureSpec.AT_MOST));
+            mCache.layout(0, 0, width, height);
         }
         bmp = mCache.getDrawingCache();
         return bmp;
