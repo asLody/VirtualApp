@@ -18,16 +18,7 @@ import java.lang.reflect.Method;
  *         Intent service, String resolvedType, String callingPackage, int
  *         userId )
  */
-/* package */ class Hook_StartService extends Hook<ActivityManagerPatch> {
-	/**
-	 * 这个构造器必须有,用于依赖注入.
-	 *
-	 * @param patchObject
-	 *            注入对象
-	 */
-	public Hook_StartService(ActivityManagerPatch patchObject) {
-		super(patchObject);
-	}
+/* package */ class Hook_StartService extends Hook {
 
 	@Override
 	public String getName() {
@@ -39,10 +30,16 @@ import java.lang.reflect.Method;
 		IApplicationThread appThread = (IApplicationThread) args[0];
 		Intent service = (Intent) args[1];
 		String resolvedType = (String) args[2];
+		if (service != null
+				&& service.getComponent() != null
+				&& getHostPkg().equals(service.getComponent().getPackageName())) {
+			// for server process
+			return method.invoke(who, args);
+		}
 		ServiceInfo serviceInfo = VirtualCore.getCore().resolveServiceInfo(service);
 		if (serviceInfo != null) {
 			String pkgName = serviceInfo.packageName;
-			if (pkgName.equals(VirtualCore.getCore().getHostPkg())) {
+			if (pkgName.equals(getHostPkg())) {
 				return method.invoke(who, args);
 			}
 			if (isAppPkg(pkgName)) {
@@ -54,6 +51,6 @@ import java.lang.reflect.Method;
 
 	@Override
 	public boolean isEnable() {
-		return isAppProcess();
+		return isAppProcess() || isServiceProcess();
 	}
 }

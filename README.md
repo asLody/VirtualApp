@@ -68,29 +68,11 @@ so you must use our `android.jar` replace the old one **(Android-SDK/platforms/a
             e.printStackTrace();
         }
     }
-
-    @Override
-    public void onCreate() {
-        super.onCreate();
-        VirtualCore.getCore().handleApplication(this);
-        if (!VirtualCore.getCore().isVAppProcess()) {
-            // Do some thing...
-        }
-    }
 ```
 
 5. For **Install a virtual App**, use this function:
 ```java
     VirtualCore.getCore().installApp({APK PATH}, flags);
-    
-    //flags values
-    
-    public interface InstallStrategy {
-	    int TERMINATE_IF_EXIST = 10;
-	    int UPDATE_IF_EXIST = 11;
-	    int COMPARE_VERSION = 12;
-	    int IGNORE_NEW_VERSION = 13;
-    }
     
 ```
 

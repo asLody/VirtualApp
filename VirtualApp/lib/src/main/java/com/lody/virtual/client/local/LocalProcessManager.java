@@ -8,6 +8,7 @@ import com.lody.virtual.client.env.RuntimeEnv;
 import com.lody.virtual.client.service.ServiceManagerNative;
 import com.lody.virtual.helper.proto.VComponentInfo;
 import com.lody.virtual.service.IProcessManager;
+import com.lody.virtual.service.interfaces.IProcessObserver;
 
 import java.util.List;
 
@@ -58,21 +59,6 @@ public class LocalProcessManager {
 		}
 	}
 
-	public static void mapProcessName(String stubProcessName, String pluginProcessName) {
-		try {
-			getService().mapProcessName(stubProcessName, pluginProcessName);
-		} catch (RemoteException e) {
-			RuntimeEnv.crash(e);
-		}
-	}
-
-	public static String getMapAppProcessName(String stubProcessName) {
-		try {
-			return getService().getMapAppProcessName(stubProcessName);
-		} catch (RemoteException e) {
-			return RuntimeEnv.crash(e);
-		}
-	}
 
 	public static void dump() {
 		try {
@@ -122,9 +108,9 @@ public class LocalProcessManager {
 		}
 	}
 
-	public static boolean isAppPID(int pid) {
+	public static boolean isAppPid(int pid) {
 		try {
-			return getService().isAppPID(pid);
+			return getService().isAppPid(pid);
 		} catch (RemoteException e) {
 			return RuntimeEnv.crash(e);
 		}
@@ -143,6 +129,22 @@ public class LocalProcessManager {
 			return getService().getAppProcessName(pid);
 		} catch (RemoteException e) {
 			return RuntimeEnv.crash(e);
+		}
+	}
+
+	public static void registerProcessObserver(IProcessObserver observer) {
+		try {
+			getService().registerProcessObserver(observer);
+		} catch (RemoteException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public static void unregisterProcessObserver(IProcessObserver observer) {
+		try {
+			getService().unregisterProcessObserver(observer);
+		} catch (RemoteException e) {
+			e.printStackTrace();
 		}
 	}
 }

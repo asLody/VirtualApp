@@ -1,29 +1,19 @@
 package com.lody.virtual.client.hook.patchs.am;
 
-import java.lang.reflect.Method;
+import android.content.Intent;
 
-import com.lody.virtual.client.local.LocalServiceManager;
 import com.lody.virtual.client.hook.base.Hook;
 import com.lody.virtual.client.hook.utils.HookUtils;
+import com.lody.virtual.client.local.LocalServiceManager;
 
-import android.content.Intent;
+import java.lang.reflect.Method;
 
 /**
  * @author Lody
  *
  * @see android.app.IActivityManager#peekService(Intent, String, String)
  */
-/* package */ class Hook_PeekService extends Hook<ActivityManagerPatch> {
-
-	/**
-	 * 这个构造器必须有,用于依赖注入.
-	 *
-	 * @param patchObject
-	 *            注入对象
-	 */
-	public Hook_PeekService(ActivityManagerPatch patchObject) {
-		super(patchObject);
-	}
+/* package */ class Hook_PeekService extends Hook {
 
 	@Override
 	public String getName() {

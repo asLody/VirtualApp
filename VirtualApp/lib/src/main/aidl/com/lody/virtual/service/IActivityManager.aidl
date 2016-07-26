@@ -16,5 +16,9 @@ interface IActivityManager {
 
     void onActivityDestroyed(in IBinder token);
 
+    ActivityInfo getCallingActivity(in IBinder token);
+
     AppTaskInfo getTaskInfo(int taskId);
+
+    String getPackageForToken(in IBinder token);
 }
