@@ -1,13 +1,33 @@
 package com.lody.virtual.client.core;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+
+import com.lody.virtual.client.VClientImpl;
+import com.lody.virtual.client.env.RuntimeEnv;
+import com.lody.virtual.client.fixer.ContextFixer;
+import com.lody.virtual.client.local.LocalContentManager;
+import com.lody.virtual.client.local.LocalPackageManager;
+import com.lody.virtual.client.local.LocalProcessManager;
+import com.lody.virtual.helper.compat.ActivityThreadCompat;
+import com.lody.virtual.helper.compat.VMRuntimeCompat;
+import com.lody.virtual.helper.loaders.ClassLoaderHelper;
+import com.lody.virtual.helper.proto.AppInfo;
+import com.lody.virtual.helper.proto.ReceiverInfo;
+import com.lody.virtual.helper.utils.Reflect;
+
 import android.app.Application;
+import android.app.IActivityManager;
 import android.app.LoadedApk;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.IntentFilter;
-import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ProviderInfo;
 import android.os.Build;
@@ -16,29 +36,7 @@ import android.os.Message;
 import android.os.StrictMode;
 import android.renderscript.RenderScript;
 import android.renderscript.RenderScriptCacheDir;
-import android.text.TextUtils;
 import android.view.HardwareRenderer;
-
-import com.lody.virtual.client.VClientImpl;
-import com.lody.virtual.client.env.RuntimeEnv;
-import com.lody.virtual.client.hook.modifiers.ContextModifier;
-import com.lody.virtual.client.local.LocalPackageManager;
-import com.lody.virtual.client.local.LocalProcessManager;
-import com.lody.virtual.helper.compat.ActivityThreadCompat;
-import com.lody.virtual.helper.compat.VMRuntimeCompat;
-import com.lody.virtual.helper.loaders.PathAppClassLoader;
-import com.lody.virtual.helper.proto.AppInfo;
-import com.lody.virtual.helper.utils.Reflect;
-import com.lody.virtual.helper.utils.XLog;
-
-import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.CountDownLatch;
 
 /**
  * @author Lody
@@ -47,23 +45,15 @@ import java.util.concurrent.CountDownLatch;
 public class AppSandBox {
 
 	private static final String TAG = AppSandBox.class.getSimpleName();
-	private static HashSet<String> installedApps = new HashSet<String>();
 	private static Map<String, Application> applicationMap = new HashMap<>();
 
 	private static String LAST_PKG;
-
-	private static boolean sInstalling = false;
 
 	public static Application getApplication(String pkg) {
 		return applicationMap.get(pkg);
 	}
 
-	public static String getLastPkg() {
-		return LAST_PKG;
-	}
-
 	public static void install(final String procName, final String pkg) {
-		sInstalling = true;
 		if (Looper.myLooper() == Looper.getMainLooper()) {
 			installLocked(procName, pkg);
 		} else {
@@ -80,26 +70,87 @@ public class AppSandBox {
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-
 		}
-		sInstalling = false;
-		XLog.d(TAG, "Application of Process(%s) have launched. ", RuntimeEnv.getCurrentProcessName());
 	}
 
-	private static void installLocked(String procName, String pkg) {
-		if (installedApps.contains(pkg)) {
+	private static void installLocked(String processName, String pkg) {
+		boolean firstInstall = LAST_PKG == null;
+		LAST_PKG = pkg;
+		if (!firstInstall) {
+			createLoadedApk(VirtualCore.getCore().findApp(pkg));
 			return;
 		}
-		LAST_PKG = pkg;
+		ContextFixer.fixCamera();
 		PatchManager.fixAllSettings();
-		XLog.d(TAG, "Installing %s.", pkg);
 		LocalProcessManager.onAppProcessCreate(VClientImpl.getClient().asBinder());
 		AppInfo appInfo = VirtualCore.getCore().findApp(pkg);
 		if (appInfo == null) {
 			return;
 		}
+		LocalPackageManager pm = LocalPackageManager.getInstance();
 		ApplicationInfo applicationInfo = appInfo.applicationInfo;
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.L && applicationInfo.targetSdkVersion < Build.VERSION_CODES.L) {
+		RuntimeEnv.setCurrentProcessName(processName, appInfo);
+		LoadedApk loadedApk = createLoadedApk(appInfo);
+		for (String sharedPkg : pm.querySharedPackages(pkg)) {
+			createLoadedApk(VirtualCore.getCore().findApp(sharedPkg));
+		}
+		setupRuntime(applicationInfo);
+
+		ClassLoader classLoader = loadedApk.getClassLoader();
+		Thread.currentThread().setContextClassLoader(classLoader);
+
+		Application app = loadedApk.makeApplication(false, null);
+		Reflect.on(VirtualCore.mainThread()).set("mInitialApplication", app);
+		ContextFixer.fixContext(app.getBaseContext());
+		// Install ContentProviders
+		List<ProviderInfo> providers = pm.queryContentProviders(processName, 0);
+		List<IActivityManager.ContentProviderHolder> holders = new ArrayList<>(providers.size());
+		for (ProviderInfo info : providers) {
+			IActivityManager.ContentProviderHolder holder = ActivityThreadCompat.installProvider(app, info);
+			if (holder != null) {
+				holders.add(holder);
+			}
+		}
+		LocalContentManager.getDefault().publishContentProviders(holders);
+		// Application => onCreate()
+		VirtualCore.mainThread().getInstrumentation().callApplicationOnCreate(app);
+
+		List<ReceiverInfo> receiverInfos = pm.queryReceivers(processName, 0);
+		installReceivers(app, receiverInfos);
+		LocalProcessManager.onEnterApp(pkg);
+		applicationMap.put(appInfo.packageName, app);
+	}
+
+	private static void installReceivers(Context app, List<ReceiverInfo> receivers) {
+		ClassLoader classLoader = app.getClassLoader();
+		for (ReceiverInfo one : receivers) {
+			ComponentName component = one.component;
+			IntentFilter[] filters = one.filters;
+			if (filters == null || filters.length == 0) {
+				filters = new IntentFilter[1];
+				IntentFilter filter = new IntentFilter();
+				filter.addAction(VirtualCore.getReceiverAction(component.getPackageName(), component.getClassName()));
+				filters[0] = filter;
+			}
+			for (IntentFilter filter : filters) {
+				try {
+					BroadcastReceiver receiver = (BroadcastReceiver) classLoader.loadClass(component.getClassName())
+							.newInstance();
+					if (one.permission != null) {
+						app.registerReceiver(receiver, filter, one.permission, null);
+					} else {
+						app.registerReceiver(receiver, filter);
+					}
+				} catch (Throwable e) {
+					// Ignore
+				}
+			}
+		}
+	}
+
+	private static void setupRuntime(ApplicationInfo applicationInfo) {
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
+				&& applicationInfo.targetSdkVersion < Build.VERSION_CODES.LOLLIPOP) {
 			try {
 				Message.updateCheckRecycle(applicationInfo.targetSdkVersion);
 			} catch (Throwable e) {
@@ -108,15 +159,10 @@ public class AppSandBox {
 		}
 		VMRuntimeCompat.setTargetSdkVersion(applicationInfo.targetSdkVersion);
 
-		RuntimeEnv.setCurrentProcessName(procName, appInfo);
-
-		LoadedApk loadedApk = createLoadedApk(appInfo);
-
 		Context appContext = createAppContext(applicationInfo);
-
 		File codeCacheDir;
 
-		if (Build.VERSION.SDK_INT >= 23) {
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
 			codeCacheDir = appContext.getCodeCacheDir();
 		} else {
 			codeCacheDir = appContext.getCacheDir();
@@ -128,17 +174,17 @@ public class AppSandBox {
 			} catch (Throwable e) {
 				e.printStackTrace();
 			}
-			if (Build.VERSION.SDK_INT >= 23) {
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
 				try {
 					RenderScriptCacheDir.setupDiskCache(codeCacheDir);
 				} catch (Throwable e) {
-					e.printStackTrace();
+					// Ignore
 				}
 			} else if (Build.VERSION.SDK_INT >= 16) {
 				try {
 					Reflect.on(RenderScript.class).call("setupDiskCache", codeCacheDir);
 				} catch (Throwable e) {
-					e.printStackTrace();
+					// Ignore
 				}
 			}
 		}
@@ -147,76 +193,9 @@ public class AppSandBox {
 			builder.permitNetwork();
 			StrictMode.setThreadPolicy(builder.build());
 		}
-
-		List<ProviderInfo> providers = null;
-
-		try {
-			PackageInfo pkgInfo = VirtualCore.getPM().getPackageInfo(pkg, PackageManager.GET_PROVIDERS);
-			if (pkgInfo.providers != null) {
-				providers = new ArrayList<>(pkgInfo.providers.length);
-				for (ProviderInfo providerInfo : pkgInfo.providers) {
-					if (TextUtils.equals(procName, providerInfo.processName)) {
-						providers.add(providerInfo);
-					}
-				}
-			}
-		} catch (PackageManager.NameNotFoundException e) {
-			e.printStackTrace();
-		}
-		ClassLoader classLoader = loadedApk.getClassLoader();
-		Thread.currentThread().setContextClassLoader(classLoader);
-		Application app = loadedApk.makeApplication(false, null);
-		Reflect.on(VirtualCore.mainThread()).set("mInitialApplication", app);
-		ContextModifier.modifyContext(app.getBaseContext());
-		if (providers != null) {
-			ActivityThreadCompat.installContentProviders(app, providers);
-		}
-		VirtualCore.mainThread().getInstrumentation().callApplicationOnCreate(app);
-		LocalPackageManager pm = LocalPackageManager.getInstance();
-
-
-		List<ActivityInfo> receivers = pm.getReceivers(pkg, 0);
-		for (ActivityInfo receiverInfo : receivers) {
-			if (TextUtils.equals(receiverInfo.processName, procName)) {
-				List<IntentFilter> filters = pm.getReceiverIntentFilter(receiverInfo);
-				if (filters != null && filters.size() > 0) {
-					for (IntentFilter filter : filters) {
-						try {
-							BroadcastReceiver receiver = (BroadcastReceiver) classLoader.loadClass(receiverInfo.name)
-									.newInstance();
-							if (receiverInfo.permission != null) {
-								app.registerReceiver(receiver, filter, receiverInfo.permission, null);
-							} else {
-								app.registerReceiver(receiver, filter);
-							}
-						} catch (Throwable e) {
-							// Ignore
-						}
-					}
-				} else {
-					try {
-						BroadcastReceiver receiver = (BroadcastReceiver) classLoader.loadClass(receiverInfo.name)
-								.newInstance();
-						IntentFilter filter = new IntentFilter();
-						filter.addAction(VirtualCore.getReceiverAction(receiverInfo.packageName, receiverInfo.name));
-						if (receiverInfo.permission != null) {
-							app.registerReceiver(receiver, filter, receiverInfo.permission, null);
-						} else {
-							app.registerReceiver(receiver, filter);
-						}
-					} catch (Throwable e) {
-						// Ignore
-					}
-				}
-			}
-		}
-		LocalProcessManager.onEnterApp(pkg);
-		applicationMap.put(appInfo.packageName, app);
-		installedApps.add(appInfo.packageName);
 	}
 
-
-	public static Context createAppContext(ApplicationInfo appInfo) {
+	private static Context createAppContext(ApplicationInfo appInfo) {
 		Context context = VirtualCore.getCore().getContext();
 		try {
 			return context.createPackageContext(appInfo.packageName,
@@ -227,33 +206,22 @@ public class AppSandBox {
 	}
 
 	private static LoadedApk createLoadedApk(AppInfo appInfo) {
-		ApplicationInfo applicationInfo = appInfo.applicationInfo;
-		LoadedApk loadedApk = ActivityThreadCompat.getPackageInfoNoCheck(applicationInfo);
-		PathAppClassLoader classLoader;
-		ApplicationInfo outsideAppInfo = null;
-		try {
-			outsideAppInfo = VirtualCore.getCore().getUnHookPackageManager().getApplicationInfo(appInfo.packageName,
-					PackageManager.GET_SHARED_LIBRARY_FILES);
-		} catch (PackageManager.NameNotFoundException e) {
-			// Ignore
-		}
-		if (outsideAppInfo != null) {
-			classLoader = new PathAppClassLoader(appInfo, outsideAppInfo);
-		} else {
-			classLoader = new PathAppClassLoader(appInfo);
-		}
-		Reflect.on(loadedApk).set("mClassLoader", classLoader);
-		try {
-			//Fuck HUA-WEI phone
-			Reflect.on(loadedApk).set("mSecurityViolation", false);
-		} catch (Throwable e) {
-			// Ignore
-		}
-		return loadedApk;
-	}
+		if (appInfo != null) {
+			ApplicationInfo applicationInfo = appInfo.applicationInfo;
+			LoadedApk loadedApk = ActivityThreadCompat.getPackageInfoNoCheck(applicationInfo);
+			ClassLoader classLoader = ClassLoaderHelper.create(appInfo);
 
-	public static Set<String> getInstalledPackages() {
-		return new HashSet<>(installedApps);
+			if (!(loadedApk.getClassLoader() instanceof ClassLoaderHelper.AppClassLoader)) {
+				Reflect.on(loadedApk).set("mClassLoader", classLoader);
+			}
+			try {
+				Reflect.on(loadedApk).set("mSecurityViolation", false);
+			} catch (Throwable e) {
+				// Ignore
+			}
+			return loadedApk;
+		}
+		return null;
 	}
 
 }

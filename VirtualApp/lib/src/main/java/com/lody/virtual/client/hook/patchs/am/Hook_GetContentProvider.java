@@ -1,23 +1,28 @@
 package com.lody.virtual.client.hook.patchs.am;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+
+import com.lody.virtual.client.env.RuntimeEnv;
+import com.lody.virtual.client.hook.base.Hook;
+import com.lody.virtual.client.hook.providers.ProviderHook;
+import com.lody.virtual.client.local.LocalContentManager;
+import com.lody.virtual.client.local.LocalPackageManager;
+import com.lody.virtual.helper.utils.ComponentUtils;
+
 import android.app.IActivityManager;
 import android.app.IApplicationThread;
 import android.content.IContentProvider;
+import android.content.pm.ProviderInfo;
 import android.os.IBinder;
-
-import com.lody.virtual.client.core.VirtualCore;
-import com.lody.virtual.client.hook.base.Hook;
-import com.lody.virtual.client.hook.providers.ExternalProviderHook;
-import com.lody.virtual.client.local.LocalContentManager;
-
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
 
 /**
  * @author Lody
  *
  *
- * @see IActivityManager#getContentProvider(IApplicationThread, String, int, boolean)
+ * @see IActivityManager#getContentProvider(IApplicationThread, String, int,
+ *      boolean)
  * @see IActivityManager#getContentProviderExternal(String, int, IBinder)
  *
  */
@@ -31,22 +36,41 @@ import java.lang.reflect.Proxy;
 	@Override
 	public Object onHook(Object who, Method method, Object... args) throws Throwable {
 		String name = (String) args[getProviderNameIndex()];
-		IActivityManager.ContentProviderHolder holder = null;
-		if (!VirtualCore.getCore().isHostProvider(name)) {
-			holder = LocalContentManager.getDefault().getContentProvider(name);
+		if (willBlock(name)) {
+			return null;
+		}
+		IActivityManager.ContentProviderHolder holder = LocalContentManager.getDefault().getContentProvider(name);
+		if (holder == null) {
+			try {
+				holder = (IActivityManager.ContentProviderHolder) method.invoke(who, args);
+				if (holder != null && holder.info != null && !ComponentUtils.isSystemApp(holder.info.applicationInfo)
+						&& !getHostPkg().equals(holder.info.packageName)) {
+					holder = null;
+				}
+			} catch (InvocationTargetException e) {
+				if (e.getCause() instanceof SecurityException) {
+					return null;
+				}
+				throw e.getCause();
+			}
 		}
 		if (holder == null) {
-			holder = (IActivityManager.ContentProviderHolder) method.invoke(who, args);
+			return null;
 		}
-		ExternalProviderHook.HookFetcher fetcher = ExternalProviderHook.fetchHook(name);
+		ProviderHook.HookFetcher fetcher = ProviderHook.fetchHook(name);
 		if (fetcher != null) {
 			IContentProvider provider = holder.provider;
-			ExternalProviderHook hook = fetcher.fetch(provider);
+			ProviderHook hook = fetcher.fetch(provider);
 			holder.provider = (IContentProvider) Proxy.newProxyInstance(provider.getClass().getClassLoader(),
 					new Class[]{IContentProvider.class}, hook);
 		}
-
 		return holder;
+	}
+
+	private boolean willBlock(String name) {
+		ProviderInfo providerInfo = LocalPackageManager.getInstance().resolveContentProvider(name, 0);
+		return providerInfo != null
+				&& ComponentUtils.getProcessName(providerInfo).equals(RuntimeEnv.getCurrentProcessName());
 	}
 
 	public int getProviderNameIndex() {

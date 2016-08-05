@@ -1,53 +1,59 @@
 package com.lody.virtual.service.process;
 
-import android.app.ActivityManager;
-import android.app.ActivityManagerNative;
-import android.app.IApplicationThread;
-import android.os.RemoteException;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import com.lody.virtual.client.IVClient;
 import com.lody.virtual.service.am.StubInfo;
 import com.lody.virtual.service.am.VActivityService;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import android.app.ActivityManager;
+import android.app.ActivityManagerNative;
+import android.app.IApplicationThread;
+import android.os.RemoteException;
 
-final class ProcessRecord {
+public final class ProcessRecord {
 	/**
-	 * 对应的进程名
+	 * Running applications on target process
+	 */
+	final Set<String> runningAppPkgs = new HashSet<String>();
+	/**
+	 * Real process name
 	 */
 	public String stubProcessName;
 	/**
-	 * 该进程正在运行的插件的进程名
+	 * Virtual process name
 	 */
 	public String appProcessName;
 	/**
-	 * 该插件对应的Stub
+	 * Target Stub info
 	 */
 	public StubInfo stubInfo;
 	/**
-	 * 该插件的appThread
+	 * ApplicationThread of target process
 	 */
 	public IApplicationThread appThread;
 	/**
-	 * Client对象
+	 * target process's Client object
 	 */
-	IVClient client;
+	public IVClient client;
 	/**
-	 * 进程PID
+	 * target process's pid
 	 */
-	int pid;
+	public int pid;
 	/**
-	 * 进程UID
+	 * target process's uid
 	 */
-	int uid;
-	/**
-	 * 运行在该进程的所有APK的包名
-	 */
-	final Set<String> runningAppPkgs = new HashSet<String>();
+	public int uid;
+	String initialPackage;
 
-	public synchronized void updateStubProc(int pid) {
+	public ProcessRecord(int pid, int uid) {
+		this.pid = pid;
+		this.uid = uid;
+	}
+
+	/* package */ synchronized void updateStubProcess(int pid) {
 		try {
 			List<ActivityManager.RunningAppProcessInfo> runningInfos = ActivityManagerNative.getDefault()
 					.getRunningAppProcesses();
@@ -63,16 +69,24 @@ final class ProcessRecord {
 		stubInfo = VActivityService.getService().findStubInfo(this.stubProcessName);
 	}
 
-
 	/**
 	 * 添加一个APK到该进程
 	 *
 	 * @param pkgName
 	 *            apk的包名
 	 */
-	public synchronized boolean addPkg(String pkgName) {
-		return !runningAppPkgs.contains(pkgName) && runningAppPkgs.add(pkgName);
+	/* package */ synchronized boolean addPkg(String pkgName) {
+		if (!runningAppPkgs.contains(pkgName)) {
+			runningAppPkgs.add(pkgName);
+			if (initialPackage == null) {
+				initialPackage = pkgName;
+			}
+		}
+		return false;
+	}
 
+	public String getInitialPackage() {
+		return initialPackage;
 	}
 
 	/**

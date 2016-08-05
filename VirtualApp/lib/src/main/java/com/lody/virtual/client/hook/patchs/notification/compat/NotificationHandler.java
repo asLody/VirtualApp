@@ -3,13 +3,11 @@ package com.lody.virtual.client.hook.patchs.notification.compat;
 import android.app.Notification;
 import android.content.Context;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
 import android.os.Build;
 import android.widget.RemoteViews;
 
-import com.lody.virtual.R;
 import com.lody.virtual.client.core.VirtualCore;
-import com.lody.virtual.helper.utils.XLog;
+import com.lody.virtual.helper.utils.VLog;
 
 import java.lang.reflect.InvocationTargetException;
 
@@ -63,40 +61,26 @@ public class NotificationHandler {
 
     public Result dealNotification(Context context, Notification notification, String packageName) throws Exception {
         Result result = new Result(RESULT_CODE_DONT_DEAL, null);
-        if (!NotificaitionUtils.isPluginNotification(notification)) {
-            //不是插件的通知栏
-            return result;
-        }
+//        if (!NotificaitionUtils.isPluginNotification(notification)) {
+//            //不是插件的通知栏
+//            return result;
+//        }
         if (DOPEN_NOT_DEAL) {
             if (VirtualCore.getCore().isOutsideInstalled(packageName)) {
                 //双开模式，直接替换icon
-                ResourcesCompat.getInstance().fixNotificationIcon(notification);
+                NotificaitionUtils.fixNotificationIcon(context, notification);
                 result.code = RESULT_CODE_DEAL_OK;
                 return result;
             }
         }
-        if (NotificaitionUtils.isCustomNotification(notification)) {
-            //自定义样式
-            Notification notification1 = replaceNotification(context, packageName, notification, false);
-            if (notification1 != null) {
-                result.code = RESULT_CODE_REPLACE;
-                result.notification = notification1;
-            } else {
-                result.code = RESULT_CODE_DONT_SHOW;
-            }
+        //自定义样式
+        Notification notification1 = replaceNotification(context, packageName, notification);
+        if (notification1 != null) {
+            result.code = RESULT_CODE_REPLACE;
+            result.notification = notification1;
         } else {
-            //系统样式
-            if (!SYSTEM_NOTIFICATION_NOT_DEAL) {
-                Notification notification1 = replaceNotification(context, packageName, notification, true);
-                if (notification1 != null) {
-                    result.code = RESULT_CODE_REPLACE;
-                    result.notification = notification1;
-                }
-            }
-        }
-        if (result.code != RESULT_CODE_DONT_SHOW && result.notification == null) {
-            ResourcesCompat.getInstance().fixNotificationResource(notification);
-            result.code = RESULT_CODE_DEAL_OK;
+            result.code = RESULT_CODE_DONT_SHOW;
+            VLog.w(TAG, "dont show notification:" + notification);
         }
         return result;
     }
@@ -107,57 +91,35 @@ public class NotificationHandler {
      * @return
      * @throws PackageManager.NameNotFoundException
      */
-    private Notification replaceNotification(Context context, String packageName, Notification notification, boolean systemId) throws PackageManager.NameNotFoundException, ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    private Notification replaceNotification(Context context, String packageName, Notification notification) throws PackageManager.NameNotFoundException, ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         Context pluginContext = getContext(context, packageName);
         if (pluginContext == null) {
             return null;
         }
         //获取需要绘制的remoteviews
         RemoteViewsCompat remoteViewsCompat = new RemoteViewsCompat(pluginContext, notification);
-        RemoteViews contentView = remoteViewsCompat.getRemoteViews();
-        if (contentView == null) {
-            return null;
-        }
-        //大通知栏?
-        boolean isBig = remoteViewsCompat.isBigRemoteViews();
-        PendIntentCompat pendIntentCompat = new PendIntentCompat(contentView, isBig);
-        //布局选择优化
-        final int layoutId;
-        if (pendIntentCompat.findPendIntents() <= 0) {
-            //如果就一个点击事件，没必要用复杂view
-            layoutId = R.layout.custom_notification_lite;
-        } else {
-            layoutId = R.layout.custom_notification;
-        }
-        //remoteviews创建
-        RemoteViews remoteViews = new RemoteViews(context.getPackageName(), layoutId);
-        ResourcesCompat.getInstance().fixIconImage(pluginContext, contentView, notification);
-        //绘制内容
-        final Bitmap bmp = RemoteViewsUtils.getInstance().createBitmap(pluginContext, contentView, isBig, systemId);
-        if (bmp == null) {
-            XLog.e(TAG, "bmp is null,contentView=" + contentView);
-        }
-        remoteViews.setImageViewBitmap(R.id.im_main, bmp);
-        if (systemId) {
-            //   setDateTime(remoteViews, remoteViewsCompat, notification.when);
-        }
-        //点击事件
-        if (layoutId == R.layout.custom_notification) {
-            pendIntentCompat.setPendIntent(
-                    remoteViews,
-                    RemoteViewsUtils.getInstance().createView(context, remoteViews, isBig, false),
-                    RemoteViewsUtils.getInstance().createView(pluginContext, contentView, isBig, false)
-            );
-        }
-//        ResourcesCompat.getInstance().fixNotificationResource(notification);
+        ///clone and set
         Notification notification1 = NotificaitionUtils.clone(pluginContext, notification);
-        if (Build.VERSION.SDK_INT >= 16 && isBig) {
-            notification1.bigContentView = remoteViews;
-        } else {
-            notification1.contentView = remoteViews;
+        //
+        if (Build.VERSION.SDK_INT >= 21) {
+            RemoteViews oldHeadsUpContentView = remoteViewsCompat.getHeadsUpContentView();
+            NotificaitionUtils.fixIconImage(pluginContext, oldHeadsUpContentView, notification);
+            notification1.headsUpContentView = RemoteViewsUtils.getInstance().createViews(context, pluginContext, oldHeadsUpContentView, false);
         }
-        ResourcesCompat.getInstance().fixNotificationIcon(notification1);
+        //
+        if (Build.VERSION.SDK_INT >= 16) {
+            RemoteViews oldBigContentViews = remoteViewsCompat.getBigRemoteViews();
+            NotificaitionUtils.fixIconImage(pluginContext, oldBigContentViews, notification);
+            notification1.bigContentView = RemoteViewsUtils.getInstance().createViews(context, pluginContext, oldBigContentViews, true);
+        }
+        //
+        RemoteViews oldContentView = remoteViewsCompat.getRemoteViews();
+        NotificaitionUtils.fixIconImage(pluginContext, oldContentView, notification);
+        notification1.contentView = RemoteViewsUtils.getInstance().createViews(context, pluginContext, oldContentView, false);
+
+        NotificaitionUtils.fixNotificationIcon(context, notification1);
         return notification1;
+
     }
 
     private Context getContext(Context base, String packageName) {

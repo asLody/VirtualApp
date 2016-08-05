@@ -1,12 +1,12 @@
 package com.lody.virtual.client.hook.patchs.pm;
 
-import android.content.pm.PackageInfo;
+import java.lang.reflect.Method;
 
 import com.lody.virtual.client.hook.base.Hook;
 import com.lody.virtual.client.local.LocalPackageManager;
+import com.lody.virtual.helper.utils.ComponentUtils;
 
-import java.lang.reflect.Method;
-
+import android.content.pm.PackageInfo;
 /**
  * @author Lody
  *
@@ -24,13 +24,25 @@ public final class Hook_GetPackageInfo extends Hook {
 	}
 
 	@Override
+	public boolean beforeHook(Object who, Method method, Object... args) {
+		return args != null && args[0] != null;
+	}
+
+	@Override
 	public Object onHook(Object who, Method method, Object... args) throws Throwable {
 		String pkg = (String) args[0];
 		int flags = (int) args[1];
-		PackageInfo packageInfo = (PackageInfo) method.invoke(who, args);
+		PackageInfo packageInfo = LocalPackageManager.getInstance().getPackageInfo(pkg, flags);
 		if (packageInfo != null) {
 			return packageInfo;
 		}
-		return LocalPackageManager.getInstance().getPackageInfo(pkg, flags);
+		packageInfo = (PackageInfo) method.invoke(who, args);
+		if (packageInfo != null) {
+			if (getHostPkg().equals(packageInfo.packageName) || ComponentUtils.isSystemApp(packageInfo)) {
+				return packageInfo;
+			}
+		}
+		return null;
 	}
+
 }

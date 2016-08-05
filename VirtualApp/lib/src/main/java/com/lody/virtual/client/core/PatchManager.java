@@ -1,18 +1,23 @@
 package com.lody.virtual.client.core;
 
-import android.content.Context;
-import android.content.ContextWrapper;
-import android.os.Build;
-import android.os.ServiceManager;
-import android.provider.Settings;
+import static android.os.Build.VERSION_CODES.JELLY_BEAN_MR1;
+import static android.os.Build.VERSION_CODES.JELLY_BEAN_MR2;
+import static android.os.Build.VERSION_CODES.KITKAT;
+import static android.os.Build.VERSION_CODES.LOLLIPOP;
+import static android.os.Build.VERSION_CODES.LOLLIPOP_MR1;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import com.lody.virtual.client.hook.base.PatchObject;
 import com.lody.virtual.client.hook.delegate.AppInstrumentation;
 import com.lody.virtual.client.hook.patchs.account.AccountManagerPatch;
+import com.lody.virtual.client.hook.patchs.alerm.AlarmManagerPatch;
 import com.lody.virtual.client.hook.patchs.am.ActivityManagerPatch;
 import com.lody.virtual.client.hook.patchs.am.HCallbackHook;
 import com.lody.virtual.client.hook.patchs.appops.AppOpsManagerPatch;
 import com.lody.virtual.client.hook.patchs.appwidget.AppWidgetManagerPatch;
+import com.lody.virtual.client.hook.patchs.audio.AudioManagerPatch;
 import com.lody.virtual.client.hook.patchs.backup.BackupManagerPatch;
 import com.lody.virtual.client.hook.patchs.camera.CameraPatch;
 import com.lody.virtual.client.hook.patchs.clipboard.ClipBoardPatch;
@@ -21,10 +26,12 @@ import com.lody.virtual.client.hook.patchs.dropbox.DropBoxManagerPatch;
 import com.lody.virtual.client.hook.patchs.graphics.GraphicsStatsPatch;
 import com.lody.virtual.client.hook.patchs.imms.MmsPatch;
 import com.lody.virtual.client.hook.patchs.input.InputMethodManagerPatch;
+import com.lody.virtual.client.hook.patchs.isub.SubPatch;
 import com.lody.virtual.client.hook.patchs.job.JobPatch;
 import com.lody.virtual.client.hook.patchs.location.LocationManagerPatch;
 import com.lody.virtual.client.hook.patchs.media.router.MediaRouterServicePatch;
 import com.lody.virtual.client.hook.patchs.media.session.SessionManagerPatch;
+import com.lody.virtual.client.hook.patchs.miui.security.MIUISecurityManagerPatch;
 import com.lody.virtual.client.hook.patchs.mount.MountServicePatch;
 import com.lody.virtual.client.hook.patchs.notification.NotificationManagerPatch;
 import com.lody.virtual.client.hook.patchs.phonesubinfo.PhoneSubInfoPatch;
@@ -42,14 +49,8 @@ import com.lody.virtual.client.interfaces.IHookObject;
 import com.lody.virtual.client.interfaces.Injectable;
 import com.lody.virtual.helper.utils.Reflect;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import static android.os.Build.VERSION_CODES.JELLY_BEAN_MR1;
-import static android.os.Build.VERSION_CODES.JELLY_BEAN_MR2;
-import static android.os.Build.VERSION_CODES.KITKAT;
-import static android.os.Build.VERSION_CODES.L;
-import static android.os.Build.VERSION_CODES.LOLLIPOP_MR1;
+import android.os.Build;
+import android.provider.Settings;
 
 /**
  * @author Lody
@@ -70,6 +71,20 @@ public final class PatchManager {
 	 */
 	public static PatchManager getInstance() {
 		return PatchManagerHolder.sPatchManager;
+	}
+
+	private static void fixSetting(Class<?> settingClass) {
+		Reflect.on(settingClass).field("sNameValueCache").set("mContentProvider", null);
+	}
+
+	public static void fixAllSettings() {
+		try {
+			fixSetting(Settings.System.class);
+			fixSetting(Settings.Secure.class);
+			fixSetting(Settings.Global.class);
+		} catch (Throwable e) {
+			// No class def
+		}
 	}
 
 	public void checkEnv() throws Throwable {
@@ -105,8 +120,15 @@ public final class PatchManager {
 		addPatch(new PackageManagerPatch());
 
 		if (VirtualCore.getCore().isVAppProcess()) {
+			// ## Fuck the MIUI Security
+			if (MIUISecurityManagerPatch.needInject()) {
+				addPatch(new MIUISecurityManagerPatch());
+			}
+			// ## End
 			addPatch(HCallbackHook.getDefault());
 			addPatch(AppInstrumentation.getDefault());
+
+			addPatch(new DropBoxManagerPatch());
 			addPatch(new NotificationManagerPatch());
 			addPatch(new LocationManagerPatch());
 			addPatch(new WindowManagerPatch());
@@ -119,7 +141,9 @@ public final class PatchManager {
 			addPatch(new TelephonyRegistryPatch());
 			addPatch(new AppWidgetManagerPatch());
 			addPatch(new AccountManagerPatch());
-			addPatch(new DropBoxManagerPatch());
+			addPatch(new AudioManagerPatch());
+			addPatch(new SearchManagerPatch());
+			addPatch(new AlarmManagerPatch());
 
 			if (Build.VERSION.SDK_INT >= JELLY_BEAN_MR2) {
 				addPatch(new VibratorPatch());
@@ -132,7 +156,7 @@ public final class PatchManager {
 			if (Build.VERSION.SDK_INT >= JELLY_BEAN_MR1) {
 				addPatch(new DisplayManagerPatch());
 			}
-			if (Build.VERSION.SDK_INT >= L) {
+			if (Build.VERSION.SDK_INT >= LOLLIPOP) {
 				addPatch(new InputMethodManagerPatch());
 				addPatch(new MmsPatch());
 				addPatch(new SessionManagerPatch());
@@ -144,12 +168,11 @@ public final class PatchManager {
 				addPatch(new AppOpsManagerPatch());
 				addPatch(new MediaRouterServicePatch());
 			}
-			if (ServiceManager.getService(Context.SEARCH_SERVICE) != null) {
-				addPatch(new SearchManagerPatch());
-			}
 			if (Build.VERSION.SDK_INT >= LOLLIPOP_MR1) {
 				addPatch(new GraphicsStatsPatch());
+				addPatch(new SubPatch());
 			}
+
 		}
 	}
 
@@ -173,35 +196,6 @@ public final class PatchManager {
 		}
 	}
 
-
-	private static void fixSetting(Class<?> settingClass) {
-		try {
-			Reflect.on(settingClass)
-					.field("sNameValueCache")
-					.set("mContentProvider", null);
-		} catch (Throwable e) {
-			e.printStackTrace();
-		}
-	}
-
-	public static void fixAllSettings() {
-		fixSetting(Settings.System.class);
-		fixSetting(Settings.Secure.class);
-		fixSetting(Settings.Global.class);
-	}
-
-	public static void fixContext(Context context) {
-		while (context instanceof ContextWrapper) {
-			context = ((ContextWrapper) context).getBaseContext();
-		}
-		try {
-			Reflect.on(context).set("mPackageManager", null);
-			context.getPackageManager();
-		} catch (Throwable e) {
-			// Ignore
-		}
-	}
-
 	public <T extends Injectable, H extends IHookObject> H getHookObject(Class<T> patchClass) {
 		T patch = findPatch(patchClass);
 		if (patch != null && patch instanceof PatchObject) {
@@ -210,7 +204,6 @@ public final class PatchManager {
 		}
 		return null;
 	}
-
 
 	private static final class PatchManagerHolder {
 		private static PatchManager sPatchManager = new PatchManager();

@@ -1,13 +1,13 @@
 package com.lody.virtual.client.hook.patchs.alerm;
 
+import java.lang.reflect.Method;
+
+import com.lody.virtual.client.hook.base.Hook;
+import com.lody.virtual.helper.utils.ArrayUtils;
+
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.os.WorkSource;
-
-import com.lody.virtual.client.hook.base.Hook;
-import com.lody.virtual.helper.utils.ArrayIndex;
-
-import java.lang.reflect.Method;
 
 /**
  * @author Lody
@@ -29,7 +29,7 @@ import java.lang.reflect.Method;
 
 	@Override
 	public boolean beforeHook(Object who, Method method, Object... args) {
-		int index = ArrayIndex.indexOfFirst(args, WorkSource.class);
+		int index = ArrayUtils.indexOfFirst(args, WorkSource.class);
 		if (index >= 0) {
 			args[index] = null;
 		}

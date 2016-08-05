@@ -1,17 +1,5 @@
 package com.lody.virtual.client.hook.base;
 
-import android.annotation.TargetApi;
-import android.os.Build;
-import android.os.IBinder;
-import android.os.IInterface;
-import android.os.Parcel;
-import android.os.RemoteException;
-import android.os.ServiceManager;
-import android.text.TextUtils;
-
-import com.lody.virtual.client.interfaces.IHookObject;
-import com.lody.virtual.helper.utils.XLog;
-
 import java.io.FileDescriptor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
@@ -20,6 +8,18 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.HashMap;
 import java.util.Map;
+
+import com.lody.virtual.client.interfaces.IHookObject;
+import com.lody.virtual.helper.utils.VLog;
+
+import android.annotation.TargetApi;
+import android.os.Build;
+import android.os.IBinder;
+import android.os.IInterface;
+import android.os.Parcel;
+import android.os.RemoteException;
+import android.os.ServiceManager;
+import android.text.TextUtils;
 
 /**
  * @author Lody
@@ -70,7 +70,6 @@ public abstract class HookBinder<Interface extends IInterface> implements IHookO
 			this.mBaseObject = createInterface(baseBinder);
 			mProxyObject = (Interface) Proxy.newProxyInstance(mBaseObject.getClass().getClassLoader(),
 					mBaseObject.getClass().getInterfaces(), new HookHandler());
-
 		}
 	}
 
@@ -151,8 +150,9 @@ public abstract class HookBinder<Interface extends IInterface> implements IHookO
 	public void addHook(Hook hook) {
 		if (hook != null && !TextUtils.isEmpty(hook.getName())) {
 			if (internalHookMapping.containsKey(hook.getName())) {
-				XLog.w(TAG, "Hook(%s) from class(%s) have been added, should not be add again.", hook.getName(),
+				VLog.w(TAG, "Hook(%s) from class(%s) have been added, should not be add again.", hook.getName(),
 						hook.getClass().getName());
+				return;
 			}
 			internalHookMapping.put(hook.getName(), hook);
 		}

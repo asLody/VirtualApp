@@ -1,18 +1,18 @@
 package com.lody.virtual.client.env;
 
+import com.lody.virtual.client.core.VirtualCore;
+import com.lody.virtual.helper.compat.AppBindDataCompat;
+import com.lody.virtual.helper.compat.VMRuntimeCompat;
+import com.lody.virtual.helper.proto.AppInfo;
+import com.lody.virtual.helper.utils.Reflect;
+import com.lody.virtual.helper.utils.VLog;
+
 import android.app.Instrumentation;
 import android.content.ComponentName;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Process;
 import android.os.RemoteException;
-
-import com.lody.virtual.client.core.VirtualCore;
-import com.lody.virtual.helper.compat.AppBindDataCompat;
-import com.lody.virtual.helper.compat.VMRuntimeCompat;
-import com.lody.virtual.helper.proto.AppInfo;
-import com.lody.virtual.helper.utils.Reflect;
-import com.lody.virtual.helper.utils.XLog;
 
 /**
  * @author Lody
@@ -65,13 +65,12 @@ public class RuntimeEnv {
 
 	public static <T> T crash(RemoteException e) throws RuntimeException {
 		e.printStackTrace();
-		// 服务端挂了, 客户端活着也没用了...
-		 Process.killProcess(Process.myPid());
+		exit();
 		throw new RuntimeException(e);
 	}
 
 	public static void exit() {
-		XLog.d(RuntimeEnv.class.getSimpleName(), "Exit Process : " + VirtualCore.getCore().getProcessName());
+		VLog.d(RuntimeEnv.class.getSimpleName(), "Exit Process : " + VirtualCore.getCore().getProcessName());
 		Process.killProcess(Process.myPid());
 		System.exit(0);
 	}

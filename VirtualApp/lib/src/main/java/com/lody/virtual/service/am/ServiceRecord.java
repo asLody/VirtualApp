@@ -1,24 +1,42 @@
 package com.lody.virtual.service.am;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import android.app.IApplicationThread;
 import android.app.IServiceConnection;
 import android.content.Intent;
 import android.content.pm.ServiceInfo;
 import android.os.IBinder;
 import android.os.RemoteException;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class ServiceRecord {
 	public final List<ServiceBoundRecord> mBoundRecords = new ArrayList<>();
+	public long activeSince;
+	public long lastActivityTime;
+	public int pid;
 	public ServiceInfo serviceInfo;
 	public IBinder token;
 	public int startId;
 	public IBinder binder;
+	public IApplicationThread targetAppThread;
 	public boolean doRebind = false;
 
 	public boolean hasSomeBound() {
 		return mBoundRecords.size() > 0;
+	}
+
+	public boolean containConnection(IServiceConnection connection) {
+		for (ServiceBoundRecord record : mBoundRecords) {
+			if (record.containsConnection(connection)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public int getClientCount() {
+		return mBoundRecords.size();
 	}
 
 	List<IServiceConnection> getAllConnections() {
@@ -42,13 +60,13 @@ public class ServiceRecord {
 		return true;
 	}
 
-	Intent removedConnection(IServiceConnection con) {
+	Intent removedConnection(IServiceConnection connection) {
 		synchronized (mBoundRecords) {
 			Intent intent = null;
 			List<ServiceBoundRecord> removed = new ArrayList<>();
 			for (ServiceBoundRecord record : mBoundRecords) {
-				if (record.containsConnection(con)) {
-					record.removeConnection(con);
+				if (record.containsConnection(connection)) {
+					record.removeConnection(connection);
 					intent = record.intent;
 				}
 				if (record.connections.size() <= 0) {
@@ -119,7 +137,7 @@ public class ServiceRecord {
 
 		public boolean containsConnection(IServiceConnection connection) {
 			for (IServiceConnection con : connections) {
-				if (con != null && connection != null && con.asBinder() == connection.asBinder()) {
+				if (con.asBinder() == connection.asBinder()) {
 					return true;
 				}
 			}
@@ -137,10 +155,19 @@ public class ServiceRecord {
 			}
 		}
 
+		public boolean containConnection(IServiceConnection connection) {
+			for (IServiceConnection con : connections) {
+				if (con.asBinder() == connection.asBinder()) {
+					return true;
+				}
+			}
+			return false;
+		}
+
 		public void removeConnection(IServiceConnection connection) {
 			List<IServiceConnection> removed = new ArrayList<>();
 			for (IServiceConnection con : connections) {
-				if (con != null && connection != null && con.asBinder() == connection.asBinder()) {
+				if (con.asBinder() == connection.asBinder()) {
 					removed.add(con);
 				}
 			}

@@ -1,10 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest package="com.lody.virtual"
-          xmlns:android="http://schemas.android.com/apk/res/android"
-          xmlns:tools="http://schemas.android.com/tools">
+<manifest
+    package="com.lody.virtual"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission
         android:name="android.permission.ACCOUNT_MANAGER"
+        tools:ignore="ProtectedPermissions"/>
+
+    <uses-permission
+        android:name="android.permission.PACKAGE_USAGE_STATS"
         tools:ignore="ProtectedPermissions"/>
     <uses-permission android:name="android.permission.USE_CREDENTIALS"/>
     <uses-permission android:name="android.permission.INTERNET"/>
@@ -204,16 +209,40 @@
         <activity
             android:name="com.lody.virtual.client.stub.ShortcutHandleActivity"
             android:exported="true"
-            android:theme="@android:style/Theme.Translucent.NoTitleBar"/>
+            />
 
         <service
             android:name="com.lody.virtual.client.stub.KeepService"
             android:process=":x"/>
-        <receiver android:name="com.lody.virtual.client.stub.ReceiverDelegate">
+
+        <activity
+            android:name=".client.service.InstallerActivity"
+            android:allowTaskReparenting="true"
+            android:configChanges="orientation|keyboardHidden|screenSize"
+            android:excludeFromRecents="false"
+            android:exported="false"
+            android:hardwareAccelerated="true"
+            android:label="@string/virtual_installer"
+            android:noHistory="true"
+            android:screenOrientation="portrait"
+            android:taskAffinity=":PInstaller"
+            android:theme="@android:style/Theme.NoDisplay">
+
             <intent-filter>
-                <action android:name="com.lody.virtual.action.DELEGATE_PENDING_INTENT"/>
+                <action android:name="android.intent.action.VIRTUAL_INSTALL_PACKAGE"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+
+                <data android:scheme="file"/>
+                <data android:mimeType="application/vnd.android.package-archive"/>
             </intent-filter>
-        </receiver>
+            <intent-filter>
+                <action android:name="android.intent.action.VIRTUAL_UNINSTALL_PACKAGE"/>
+
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:scheme="package"/>
+            </intent-filter>
+        </activity>
+
         <provider
             android:name="com.lody.virtual.service.BinderProvider"
             android:authorities="virtual.service.BinderProvider"
@@ -224,7 +253,8 @@
             android:name="com.lody.virtual.client.stub.StubActivity$C0"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p0"
-            android:taskAffinity="com.lody.virtual.vt">
+            android:taskAffinity="com.lody.virtual.vt"
+            android:theme="@style/VATheme">
             <meta-data
                 android:name="X-Identity"
                 android:value="Stub-User"/>
@@ -233,7 +263,8 @@
             android:name="com.lody.virtual.client.stub.StubActivity$C1"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p1"
-            android:taskAffinity="com.lody.virtual.vt">
+            android:taskAffinity="com.lody.virtual.vt"
+            android:theme="@style/VATheme">
             <meta-data
                 android:name="X-Identity"
                 android:value="Stub-User"/>
@@ -242,7 +273,8 @@
             android:name="com.lody.virtual.client.stub.StubActivity$C2"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p2"
-            android:taskAffinity="com.lody.virtual.vt">
+            android:taskAffinity="com.lody.virtual.vt"
+            android:theme="@style/VATheme">
             <meta-data
                 android:name="X-Identity"
                 android:value="Stub-User"/>
@@ -252,7 +284,8 @@
             android:name="com.lody.virtual.client.stub.StubActivity$C3"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p3"
-            android:taskAffinity="com.lody.virtual.vt">
+            android:taskAffinity="com.lody.virtual.vt"
+            android:theme="@style/VATheme">
             <meta-data
                 android:name="X-Identity"
                 android:value="Stub-User"/>
@@ -262,7 +295,8 @@
             android:name="com.lody.virtual.client.stub.StubActivity$C4"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p4"
-            android:taskAffinity="com.lody.virtual.vt">
+            android:taskAffinity="com.lody.virtual.vt"
+            android:theme="@style/VATheme">
             <meta-data
                 android:name="X-Identity"
                 android:value="Stub-User"/>
@@ -272,7 +306,8 @@
             android:name="com.lody.virtual.client.stub.StubActivity$C5"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p5"
-            android:taskAffinity="com.lody.virtual.vt">
+            android:taskAffinity="com.lody.virtual.vt"
+            android:theme="@style/VATheme">
             <meta-data
                 android:name="X-Identity"
                 android:value="Stub-User"/>
@@ -282,7 +317,8 @@
             android:name="com.lody.virtual.client.stub.StubActivity$C6"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p6"
-            android:taskAffinity="com.lody.virtual.vt">
+            android:taskAffinity="com.lody.virtual.vt"
+            android:theme="@style/VATheme">
             <meta-data
                 android:name="X-Identity"
                 android:value="Stub-User"/>
@@ -302,7 +338,8 @@
             android:name="com.lody.virtual.client.stub.StubActivity$C8"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p8"
-            android:taskAffinity="com.lody.virtual.vt">
+            android:taskAffinity="com.lody.virtual.vt"
+            android:theme="@style/VATheme">
             <meta-data
                 android:name="X-Identity"
                 android:value="Stub-User"/>
@@ -312,7 +349,8 @@
             android:name="com.lody.virtual.client.stub.StubActivity$C9"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p9"
-            android:taskAffinity="com.lody.virtual.vt">
+            android:taskAffinity="com.lody.virtual.vt"
+            android:theme="@style/VATheme">
             <meta-data
                 android:name="X-Identity"
                 android:value="Stub-User"/>
@@ -322,113 +360,112 @@
         <!--Dialog-->
 
         <activity
-            android:theme="@android:style/Theme.Dialog"
             android:name="com.lody.virtual.client.stub.StubActivity$C0_"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p0"
-            android:taskAffinity="com.lody.virtual.vt">
+            android:taskAffinity="com.lody.virtual.vt"
+            android:theme="@android:style/Theme.Dialog">
             <meta-data
                 android:name="X-Identity"
                 android:value="Stub-User"/>
         </activity>
         <activity
-            android:theme="@android:style/Theme.Dialog"
             android:name="com.lody.virtual.client.stub.StubActivity$C1_"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p1"
-            android:taskAffinity="com.lody.virtual.vt">
+            android:taskAffinity="com.lody.virtual.vt"
+            android:theme="@android:style/Theme.Dialog">
             <meta-data
                 android:name="X-Identity"
                 android:value="Stub-User"/>
         </activity>
         <activity
-            android:theme="@android:style/Theme.Dialog"
             android:name="com.lody.virtual.client.stub.StubActivity$C2_"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p2"
-            android:taskAffinity="com.lody.virtual.vt">
+            android:taskAffinity="com.lody.virtual.vt"
+            android:theme="@android:style/Theme.Dialog">
             <meta-data
                 android:name="X-Identity"
                 android:value="Stub-User"/>
         </activity>
 
         <activity
-            android:theme="@android:style/Theme.Dialog"
             android:name="com.lody.virtual.client.stub.StubActivity$C3_"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p3"
-            android:taskAffinity="com.lody.virtual.vt">
+            android:taskAffinity="com.lody.virtual.vt"
+            android:theme="@android:style/Theme.Dialog">
             <meta-data
                 android:name="X-Identity"
                 android:value="Stub-User"/>
         </activity>
 
         <activity
-            android:theme="@android:style/Theme.Dialog"
             android:name="com.lody.virtual.client.stub.StubActivity$C4_"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p4"
-            android:taskAffinity="com.lody.virtual.vt">
+            android:taskAffinity="com.lody.virtual.vt"
+            android:theme="@android:style/Theme.Dialog">
             <meta-data
                 android:name="X-Identity"
                 android:value="Stub-User"/>
         </activity>
 
         <activity
-            android:theme="@android:style/Theme.Dialog"
             android:name="com.lody.virtual.client.stub.StubActivity$C5_"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p5"
-            android:taskAffinity="com.lody.virtual.vt">
+            android:taskAffinity="com.lody.virtual.vt"
+            android:theme="@android:style/Theme.Dialog">
             <meta-data
                 android:name="X-Identity"
                 android:value="Stub-User"/>
         </activity>
 
         <activity
-            android:theme="@android:style/Theme.Dialog"
             android:name="com.lody.virtual.client.stub.StubActivity$C6_"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p6"
-            android:taskAffinity="com.lody.virtual.vt">
+            android:taskAffinity="com.lody.virtual.vt"
+            android:theme="@android:style/Theme.Dialog">
             <meta-data
                 android:name="X-Identity"
                 android:value="Stub-User"/>
         </activity>
 
         <activity
-            android:theme="@android:style/Theme.Dialog"
             android:name="com.lody.virtual.client.stub.StubActivity$C7_"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p7"
-            android:taskAffinity="com.lody.virtual.vt">
+            android:taskAffinity="com.lody.virtual.vt"
+            android:theme="@android:style/Theme.Dialog">
             <meta-data
                 android:name="X-Identity"
                 android:value="Stub-User"/>
         </activity>
 
         <activity
-            android:theme="@android:style/Theme.Dialog"
             android:name="com.lody.virtual.client.stub.StubActivity$C8_"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p8"
-            android:taskAffinity="com.lody.virtual.vt">
+            android:taskAffinity="com.lody.virtual.vt"
+            android:theme="@android:style/Theme.Dialog">
             <meta-data
                 android:name="X-Identity"
                 android:value="Stub-User"/>
         </activity>
 
         <activity
-            android:theme="@android:style/Theme.Dialog"
             android:name="com.lody.virtual.client.stub.StubActivity$C9_"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale"
             android:process=":p9"
-            android:taskAffinity="com.lody.virtual.vt">
+            android:taskAffinity="com.lody.virtual.vt"
+            android:theme="@android:style/Theme.Dialog">
             <meta-data
                 android:name="X-Identity"
                 android:value="Stub-User"/>
         </activity>
-
 
 
         <provider

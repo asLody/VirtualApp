@@ -1,5 +1,25 @@
 package com.lody.virtual.client.core;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import com.lody.virtual.client.env.Constants;
+import com.lody.virtual.client.env.RuntimeEnv;
+import com.lody.virtual.client.fixer.ContextFixer;
+import com.lody.virtual.client.local.LocalPackageManager;
+import com.lody.virtual.client.local.LocalProcessManager;
+import com.lody.virtual.client.service.ServiceManagerNative;
+import com.lody.virtual.helper.ExtraConstants;
+import com.lody.virtual.helper.compat.ActivityThreadCompat;
+import com.lody.virtual.helper.compat.BundleCompat;
+import com.lody.virtual.helper.loaders.DexAppClassLoader;
+import com.lody.virtual.helper.proto.AppInfo;
+import com.lody.virtual.helper.proto.InstallResult;
+import com.lody.virtual.service.IAppManager;
+
+import android.app.Activity;
 import android.app.ActivityThread;
 import android.content.ComponentName;
 import android.content.Context;
@@ -7,33 +27,15 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.content.pm.ProviderInfo;
 import android.content.pm.ResolveInfo;
 import android.content.pm.ServiceInfo;
 import android.content.res.AssetManager;
 import android.content.res.Resources;
+import android.os.Bundle;
+import android.os.IBinder;
 import android.os.Looper;
-import android.os.Messenger;
 import android.os.RemoteException;
 import android.text.TextUtils;
-
-import com.lody.virtual.client.env.Constants;
-import com.lody.virtual.client.env.RuntimeEnv;
-import com.lody.virtual.client.local.LocalProcessManager;
-import com.lody.virtual.client.service.ServiceManagerNative;
-import com.lody.virtual.helper.ExtraConstants;
-import com.lody.virtual.helper.compat.ActivityThreadCompat;
-import com.lody.virtual.helper.loaders.DexAppClassLoader;
-import com.lody.virtual.helper.proto.AppInfo;
-import com.lody.virtual.helper.proto.InstallResult;
-import com.lody.virtual.service.IAppManager;
-
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * @author Lody
@@ -68,7 +70,6 @@ public final class VirtualCore {
 	private ProcessType processType;
 	private IAppManager mService;
 	private boolean isStartUp;
-	private Set<String> hostProviderAuths = new HashSet<String>(5);
 	private PackageInfo hostPkgInfo;
 	private Map<ComponentName, ActivityInfo> activityInfoCache = new HashMap<ComponentName, ActivityInfo>();
 
@@ -114,14 +115,17 @@ public final class VirtualCore {
 		return String.format("%s.BRC_%s", getCore().getHostPkg(), extAction);
 	}
 
-    public PackageInfo getHostPkgInfo() {
+	public int[] getGids() {
+		return hostPkgInfo.gids;
+	}
+
+	public PackageInfo getHostPkgInfo() {
 		return hostPkgInfo;
 	}
 
 	public Context getContext() {
 		return context;
 	}
-
 
 	public PackageManager getPackageManager() {
 		return context.getPackageManager();
@@ -145,12 +149,6 @@ public final class VirtualCore {
 			hostBindData = ActivityThreadCompat.getBoundApplication(mainThread);
 			unHookPackageManager = context.getPackageManager();
 			hostPkgInfo = unHookPackageManager.getPackageInfo(context.getPackageName(), PackageManager.GET_PROVIDERS);
-			ProviderInfo[] hostProviders = hostPkgInfo.providers;
-			if (hostProviders != null) {
-				for (ProviderInfo info : hostProviders) {
-					hostProviderAuths.add(info.authority);
-				}
-			}
 			// Host包名
 			pkgName = context.getPackageName();
 			// 主进程名
@@ -170,15 +168,10 @@ public final class VirtualCore {
 			patchManager.injectAll();
 			patchManager.checkEnv();
 			RuntimeEnv.init();
-			PatchManager.fixContext(context);
+			ContextFixer.fixContext(context);
 			isStartUp = true;
 		}
 	}
-
-	public boolean isHostProvider(String auth) {
-		return auth != null && hostProviderAuths.contains(auth);
-	}
-
 
 	public IAppManager getService() {
 		if (mService == null) {
@@ -191,7 +184,6 @@ public final class VirtualCore {
 		}
 		return mService;
 	}
-
 
 	public void notifyOnEnterApp(String appPkg) {
 		LocalProcessManager.onEnterApp(appPkg);
@@ -245,7 +237,7 @@ public final class VirtualCore {
 
 	public void preOpt(String pkg) throws Exception {
 		AppInfo info = findApp(pkg);
-		if (info != null && !info.isInstalled()) {
+		if (info != null && !info.dependSystem) {
 			new DexAppClassLoader(info);
 		}
 	}
@@ -258,7 +250,6 @@ public final class VirtualCore {
 		}
 	}
 
-
 	public boolean isAppInstalled(String pkg) {
 		try {
 			return getService().isAppInstalled(pkg);
@@ -266,25 +257,39 @@ public final class VirtualCore {
 			return RuntimeEnv.crash(e);
 		}
 	}
-	public void launchApp(String pkgName) throws Throwable {
-		launchApp(pkgName, null);
+
+	public Intent getLaunchIntent(String pkg) {
+		AppInfo info = findApp(pkg);
+		if (info != null) {
+			Intent intent = getPackageManager().getLaunchIntentForPackage(pkg);
+			if (intent == null) {
+				throw new IllegalStateException("Unable to launch the app named : " + pkg);
+			}
+			return intent;
+		} else {
+			throw new IllegalStateException("Unable to find app named : " + pkg);
+		}
 	}
 
-	public void launchApp(String pkgName, Messenger messenger) throws Throwable {
-		AppInfo pluginPackage = findApp(pkgName);
-		if (pluginPackage != null) {
-			Intent intent = getPM().getLaunchIntentForPackage(pluginPackage.packageName);
-			if (intent == null) {
-				throw new IllegalStateException("Unable to launch the app named : " + pkgName);
-			}
-			if (messenger != null) {
-				intent.putExtra(ExtraConstants.EXTRA_MESSENGER, messenger);
-			}
-			context.startActivity(intent);
-		} else {
-			throw new IllegalStateException("Unable to find plugin named : " + pkgName);
-		}
+	public void launchApp(String pkgName) throws Throwable {
+		Intent intent = getLaunchIntent(pkgName);
+		context.startActivity(intent);
+	}
 
+	public void addLoadingPage(Intent intent, Activity activity) {
+		if (activity != null) {
+			Bundle bundle = new Bundle();
+			BundleCompat.putBinder(bundle, ExtraConstants.EXTRA_BINDER, activity.getActivityToken());
+			intent.putExtra(ExtraConstants.EXTRA_SENDER, bundle);
+		}
+	}
+
+	public void addLoadingPage(Intent intent, IBinder token) {
+		if (token != null) {
+			Bundle bundle = new Bundle();
+			BundleCompat.putBinder(bundle, ExtraConstants.EXTRA_BINDER, token);
+			intent.putExtra(ExtraConstants.EXTRA_SENDER, bundle);
+		}
 	}
 
 	public AppInfo findApp(final String pkg) {
@@ -294,7 +299,6 @@ public final class VirtualCore {
 			return RuntimeEnv.crash(e);
 		}
 	}
-
 
 	public int getAppCount() {
 		try {
@@ -335,7 +339,7 @@ public final class VirtualCore {
 	public synchronized ActivityInfo resolveActivityInfo(Intent intent) {
 		ActivityInfo activityInfo = null;
 		if (intent.getComponent() == null) {
-			ResolveInfo resolveInfo = getPM().resolveActivity(intent, 0);
+			ResolveInfo resolveInfo = LocalPackageManager.getInstance().resolveIntent(intent, intent.getType(), 0);
 			if (resolveInfo != null && resolveInfo.activityInfo != null) {
 				activityInfo = resolveInfo.activityInfo;
 				intent.setClassName(activityInfo.packageName, activityInfo.name);
@@ -350,13 +354,9 @@ public final class VirtualCore {
 	public synchronized ActivityInfo resolveActivityInfo(ComponentName componentName) {
 		ActivityInfo activityInfo = activityInfoCache.get(componentName);
 		if (activityInfo == null) {
-			try {
-				activityInfo = getPM().getActivityInfo(componentName, 0);
-				if (activityInfo != null) {
-					activityInfoCache.put(componentName, activityInfo);
-				}
-			} catch (PackageManager.NameNotFoundException e) {
-				// Ignore
+			activityInfo = LocalPackageManager.getInstance().getActivityInfo(componentName, 0);
+			if (activityInfo != null) {
+				activityInfoCache.put(componentName, activityInfo);
 			}
 		}
 		return activityInfo;
@@ -364,17 +364,9 @@ public final class VirtualCore {
 
 	public ServiceInfo resolveServiceInfo(Intent intent) {
 		ServiceInfo serviceInfo = null;
-		if (intent.getComponent() == null) {
-			ResolveInfo resolveInfo = getPM().resolveService(intent, 0);
-			if (resolveInfo != null && resolveInfo.serviceInfo != null) {
-				serviceInfo = resolveInfo.serviceInfo;
-			}
-		} else {
-			try {
-				serviceInfo = getPM().getServiceInfo(intent.getComponent(), 0);
-			} catch (PackageManager.NameNotFoundException e) {
-				// Ignore
-			}
+		ResolveInfo resolveInfo = LocalPackageManager.getInstance().resolveService(intent, intent.getType(), 0);
+		if (resolveInfo != null) {
+			serviceInfo = resolveInfo.serviceInfo;
 		}
 		return serviceInfo;
 	}

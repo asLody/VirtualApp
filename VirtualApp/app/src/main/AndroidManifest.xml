@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest package="io.virtualapp"
-          xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest
+    package="io.virtualapp"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    >
 
     <application
         android:name=".VApp"
@@ -9,7 +11,6 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-
 
         <activity
             android:name=".enter.EnterActivity"
@@ -25,6 +26,25 @@
             android:name=".home.ListAppActivity"
             android:theme="@style/AppListTheme"/>
 
+        <activity
+            android:name=".home.LoadingActivity"
+            android:noHistory="true"
+            android:taskAffinity="va.task.loading"
+            android:excludeFromRecents="true"
+            android:theme="@android:style/Theme.DeviceDefault.Dialog.NoActionBar"/>
+
+
+        <meta-data
+            android:name="UMENG_APPKEY"
+            android:value="5792f68f67e58e08ee000ee1">
+        </meta-data>
+        <meta-data
+            android:name="UMENG_CHANNEL"
+            android:value="Umeng">
+        </meta-data>
+        <meta-data
+            android:name="com.google.android.gms.version"
+            android:value="@integer/google_play_services_version"/>
     </application>
 
 

@@ -1,8 +1,9 @@
 package com.lody.virtual.client.hook.patchs.pm;
 
-import com.lody.virtual.client.hook.base.Hook;
-
 import java.lang.reflect.Method;
+
+import com.lody.virtual.client.hook.base.Hook;
+import com.lody.virtual.client.local.LocalPackageManager;
 
 /**
  * @author Lody
@@ -10,7 +11,8 @@ import java.lang.reflect.Method;
  *         <p/>
  *         Android 4.4+
  *
- *         @see android.content.pm.IPackageManager#queryContentProviders(String, int, int)
+ * @see android.content.pm.IPackageManager#queryContentProviders(String, int,
+ *      int)
  *
  */
 @SuppressWarnings("unchecked")
@@ -22,9 +24,10 @@ import java.lang.reflect.Method;
 	}
 
 	@Override
-	public boolean beforeHook(Object who, Method method, Object... args) {
-		return false;
+	public Object onHook(Object who, Method method, Object... args) throws Throwable {
+		String processName = (String) args[0];
+		int flags = (int) args[2];
+		return LocalPackageManager.getInstance().queryContentProviders(processName, flags);
 	}
-
 
 }

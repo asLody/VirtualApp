@@ -1,5 +1,14 @@
 package com.lody.virtual.client.hook.patchs.am;
 
+import java.lang.reflect.Method;
+
+import com.lody.virtual.client.core.VirtualCore;
+import com.lody.virtual.client.env.Constants;
+import com.lody.virtual.client.hook.base.Hook;
+import com.lody.virtual.helper.ExtraConstants;
+import com.lody.virtual.helper.utils.BitmapUtils;
+import com.lody.virtual.helper.utils.VLog;
+
 import android.app.IApplicationThread;
 import android.content.ComponentName;
 import android.content.IIntentReceiver;
@@ -10,15 +19,6 @@ import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.text.TextUtils;
 
-import com.lody.virtual.client.core.VirtualCore;
-import com.lody.virtual.client.env.Constants;
-import com.lody.virtual.client.hook.base.Hook;
-import com.lody.virtual.helper.ExtraConstants;
-import com.lody.virtual.helper.utils.BitmapUtils;
-import com.lody.virtual.helper.utils.XLog;
-
-import java.lang.reflect.Method;
-
 /**
  * @author Lody
  *
@@ -28,6 +28,8 @@ import java.lang.reflect.Method;
  *      Bundle, boolean, boolean, int)
  */
 /* package */ class Hook_BroadcastIntent extends Hook {
+
+	private static final String TAG = Hook_BroadcastIntent.class.getSimpleName();
 
 	@Override
 	public String getName() {
@@ -40,10 +42,13 @@ import java.lang.reflect.Method;
 			Intent intent = (Intent) args[1];
 			handleIntent(intent);
 		}
-		if (args[7] instanceof String) {
+		Class<?> permissionType = method.getParameterTypes()[7];
+		if (permissionType == String.class) {
 			args[7] = VirtualCore.getPermissionBroadcast();
-		} else if (args[7] instanceof String[]) {
+		} else if (permissionType == String[].class) {
 			args[7] = new String[]{VirtualCore.getPermissionBroadcast()};
+		} else {
+			VLog.e(TAG, "replace permission failed.");
 		}
 		return method.invoke(who, args);
 	}
@@ -63,7 +68,7 @@ import java.lang.reflect.Method;
 				if (name.startsWith(".")) {
 					name = cn.getPackageName() + cn.getClassName();
 				}
-                XLog.d("broadcast", "action="+action+",cn="+cn);
+				VLog.d("broadcast", "action=" + action + ",cn=" + cn);
 				intent.setComponent(null);
 				intent.setAction(VirtualCore.getReceiverAction(cn.getPackageName(), name));
 			}

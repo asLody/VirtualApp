@@ -1,13 +1,13 @@
 package com.lody.virtual.client.hook.patchs.am;
 
-import android.app.ActivityManager;
-import android.os.Process;
+import java.lang.reflect.Method;
+import java.util.List;
 
 import com.lody.virtual.client.hook.base.Hook;
 import com.lody.virtual.client.local.LocalProcessManager;
 
-import java.lang.reflect.Method;
-import java.util.List;
+import android.app.ActivityManager;
+import android.os.Process;
 
 /**
  * @author Lody
@@ -28,7 +28,7 @@ import java.util.List;
 		if (infoList != null) {
 			int myUid = Process.myUid();
 			for (ActivityManager.RunningAppProcessInfo info : infoList) {
-				if (info.uid == myUid && LocalProcessManager.isAppPID(info.pid)) {
+				if (info.uid == myUid && LocalProcessManager.isAppPid(info.pid)) {
 					List<String> pkgList = LocalProcessManager.getProcessPkgList(info.pid);
 					String processName = LocalProcessManager.getAppProcessName(info.pid);
 					if (processName != null) {

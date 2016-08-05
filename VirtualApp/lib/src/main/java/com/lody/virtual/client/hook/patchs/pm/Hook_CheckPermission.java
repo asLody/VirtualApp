@@ -1,8 +1,9 @@
 package com.lody.virtual.client.hook.patchs.pm;
 
-import com.lody.virtual.client.hook.base.Hook;
-
 import java.lang.reflect.Method;
+
+import com.lody.virtual.client.hook.base.Hook;
+import com.lody.virtual.client.local.LocalPackageManager;
 
 /**
  * @author Lody
@@ -19,12 +20,13 @@ import java.lang.reflect.Method;
 
 	@Override
 	public Object onHook(Object who, Method method, Object... args) throws Throwable {
-		if (args.length > 1 && args[1] instanceof String) {
-			String pkg = (String) args[1];
-			if (isAppPkg(pkg)) {
-				args[1] = getHostPkg();
-			}
-		}
-		return method.invoke(who, args);
+		String permName = (String) args[0];
+		String pkgName = (String) args[1];
+		return LocalPackageManager.getInstance().checkPermission(permName, pkgName);
+	}
+
+	@Override
+	public boolean isEnable() {
+		return false;
 	}
 }
