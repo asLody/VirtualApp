@@ -6,13 +6,7 @@ import com.lody.virtual.service.interfaces.IProcessObserver;
 
 interface IProcessManager {
 
-    void onAppProcessCreate(in IBinder appThread);
-
-    void onEnterApp(String pkg);
-
-    void onEnterAppProcessName(String pluginProcessName);
-
-    void installComponent(in VComponentInfo componentInfo);
+    void attachClient(in IBinder clinet);
 
     boolean isAppProcess(String processName);
 
@@ -34,5 +28,10 @@ interface IProcessManager {
 
     void unregisterProcessObserver(in IProcessObserver observer);
 
+    String getInitialPackage(int pid);
+
+    void handleApplicationCrash();
+
+    void appDoneExecuting(in String packageName);
 
 }

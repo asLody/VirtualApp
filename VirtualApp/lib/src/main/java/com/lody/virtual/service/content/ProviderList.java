@@ -1,4 +1,4 @@
-package com.lody.virtual.service.process;
+package com.lody.virtual.service.content;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -11,7 +11,7 @@ import android.app.IActivityManager;
  *
  */
 public class ProviderList {
-	private final Map<String, IActivityManager.ContentProviderHolder> mHolders = new HashMap<String, IActivityManager.ContentProviderHolder>();
+	private final Map<String, IActivityManager.ContentProviderHolder> mHolders = new HashMap<>();
 
 	public IActivityManager.ContentProviderHolder getHolder(String auth) {
 		return mHolders.get(auth);
@@ -21,11 +21,11 @@ public class ProviderList {
 		mHolders.put(auth, holder);
 	}
 
-	public Set<String> authSet() {
+	public Set<String> getAuthorities() {
 		return mHolders.keySet();
 	}
 
-	public void removeAuth(String auth) {
-		mHolders.remove(auth);
+	public void removeAuthority(String name) {
+		mHolders.remove(name);
 	}
 }

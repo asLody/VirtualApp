@@ -1,16 +1,14 @@
 package com.lody.virtual.client.local;
 
-import java.util.List;
+import android.os.IBinder;
+import android.os.RemoteException;
 
-import com.lody.virtual.client.env.RuntimeEnv;
+import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.client.service.ServiceManagerNative;
-import com.lody.virtual.helper.proto.VComponentInfo;
 import com.lody.virtual.service.IProcessManager;
 import com.lody.virtual.service.interfaces.IProcessObserver;
 
-import android.content.pm.ComponentInfo;
-import android.os.IBinder;
-import android.os.RemoteException;
+import java.util.List;
 
 /**
  * @author Lody
@@ -35,6 +33,14 @@ public class LocalProcessManager {
 		return service;
 	}
 
+	public static void attachClient(IBinder client) {
+		try {
+			getService().attachClient(client);
+		} catch (RemoteException e) {
+			VirtualRuntime.crash(e);
+		}
+	}
+
 	public static void killAllApps() {
 		try {
 			getService().killAllApps();
@@ -55,7 +61,7 @@ public class LocalProcessManager {
 		try {
 			return getService().isAppProcess(processName);
 		} catch (RemoteException e) {
-			return RuntimeEnv.crash(e);
+			return VirtualRuntime.crash(e);
 		}
 	}
 
@@ -75,43 +81,11 @@ public class LocalProcessManager {
 		}
 	}
 
-	public static void onEnterAppProcessName(String pluginProcessName) {
-		try {
-			getService().onEnterAppProcessName(pluginProcessName);
-		} catch (RemoteException e) {
-			// Ignore
-		}
-	}
-
-	public static void onEnterApp(String pkg) {
-		try {
-			getService().onEnterApp(pkg);
-		} catch (RemoteException e) {
-			// Ignore
-		}
-	}
-
-	public static void onAppProcessCreate(IBinder appThread) {
-		try {
-			getService().onAppProcessCreate(appThread);
-		} catch (RemoteException e) {
-			// Ignore
-		}
-	}
-
-	public static void installComponent(ComponentInfo componentInfo) {
-		try {
-			getService().installComponent(VComponentInfo.wrap(componentInfo));
-		} catch (RemoteException e) {
-			// Ignore
-		}
-	}
-
 	public static boolean isAppPid(int pid) {
 		try {
 			return getService().isAppPid(pid);
 		} catch (RemoteException e) {
-			return RuntimeEnv.crash(e);
+			return VirtualRuntime.crash(e);
 		}
 	}
 
@@ -119,7 +93,7 @@ public class LocalProcessManager {
 		try {
 			return getService().getProcessPkgList(pid);
 		} catch (RemoteException e) {
-			return RuntimeEnv.crash(e);
+			return VirtualRuntime.crash(e);
 		}
 	}
 
@@ -127,7 +101,7 @@ public class LocalProcessManager {
 		try {
 			return getService().getAppProcessName(pid);
 		} catch (RemoteException e) {
-			return RuntimeEnv.crash(e);
+			return VirtualRuntime.crash(e);
 		}
 	}
 
@@ -142,6 +116,30 @@ public class LocalProcessManager {
 	public static void unregisterProcessObserver(IProcessObserver observer) {
 		try {
 			getService().unregisterProcessObserver(observer);
+		} catch (RemoteException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public static String getInitialPackage(int pid) {
+		try {
+			return getService().getInitialPackage(pid);
+		} catch (RemoteException e) {
+			return VirtualRuntime.crash(e);
+		}
+	}
+
+	public static void handleApplicationCrash() {
+		try {
+			getService().handleApplicationCrash();
+		} catch (RemoteException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public static void appDoneExecuting(String packageName) {
+		try {
+			getService().appDoneExecuting(packageName);
 		} catch (RemoteException e) {
 			e.printStackTrace();
 		}

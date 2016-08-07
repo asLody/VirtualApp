@@ -1,14 +1,14 @@
 package com.lody.virtual.client.hook.providers;
 
+import android.content.IContentProvider;
+import android.net.Uri;
+import android.os.Bundle;
+
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
-
-import android.content.IContentProvider;
-import android.net.Uri;
-import android.os.Bundle;
 
 /**
  * @author Lody
@@ -28,6 +28,12 @@ public class ProviderHook implements InvocationHandler {
 				return new SettingsProviderHook(provider);
 			}
 		});
+		PROVIDER_MAP.put("downloads", new HookFetcher() {
+			@Override
+			public ProviderHook fetch(IContentProvider provider) {
+				return new DownloadProviderHook(provider);
+			}
+		});
 	}
 
 	protected final Object mBase;
@@ -37,7 +43,16 @@ public class ProviderHook implements InvocationHandler {
 	}
 
 	public static HookFetcher fetchHook(String authority) {
-		return PROVIDER_MAP.get(authority);
+		HookFetcher fetcher = PROVIDER_MAP.get(authority);
+		if (fetcher == null) {
+			fetcher = new HookFetcher() {
+				@Override
+				public ProviderHook fetch(IContentProvider provider) {
+					return new ExternalProviderHook(provider);
+				}
+			};
+		}
+		return fetcher;
 	}
 
 	public Bundle call(Method method, Object[] args) throws InvocationTargetException, IllegalAccessException {

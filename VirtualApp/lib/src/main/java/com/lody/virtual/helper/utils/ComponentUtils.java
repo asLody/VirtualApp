@@ -58,4 +58,10 @@ public class ComponentUtils {
 	public static boolean isSystemApp(ApplicationInfo applicationInfo) {
 		return applicationInfo != null && (ApplicationInfo.FLAG_SYSTEM & applicationInfo.flags) != 0;
 	}
+
+
+	public static boolean isSharedPackage(String initialPackage) {
+		// TODO
+		return false;
+	}
 }

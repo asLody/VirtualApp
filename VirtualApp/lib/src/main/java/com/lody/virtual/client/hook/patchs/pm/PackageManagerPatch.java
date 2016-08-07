@@ -91,6 +91,7 @@ public final class PackageManagerPatch extends PatchObject<IPackageManager, Hook
 			}
 		};
 		pmHookBinder.injectService("package");
+
 	}
 
 	@Override

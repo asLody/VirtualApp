@@ -2,6 +2,7 @@ package com.lody.virtual.client.hook.patchs.pm;
 
 import java.lang.reflect.Method;
 
+import com.lody.virtual.client.fixer.ComponentFixer;
 import com.lody.virtual.client.hook.base.Hook;
 import com.lody.virtual.client.local.LocalPackageManager;
 import com.lody.virtual.helper.utils.ComponentUtils;
@@ -34,6 +35,7 @@ public final class Hook_GetPackageInfo extends Hook {
 		int flags = (int) args[1];
 		PackageInfo packageInfo = LocalPackageManager.getInstance().getPackageInfo(pkg, flags);
 		if (packageInfo != null) {
+			ComponentFixer.fixUid(packageInfo.applicationInfo);
 			return packageInfo;
 		}
 		packageInfo = (PackageInfo) method.invoke(who, args);

@@ -1,15 +1,12 @@
 package com.lody.virtual.helper.proto;
 
-import com.lody.virtual.client.core.AppSandBox;
-import com.lody.virtual.client.core.VirtualCore;
-import com.lody.virtual.helper.compat.ActivityThreadCompat;
-
-import android.app.Application;
 import android.app.LoadedApk;
 import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageManager;
+import android.content.res.CompatibilityInfo;
 import android.os.Parcel;
 import android.os.Parcelable;
+
+import com.lody.virtual.client.core.VirtualCore;
 
 /**
  * @author Lody
@@ -34,57 +31,47 @@ public final class AppInfo implements Parcelable {
 	public String libDir;
 	public String odexDir;
 	public String cacheDir;
-	public ApplicationInfo applicationInfo;
 	public boolean dependSystem;
+	private ApplicationInfo applicationInfo;
 
 	public AppInfo() {
 	}
 
 	protected AppInfo(Parcel in) {
-		this.packageName = in.readString();
-		this.apkPath = in.readString();
-		this.dataDir = in.readString();
-		this.libDir = in.readString();
-		this.odexDir = in.readString();
-		this.cacheDir = in.readString();
-		this.applicationInfo = in.readParcelable(ApplicationInfo.class.getClassLoader());
-		this.dependSystem = in.readByte() != 0;
+		packageName = in.readString();
+		apkPath = in.readString();
+		dataDir = in.readString();
+		libDir = in.readString();
+		odexDir = in.readString();
+		cacheDir = in.readString();
+		applicationInfo = in.readParcelable(ApplicationInfo.class.getClassLoader());
+		dependSystem = in.readByte() != 0;
+	}
+
+	public ApplicationInfo getApplicationInfo() {
+		return applicationInfo;
+	}
+
+	public void setApplicationInfo(ApplicationInfo applicationInfo) {
+		this.applicationInfo = applicationInfo;
 	}
 
 	public ClassLoader getClassLoader() {
-
 		return getLoadedApk().getClassLoader();
 	}
 
-	public synchronized LoadedApk getLoadedApk() {
+	public LoadedApk getLoadedApk() {
 		LoadedApk loadedApk = null;
 		try {
 			loadedApk = VirtualCore.mainThread().peekPackageInfo(packageName, true);
 		} catch (Throwable e) {
 			// Ignore
 		}
-		if (loadedApk != null) {
-			return loadedApk;
-		}
-		loadedApk = ActivityThreadCompat.getPackageInfoNoCheck(applicationInfo);
-		int repeat = 3;
-		while (repeat-- > 0 && loadedApk == null) {
-			loadedApk = ActivityThreadCompat.getPackageInfoNoCheck(applicationInfo);
+		if (loadedApk == null) {
+			loadedApk = VirtualCore.mainThread().getPackageInfoNoCheck(getApplicationInfo(),
+					CompatibilityInfo.DEFAULT_COMPATIBILITY_INFO);
 		}
 		return loadedApk;
-	}
-
-	public boolean isInstalled() {
-		try {
-			return VirtualCore.getCore().getUnHookPackageManager().getApplicationInfo(packageName, 0) != null;
-		} catch (PackageManager.NameNotFoundException e) {
-			// Ignore
-		}
-		return false;
-	}
-
-	public Application getApplication() {
-		return AppSandBox.getApplication(packageName);
 	}
 
 	@Override
@@ -94,13 +81,13 @@ public final class AppInfo implements Parcelable {
 
 	@Override
 	public void writeToParcel(Parcel dest, int flags) {
-		dest.writeString(this.packageName);
-		dest.writeString(this.apkPath);
-		dest.writeString(this.dataDir);
-		dest.writeString(this.libDir);
-		dest.writeString(this.odexDir);
-		dest.writeString(this.cacheDir);
-		dest.writeParcelable(this.applicationInfo, flags);
-		dest.writeByte(this.dependSystem ? (byte) 1 : (byte) 0);
+		dest.writeString(packageName);
+		dest.writeString(apkPath);
+		dest.writeString(dataDir);
+		dest.writeString(libDir);
+		dest.writeString(odexDir);
+		dest.writeString(cacheDir);
+		dest.writeParcelable(applicationInfo, flags);
+		dest.writeByte(dependSystem ? (byte) 1 : (byte) 0);
 	}
 }

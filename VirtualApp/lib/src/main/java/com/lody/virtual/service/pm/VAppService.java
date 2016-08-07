@@ -1,15 +1,13 @@
 package com.lody.virtual.service.pm;
 
-import android.content.Intent;
-import android.net.Uri;
-import android.os.RemoteCallbackList;
-import android.os.RemoteException;
-import android.util.DisplayMetrics;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 import com.lody.virtual.client.core.InstallStrategy;
 import com.lody.virtual.client.core.VirtualCore;
-import com.lody.virtual.client.local.LocalReceiverManager;
-import com.lody.virtual.client.service.ServiceManagerNative;
+import com.lody.virtual.client.env.Constants;
 import com.lody.virtual.helper.compat.NativeLibraryHelperCompat;
 import com.lody.virtual.helper.proto.AppInfo;
 import com.lody.virtual.helper.proto.InstallResult;
@@ -20,10 +18,11 @@ import com.lody.virtual.service.IAppManager;
 import com.lody.virtual.service.interfaces.IAppObserver;
 import com.lody.virtual.service.process.VProcessService;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
+import android.content.Intent;
+import android.net.Uri;
+import android.os.RemoteCallbackList;
+import android.os.RemoteException;
+import android.util.DisplayMetrics;
 
 /**
  * @author Lody
@@ -139,7 +138,7 @@ public class VAppService extends IAppManager.Stub {
 		appInfo.dependSystem = dependSystem;
 		appInfo.apkPath = apk.getPath();
 		appInfo.packageName = pkg.packageName;
-		appInfo.applicationInfo = pkg.applicationInfo;
+		appInfo.setApplicationInfo(pkg.applicationInfo);
 
 		File dataFolder = fileSystem.getAppPackageFolder(pkg.packageName);
 		File libFolder = fileSystem.getAppLibFolder(pkg.packageName);
@@ -208,9 +207,10 @@ public class VAppService extends IAppManager.Stub {
 			}
 		}
 		remoteCallbackList.finishBroadcast();
-
-		notifySysInstalled(pkgName);
-		notifyVirtualInstalled(pkgName);
+		Intent virtualIntent = new Intent(Constants.VIRTUAL_ACTION_PACKAGE_ADDED);
+		Uri uri = Uri.fromParts("package", pkgName, null);
+		virtualIntent.setData(uri);
+		VirtualCore.getCore().getContext().sendBroadcast(virtualIntent);
 	}
 
 	private void notifyAppUninstalled(String pkgName) {
@@ -223,34 +223,7 @@ public class VAppService extends IAppManager.Stub {
 			}
 		}
 		remoteCallbackList.finishBroadcast();
-
-		notifySysUninstalled(pkgName);
-		notifyVirtualUninstalled(pkgName);
-	}
-
-	private void notifySysInstalled(String pkgName) {
-		Intent intent = new Intent(Intent.ACTION_PACKAGE_ADDED);
-		Uri uri = Uri.fromParts("package", pkgName, null);
-		intent.setData(uri);
-		LocalReceiverManager.sendBroadcast(intent);
-	}
-
-	private void notifySysUninstalled(String pkgName) {
-		Intent intent = new Intent(Intent.ACTION_PACKAGE_REMOVED);
-		Uri uri = Uri.fromParts("package", pkgName, null);
-		intent.setData(uri);
-		LocalReceiverManager.sendBroadcast(intent);
-	}
-
-	private void notifyVirtualInstalled(String pkgName) {
-		Intent virtualIntent = new Intent(ServiceManagerNative.ACTION_PACKAGE_ADDED);
-		Uri uri = Uri.fromParts("package", pkgName, null);
-		virtualIntent.setData(uri);
-		VirtualCore.getCore().getContext().sendBroadcast(virtualIntent);
-	}
-
-	private void notifyVirtualUninstalled(String pkgName) {
-		Intent virtualIntent = new Intent(ServiceManagerNative.ACTION_PACKAGE_REMOVE);
+		Intent virtualIntent = new Intent(Constants.VIRTUAL_ACTION_PACKAGE_REMOVED);
 		Uri uri = Uri.fromParts("package", pkgName, null);
 		virtualIntent.setData(uri);
 		VirtualCore.getCore().getContext().sendBroadcast(virtualIntent);
