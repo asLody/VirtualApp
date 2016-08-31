@@ -55,6 +55,7 @@ import com.lody.virtual.service.pm.VPackageManagerService;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -95,10 +96,11 @@ public class VActivityManagerService extends IActivityManager.Stub {
 	private final ActivityStack mMainStack = new ActivityStack(this);
 	private final List<ServiceRecord> mHistory = new ArrayList<ServiceRecord>();
 	private final ProcessMap<ProcessRecord> mProcessNames = new ProcessMap<ProcessRecord>();
-	private ActivityManager am = (ActivityManager) VirtualCore.get().getContext()
-			.getSystemService(Context.ACTIVITY_SERVICE);
-	private ProcessMap<ProcessRecord> mPendingProcesses = new ProcessMap<>();
-	private final VPendingIntents mPendingIntents = new VPendingIntents();
+    private final VPendingIntents mPendingIntents = new VPendingIntents();
+    private final HashMap<IBinder, Integer> mSingleInstanceTaskRecord = new HashMap<IBinder, Integer>();
+    private ActivityManager am = (ActivityManager) VirtualCore.get().getContext()
+            .getSystemService(Context.ACTIVITY_SERVICE);
+    private ProcessMap<ProcessRecord> mPendingProcesses = new ProcessMap<>();
 
 	public static VActivityManagerService get() {
 		return sService.get();
@@ -192,9 +194,16 @@ public class VActivityManagerService extends IActivityManager.Stub {
 	@Override
 	public Intent startActivity(Intent intent, ActivityInfo info, IBinder resultTo, Bundle options, boolean fromHost, int userId) {
 		synchronized (this) {
-			return mMainStack.startActivityLocked(userId, intent, info, resultTo, fromHost, options);
-		}
-	}
+            //if not single instance , you should bring other top task to front
+            if (info.launchMode != ActivityInfo.LAUNCH_SINGLE_INSTANCE) {
+                ActivityTaskRecord moveTop = getTopTask();
+                if (moveTop != null) {
+                    am.moveTaskToFront(moveTop.taskId, 0);
+                }
+            }
+            return mMainStack.startActivityLocked(userId, intent, info, resultTo, fromHost, options);
+        }
+    }
 
 	@Override
 	public PendingIntentData getPendingIntent(IBinder binder) {
@@ -219,10 +228,14 @@ public class VActivityManagerService extends IActivityManager.Stub {
 	@Override
 	public void onActivityCreated(IBinder token, ActivityInfo targetActInfo, ActivityInfo callerActInfo, int taskId) {
 		synchronized (mMainStack) {
-			ActivityTaskRecord task = mMainStack.findTask(taskId);
-			if (task == null) {
-				task = new ActivityTaskRecord();
-				task.taskId = taskId;
+            String taskAffinity = ComponentUtils.getTaskAffinity(targetActInfo, VBinder.getCallingUid());
+            if (targetActInfo.launchMode == ActivityInfo.LAUNCH_SINGLE_INSTANCE) {
+                mSingleInstanceTaskRecord.put(token, taskId);
+            }
+            ActivityTaskRecord task = mMainStack.findTask(taskAffinity);
+            if (task == null) {
+                task = new ActivityTaskRecord();
+                task.taskId = taskId;
 				task.rootAffinity = ComponentUtils.getTaskAffinity(targetActInfo, VBinder.getCallingUid());
 				task.baseActivity = new ComponentName(targetActInfo.packageName, targetActInfo.name);
 				mMainStack.mTasks.add(task);
@@ -262,8 +275,9 @@ public class VActivityManagerService extends IActivityManager.Stub {
 					mMainStack.mTasks.remove(r);
 				}
 			}
-		}
-	}
+            mSingleInstanceTaskRecord.remove(token);
+        }
+    }
 
 	@Override
 	public AppTaskInfo getTaskInfo(int taskId) {
@@ -288,12 +302,16 @@ public class VActivityManagerService extends IActivityManager.Stub {
 	}
 
 	private synchronized int getTopTaskId() {
-		List<ActivityManager.RunningTaskInfo> taskInfos = am.getRunningTasks(1);
-		if (taskInfos.size() > 0) {
-			return taskInfos.get(0).id;
-		}
-		return -1;
-	}
+        List<ActivityManager.RunningTaskInfo> taskInfos = am.getRunningTasks(Integer.MAX_VALUE);
+        //get non-single instance task id
+        for (ActivityManager.RunningTaskInfo runningTaskInfo : taskInfos) {
+            if (mSingleInstanceTaskRecord.containsValue(runningTaskInfo.id)) {
+                continue;
+            }
+            return runningTaskInfo.id;
+        }
+        return -1;
+    }
 
 	public ActivityTaskRecord getTopTask() {
 		synchronized (mMainStack) {
