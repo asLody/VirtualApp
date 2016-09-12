@@ -14,6 +14,7 @@ import android.content.pm.ServiceInfo;
 import android.content.res.AssetManager;
 import android.content.res.Resources;
 import android.os.Bundle;
+import android.os.ConditionVariable;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.Process;
@@ -75,7 +76,11 @@ public final class VirtualCore {
 	private final LruCache<ComponentName, ActivityInfo> activityInfoCache = new LruCache<>(6);
 	private final int myUid = Process.myUid();
 	private int systemPid;
+	private ConditionVariable initLock = new ConditionVariable();
 
+	public ConditionVariable getInitLock() {
+		return initLock;
+	}
 
 	private VirtualCore() {}
 
@@ -152,8 +157,12 @@ public final class VirtualCore {
 			PatchManager patchManager = PatchManager.getInstance();
 			patchManager.init();
 			patchManager.injectAll();
-			ContextFixer.fixContext(context);
+            ContextFixer.fixContext(context);
 			isStartUp = true;
+			if (initLock != null) {
+				initLock.open();
+				initLock = null;
+			}
 		}
 	}
 
@@ -198,14 +207,14 @@ public final class VirtualCore {
 	}
 
 	/**
-	 * @return 当前进程名
+	 * @return current real process name
 	 */
 	public String getProcessName() {
 		return processName;
 	}
 
 	/**
-	 * @return 主进程名
+	 * @return Main process name
 	 */
 	public String getMainProcessName() {
 		return mainProcessName;
@@ -216,6 +225,10 @@ public final class VirtualCore {
 		if (info != null && !info.dependSystem) {
 			DexFile.loadDex(info.apkPath, info.getOdexFile().getPath(), 0).close();
 		}
+	}
+
+	public boolean isAppRunning(String packageName, int userId) {
+		return VActivityManager.get().isAppRunning(packageName, userId);
 	}
 
 	public InstallResult installApp(String apkPath, int flags) {
@@ -386,6 +399,8 @@ public final class VirtualCore {
 			// Ignore
 		}
 	}
+
+
 
 	public boolean isOutsideInstalled(String packageName) {
 		try {

@@ -14,6 +14,7 @@ import com.lody.virtual.client.hook.patchs.appwidget.AppWidgetManagerPatch;
 import com.lody.virtual.client.hook.patchs.audio.AudioManagerPatch;
 import com.lody.virtual.client.hook.patchs.backup.BackupManagerPatch;
 import com.lody.virtual.client.hook.patchs.clipboard.ClipBoardPatch;
+import com.lody.virtual.client.hook.patchs.connectivity.ConnectivityPatch;
 import com.lody.virtual.client.hook.patchs.content.ContentServicePatch;
 import com.lody.virtual.client.hook.patchs.display.DisplayPatch;
 import com.lody.virtual.client.hook.patchs.dropbox.DropBoxManagerPatch;
@@ -170,7 +171,7 @@ public final class PatchManager {
 			if (Build.VERSION.SDK_INT >= LOLLIPOP_MR1) {
 				addPatch(new GraphicsStatsPatch());
 			}
-
+            addPatch(new ConnectivityPatch());
 		}
 	}
 

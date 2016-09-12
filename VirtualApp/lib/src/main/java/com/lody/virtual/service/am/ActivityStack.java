@@ -11,9 +11,9 @@ import android.os.IBinder;
 import android.os.RemoteException;
 import android.util.SparseArray;
 
-import com.lody.virtual.client.VClientImpl;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.VirtualRuntime;
+import com.lody.virtual.client.stub.StubManifest;
 import com.lody.virtual.helper.proto.AppTaskInfo;
 import com.lody.virtual.helper.proto.StubActivityRecord;
 import com.lody.virtual.helper.utils.ArrayUtils;
@@ -21,11 +21,15 @@ import com.lody.virtual.helper.utils.ClassUtils;
 import com.lody.virtual.helper.utils.ComponentUtils;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.ListIterator;
 
 import mirror.android.app.ActivityManagerNative;
+import mirror.android.app.ActivityThread;
 import mirror.android.app.IApplicationThread;
+import mirror.com.android.internal.R_styleable;
 
 import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_INSTANCE;
 import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TASK;
@@ -52,22 +56,21 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
 				int N = mHistory.size();
 				while (N-- > 0) {
 					final TaskRecord task = mHistory.valueAt(N);
-					synchronized (task) {
-						for (ActivityRecord r : task.activities) {
-							if (r.marked) {
-								try {
-									r.process.client.finishActivity(r.token);
-								} catch (RemoteException e) {
-									e.printStackTrace();
-								}
-							}
+					List<ActivityRecord> activities = Collections.unmodifiableList(task.activities);
+					for (ActivityRecord r : activities) {
+						if (!r.marked) {
+							continue;
+						}
+						try {
+							r.process.client.finishActivity(r.token);
+						} catch (RemoteException e) {
+							e.printStackTrace();
 						}
 					}
 				}
 			}
 		}
 	};
-
 
 	ActivityStack(VActivityManagerService mService) {
 		this.mService = mService;
@@ -83,13 +86,15 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
 	}
 
 	private static ActivityRecord topActivityInTask(TaskRecord task) {
-		for (int size = task.activities.size() - 1; size >= 0; size--) {
-			ActivityRecord r = task.activities.get(size);
-			if (!r.marked) {
-				return r;
+		synchronized (task.activities) {
+			for (int size = task.activities.size() - 1; size >= 0; size--) {
+				ActivityRecord r = task.activities.get(size);
+				if (!r.marked) {
+					return r;
+				}
 			}
+			return null;
 		}
-		return null;
 	}
 
 	private void deliverNewIntentLocked(ActivityRecord sourceRecord, ActivityRecord targetRecord, Intent intent) {
@@ -111,12 +116,6 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
 		return null;
 	}
 
-	private void removeTaskLocked(int taskId) {
-		synchronized (mHistory) {
-			mHistory.remove(taskId);
-		}
-	}
-
 	private TaskRecord findTaskByIntentLocked(int userId, Intent intent) {
 		for (int i = 0; i < this.mHistory.size(); i++) {
 			TaskRecord r = this.mHistory.valueAt(i);
@@ -135,9 +134,11 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
 				if (task.userId != userId) {
 					continue;
 				}
-				for (ActivityRecord r : task.activities) {
-					if (r.token == token) {
-						target = r;
+				synchronized (task.activities) {
+					for (ActivityRecord r : task.activities) {
+						if (r.token == token) {
+							target = r;
+						}
 					}
 				}
 			}
@@ -148,32 +149,56 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
 	private boolean markTaskByClearTarget(TaskRecord task, ClearTarget clearTarget, ComponentName component) {
 		boolean marked = false;
 		switch (clearTarget) {
-			case TASK : {
-				for (ActivityRecord r : task.activities) {
-					r.marked = true;
-					marked = true;
-				}
-			} break;
-			case ACTIVITY : {
-				for (ActivityRecord r : task.activities) {
-					if (r.component.equals(component)) {
+			case FULL_TASK : {
+				synchronized (task.activities) {
+					for (ActivityRecord r : task.activities) {
 						r.marked = true;
 						marked = true;
 					}
 				}
 			} break;
-			case TOP : {
-				int N = task.activities.size();
-				while (N-- > 0) {
-					ActivityRecord r = task.activities.get(N);
-					if (r.component.equals(component)) {
-						marked = true;
-						break;
+			case SPEC_ACTIVITY : {
+				synchronized (task.activities) {
+					for (ActivityRecord r : task.activities) {
+						if (r.component.equals(component)) {
+							r.marked = true;
+							marked = true;
+						}
 					}
 				}
-				if (marked) {
-					while (N++ < task.activities.size() - 1) {
-						task.activities.get(N).marked = true;
+			} break;
+			case AFTER_TOP : {
+				synchronized (task.activities) {
+					int N = task.activities.size();
+					while (N-- > 0) {
+						ActivityRecord r = task.activities.get(N);
+						if (r.component.equals(component)) {
+							marked = true;
+							break;
+						}
+					}
+					if (marked) {
+						while (N++ < task.activities.size() - 1) {
+							task.activities.get(N).marked = true;
+						}
+					}
+				}
+			} break;
+			case AFTER_TOP_WITH_TOP: {
+				synchronized (task.activities) {
+					int N = task.activities.size();
+					while (N-- > 0) {
+						ActivityRecord r = task.activities.get(N);
+						if (r.component.equals(component)) {
+							marked = true;
+							break;
+						}
+					}
+					N--;
+					if (marked) {
+						while (N++ < task.activities.size() - 1) {
+							task.activities.get(N).marked = true;
+						}
 					}
 				}
 			} break;
@@ -182,13 +207,14 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
 	}
 
 	/**
-	 * App started in VA may be removed in OverView screen, then AMS.removeTask will be invoked,
-	 * all data struct about the task in AMS are released, while the client's process is still alive.
-	 * So remove related data in VA as well. A new TaskRecord will be recreated in `onActivityCreated`
+	 * App started in VA may be removed in OverView screen, then AMS.removeTask
+	 * will be invoked, all data struct about the task in AMS are released,
+	 * while the client's process is still alive. So remove related data in VA
+	 * as well. A new TaskRecord will be recreated in `onActivityCreated`
 	 *
 	 */
 	private void optimizeTasksLocked() {
-		//noinspection deprecation
+		// noinspection deprecation
 		ArrayList<ActivityManager.RecentTaskInfo> recentTask = new ArrayList<>(mAM.getRecentTasks(Integer.MAX_VALUE,
 				ActivityManager.RECENT_WITH_EXCLUDED | ActivityManager.RECENT_IGNORE_UNAVAILABLE));
 		int N = mHistory.size();
@@ -211,7 +237,7 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
 	}
 
 	int startActivityLocked(int userId, Intent intent, ActivityInfo info, IBinder resultTo, Bundle options,
-							String resultWho, int requestCode) {
+			String resultWho, int requestCode) {
 
 		optimizeTasksLocked();
 
@@ -221,6 +247,7 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
 
 		ReuseTarget reuseTarget = ReuseTarget.CURRENT;
 		ClearTarget clearTarget = ClearTarget.NOTHING;
+		boolean clearTop = containFlags(intent, Intent.FLAG_ACTIVITY_CLEAR_TOP);
 
 		if (intent.getComponent() == null) {
 			intent.setComponent(new ComponentName(info.packageName, info.name));
@@ -228,13 +255,13 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
 		if (sourceRecord != null && sourceRecord.launchMode == LAUNCH_SINGLE_INSTANCE) {
 			intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 		}
-		if (containFlags(intent, Intent.FLAG_ACTIVITY_CLEAR_TOP)) {
+		if (clearTop) {
 			removeFlags(intent, Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
-			clearTarget = ClearTarget.TOP;
+			clearTarget = ClearTarget.AFTER_TOP_WITH_TOP;
 		}
 		if (containFlags(intent, Intent.FLAG_ACTIVITY_CLEAR_TASK)) {
 			if (containFlags(intent, Intent.FLAG_ACTIVITY_NEW_TASK)) {
-				clearTarget = ClearTarget.TASK;
+				clearTarget = ClearTarget.FULL_TASK;
 			} else {
 				removeFlags(intent, Intent.FLAG_ACTIVITY_CLEAR_TASK);
 			}
@@ -242,7 +269,7 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
 			switch (info.documentLaunchMode) {
 				case ActivityInfo.DOCUMENT_LAUNCH_INTO_EXISTING :
-					clearTarget = ClearTarget.TASK;
+					clearTarget = ClearTarget.FULL_TASK;
 					reuseTarget = ReuseTarget.DOCUMENT;
 					break;
 				case ActivityInfo.DOCUMENT_LAUNCH_ALWAYS :
@@ -253,7 +280,7 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
 
 		switch (info.launchMode) {
 			case LAUNCH_SINGLE_TOP : {
-				clearTarget = ClearTarget.TOP;
+				clearTarget = ClearTarget.AFTER_TOP;
 				if (containFlags(intent, Intent.FLAG_ACTIVITY_NEW_TASK)) {
 					reuseTarget = containFlags(intent, Intent.FLAG_ACTIVITY_MULTIPLE_TASK)
 							? ReuseTarget.MULTIPLE
@@ -262,27 +289,27 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
 			}
 				break;
 			case LAUNCH_SINGLE_TASK : {
-				clearTarget = ClearTarget.TOP;
+				clearTarget = ClearTarget.AFTER_TOP;
 				reuseTarget = containFlags(intent, Intent.FLAG_ACTIVITY_MULTIPLE_TASK)
 						? ReuseTarget.MULTIPLE
 						: ReuseTarget.AFFINITY;
 			}
 				break;
 			case LAUNCH_SINGLE_INSTANCE : {
-				clearTarget = ClearTarget.TOP;
+				clearTarget = ClearTarget.AFTER_TOP;
 				reuseTarget = ReuseTarget.AFFINITY;
 			}
 				break;
 			default : {
 				if (containFlags(intent, Intent.FLAG_ACTIVITY_SINGLE_TOP)) {
-					clearTarget = ClearTarget.TOP;
+					clearTarget = ClearTarget.AFTER_TOP;
 				}
 			}
 				break;
 		}
 		if (clearTarget == ClearTarget.NOTHING) {
 			if (containFlags(intent, Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)) {
-				clearTarget = ClearTarget.ACTIVITY;
+				clearTarget = ClearTarget.SPEC_ACTIVITY;
 			}
 		}
 		if (sourceTask == null && reuseTarget == ReuseTarget.CURRENT) {
@@ -314,7 +341,7 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
 				destIntent.addFlags(Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
 
 				if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-					//noinspection deprecation
+					// noinspection deprecation
 					destIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET);
 				} else {
 					destIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_DOCUMENT);
@@ -327,13 +354,13 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
 				}
 
 			}
-		} else if (clearTarget != ClearTarget.TOP && ComponentUtils.isSameIntent(intent, reuseTask.taskRoot)) {
+		} else if (!clearTarget.deliverIntent && ComponentUtils.isSameIntent(intent, reuseTask.taskRoot)) {
 			// In this case, we only need to move the task to front.
 			mAM.moveTaskToFront(reuseTask.taskId, 0);
 		} else {
 			boolean delivered = false;
 			mAM.moveTaskToFront(reuseTask.taskId, 0);
-			if (clearTarget == ClearTarget.TOP) {
+			if (clearTarget.deliverIntent) {
 				taskMarked = markTaskByClearTarget(reuseTask, clearTarget, intent.getComponent());
 				ActivityRecord topRecord = topActivityInTask(reuseTask);
 				// Target activity is on top
@@ -361,7 +388,8 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
 		VirtualRuntime.getUIHandler().post(mCleanTaskScheduler);
 	}
 
-	private boolean startActivityFromSourceTask(TaskRecord task, Intent intent, ActivityInfo info, String resultWho, int requestCode, Bundle options) {
+	private boolean startActivityFromSourceTask(TaskRecord task, Intent intent, ActivityInfo info, String resultWho,
+			int requestCode, Bundle options) {
 		ActivityRecord top = topActivityInTask(task);
 		if (top != null) {
 			if (startActivityProcess(task.userId, top, intent, info) != null) {
@@ -371,11 +399,12 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
 		return false;
 	}
 
-	private void realStartActivityLocked(IBinder resultTo, Intent intent, String resultWho, int requestCode, Bundle options) {
+	private void realStartActivityLocked(IBinder resultTo, Intent intent, String resultWho, int requestCode,
+			Bundle options) {
 		Class<?>[] types = mirror.android.app.IActivityManager.startActivity.paramList();
 		Object[] args = new Object[types.length];
 		if (types[0] == IApplicationThread.TYPE) {
-			args[0] = VClientImpl.getClient().getAppThread();
+			args[0] = ActivityThread.getApplicationThread.call(VirtualCore.mainThread());
 		}
 		int intentIndex = ArrayUtils.protoIndexOf(types, Intent.class);
 		int resultToIndex = ArrayUtils.protoIndexOf(types, IBinder.class, 2);
@@ -395,10 +424,38 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
 		}
 		ClassUtils.fixArgs(types, args);
 
-		mirror.android.app.IActivityManager.startActivity.call(
-				ActivityManagerNative.getDefault.call(),
-				(Object[]) args
-		);
+		mirror.android.app.IActivityManager.startActivity.call(ActivityManagerNative.getDefault.call(),
+				(Object[]) args);
+	}
+
+	private String fetchStubActivity(int vpid, ActivityInfo targetInfo) {
+
+		boolean isFloating = false;
+		boolean isTranslucent = false;
+		boolean showWallpaper = false;
+		try {
+			int[] R_Styleable_Window = R_styleable.Window.get();
+			int R_Styleable_Window_windowIsTranslucent = R_styleable.Window_windowIsTranslucent.get();
+			int R_Styleable_Window_windowIsFloating = R_styleable.Window_windowIsFloating.get();
+			int R_Styleable_Window_windowShowWallpaper = R_styleable.Window_windowShowWallpaper.get();
+
+			AttributeCache.Entry ent = AttributeCache.instance().get(targetInfo.packageName, targetInfo.theme,
+					R_Styleable_Window);
+			if (ent != null && ent.array != null) {
+				showWallpaper = ent.array.getBoolean(R_Styleable_Window_windowShowWallpaper, false);
+				isTranslucent = ent.array.getBoolean(R_Styleable_Window_windowIsTranslucent, false);
+				isFloating = ent.array.getBoolean(R_Styleable_Window_windowIsFloating, false);
+			}
+		} catch (Throwable e) {
+			e.printStackTrace();
+		}
+
+		boolean isDialogStyle = isFloating || isTranslucent || showWallpaper;
+		if (isDialogStyle) {
+			return StubManifest.getStubDialogName(vpid);
+		} else {
+			return StubManifest.getStubActivityName(vpid);
+		}
 	}
 
 	private Intent startActivityProcess(int userId, ActivityRecord sourceRecord, Intent intent, ActivityInfo info) {
@@ -407,9 +464,8 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
 		if (targetApp == null) {
 			return null;
 		}
-		ActivityInfo stubActivityInfo = targetApp.stubInfo.fetchStubActivityInfo(info);
 		Intent targetIntent = new Intent();
-		targetIntent.setClassName(stubActivityInfo.packageName, stubActivityInfo.name);
+		targetIntent.setClassName(VirtualCore.get().getHostPkg(), fetchStubActivity(targetApp.vpid, info));
 		ComponentName component = intent.getComponent();
 		if (component == null) {
 			component = ComponentUtils.toComponentName(info);
@@ -422,7 +478,7 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
 	}
 
 	void onActivityCreated(ProcessRecord targetApp, ComponentName component, ComponentName caller, IBinder token,
-						   Intent taskRoot, String affinity, int taskId, int launchMode, int flags) {
+			Intent taskRoot, String affinity, int taskId, int launchMode, int flags) {
 		synchronized (mHistory) {
 			optimizeTasksLocked();
 			TaskRecord task = mHistory.get(taskId);
@@ -430,9 +486,11 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
 				task = new TaskRecord(taskId, targetApp.userId, affinity, taskRoot);
 				mHistory.put(taskId, task);
 			}
-			ActivityRecord record = new ActivityRecord(task, component, caller, token, targetApp.userId, targetApp, launchMode,
-					flags, affinity);
-			task.activities.add(record);
+			ActivityRecord record = new ActivityRecord(task, component, caller, token, targetApp.userId, targetApp,
+					launchMode, flags, affinity);
+			synchronized (task.activities) {
+				task.activities.add(record);
+			}
 		}
 	}
 
@@ -441,8 +499,10 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
 			optimizeTasksLocked();
 			ActivityRecord r = findActivityByToken(userId, token);
 			if (r != null) {
-				r.task.activities.remove(r);
-				r.task.activities.add(r);
+				synchronized (r.task.activities) {
+					r.task.activities.remove(r);
+					r.task.activities.add(r);
+				}
 			}
 		}
 	}
@@ -452,10 +512,12 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
 			optimizeTasksLocked();
 			ActivityRecord r = findActivityByToken(userId, token);
 			if (r != null) {
-				r.task.activities.remove(r);
-				if (r.task.activities.isEmpty()) {
-					mHistory.remove(r.task.taskId);
-					return true;
+				synchronized (r.task.activities) {
+					r.task.activities.remove(r);
+					if (r.task.activities.isEmpty()) {
+						mHistory.remove(r.task.taskId);
+						return true;
+					}
 				}
 			}
 			return false;
@@ -468,13 +530,15 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
 			int N = mHistory.size();
 			while (N-- > 0) {
 				TaskRecord task = mHistory.valueAt(N);
-				Iterator<ActivityRecord> iterator = task.activities.iterator();
-				while (iterator.hasNext()) {
-					ActivityRecord r = iterator.next();
-					if (r.process.pid == record.pid) {
-						iterator.remove();
-						if (task.activities.isEmpty()) {
-							mHistory.remove(task.taskId);
+				synchronized (task.activities) {
+					Iterator<ActivityRecord> iterator = task.activities.iterator();
+					while (iterator.hasNext()) {
+						ActivityRecord r = iterator.next();
+						if (r.process.pid == record.pid) {
+							iterator.remove();
+							if (task.activities.isEmpty()) {
+								mHistory.remove(task.taskId);
+							}
 						}
 					}
 				}
@@ -514,7 +578,20 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
 	}
 
 	private enum ClearTarget {
-		NOTHING, TASK, ACTIVITY, TOP
+		NOTHING,
+		SPEC_ACTIVITY,
+		FULL_TASK(true),
+		AFTER_TOP(true),
+		AFTER_TOP_WITH_TOP(true);
+
+		boolean deliverIntent;
+
+		ClearTarget() {
+			this(false);
+		}
+		ClearTarget(boolean deliverIntent) {
+			this.deliverIntent = deliverIntent;
+		}
 	}
 
 	private enum ReuseTarget {

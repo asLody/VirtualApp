@@ -16,13 +16,11 @@ public abstract class Hook {
 
 	private boolean enable = true;
 
-
 	public abstract String getName();
 
 	public boolean beforeCall(Object who, Method method, Object... args) {
 		return true;
 	}
-
 
 	public Object call(Object who, Method method, Object... args) throws Throwable {
 		return method.invoke(who, args);
