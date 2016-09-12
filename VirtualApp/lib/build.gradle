@@ -31,7 +31,40 @@ android {
     }
 }
 
+gradle.projectsEvaluated {
+    tasks.withType(JavaCompile) {
+        options.compilerArgs.add('-Xbootclasspath/p:lib/android.jar')
+    }
+}
+
+task pushDownJdkDependency {
+    def taskName = tasks.getAt(0).toString();
+    println ("======" + taskName )
+    def imlName = taskName.split(":")[1] + ".iml"
+    println ("======" + imlName )
+    def imlFile = file(imlName)
+    try {
+        def parsedXml = (new XmlParser()).parse(imlFile)
+        def jdkNode = parsedXml.component[1].orderEntry.find { it.'@type' == 'jdk' }
+        parsedXml.component[1].remove(jdkNode)
+        new Node(
+                parsedXml.component[1],
+                'orderEntry', [
+                    'type': jdkNode.'@type',
+                    'jdkName': jdkNode.'@jdkName',
+                    'jdkType': jdkNode.'@jdkType'
+                ]
+        )
+        def writer = new StringWriter()
+        new XmlNodePrinter(new PrintWriter(writer)).print(parsedXml)
+        imlFile.text = writer.toString()
+    } catch (FileNotFoundException e) {
+        // nop, iml not found
+    }
+}
+
 
 dependencies {
+    provided files('android.jar')
     compile fileTree(dir: 'libs', include: ['*.jar'])
 }
