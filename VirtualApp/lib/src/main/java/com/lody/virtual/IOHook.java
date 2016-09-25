@@ -2,6 +2,7 @@ package com.lody.virtual;
 
 import android.os.Binder;
 import android.os.Build;
+import android.os.Process;
 
 import com.lody.virtual.client.VClientImpl;
 import com.lody.virtual.client.core.VirtualCore;
@@ -85,19 +86,23 @@ public class IOHook {
 
 	private static Method openDexFileNative;
 	static {
-		try {
-			String methodName =
-					Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT ? "openDexFileNative" : "openDexFile";
-			openDexFileNative = DexFile.class.getDeclaredMethod(methodName, String.class, String.class, Integer.TYPE);
-			openDexFileNative.setAccessible(true);
-		} catch (Throwable e) {
-			throw new RuntimeException(e);
+		String methodName =
+				Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT ? "openDexFileNative" : "openDexFile";
+		for (Method method : DexFile.class.getDeclaredMethods()) {
+			if (method.getName().equals(methodName)) {
+				openDexFileNative = method;
+				break;
+			}
 		}
+		if (openDexFileNative == null) {
+			throw new RuntimeException("Unable to find method : " + methodName);
+		}
+		openDexFileNative.setAccessible(true);
 	}
 
 	public static void hookNative() {
 		try {
-			nativeHookNative(openDexFileNative, VirtualRuntime.isArt());
+			nativeHookNative(openDexFileNative, VirtualRuntime.isArt(), Build.VERSION.SDK_INT);
 		} catch (Throwable e) {
 			VLog.e(TAG, VLog.getStackTraceString(e));
 		}
@@ -111,13 +116,18 @@ public class IOHook {
 	}
 
 	public static int onGetCallingUid(int originUid) {
-		if (false) {
-			int callingPid = Binder.getCallingPid();
-			int vuid = VActivityManager.get().getUidByPid(callingPid);
-			if (vuid != -1) {
-				return VUserHandle.getAppId(vuid);
-			}
+		int callingPid = Binder.getCallingPid();
+		if (callingPid == Process.myPid()) {
+			return VClientImpl.getClient().getBaseVUid();
 		}
+		if (callingPid == VirtualCore.get().getSystemPid()) {
+			return Process.SYSTEM_UID;
+		}
+		int vuid = VActivityManager.get().getUidByPid(callingPid);
+		if (vuid != -1) {
+            return VUserHandle.getAppId(vuid);
+        }
+		VLog.d(TAG, "Ops, who are you ? " + callingPid);
 		return VClientImpl.getClient().getBaseVUid();
 	}
 
@@ -139,7 +149,7 @@ public class IOHook {
 
 
 
-    private static native void nativeHookNative(Object method, boolean isArt);
+    private static native void nativeHookNative(Object method, boolean isArt, int apiLevel);
 
 	private static native void nativeMark();
 

@@ -211,7 +211,7 @@
         <receiver android:name=".client.stub.StubPendingReceiver" android:process=":x"/>
 
         <service
-            android:name="com.lody.virtual.client.stub.KeepService"
+            android:name="com.lody.virtual.client.stub.DaemonService"
             android:process=":x"/>
 
         <activity
@@ -242,7 +242,7 @@
         </activity>
 
         <provider
-            android:name="com.lody.virtual.service.BinderProvider"
+            android:name="com.lody.virtual.server.BinderProvider"
             android:authorities="virtual.service.BinderProvider"
             android:exported="false"
             android:process=":x"/>

@@ -13,7 +13,7 @@ import java.lang.reflect.Method;
  *
  */
 public abstract class Hook {
-
+	
 	private boolean enable = true;
 
 	public abstract String getName();
@@ -59,7 +59,7 @@ public abstract class Hook {
 		return VirtualCore.get().isVAppProcess();
 	}
 
-	protected final boolean isServiceProcess() {
+	protected final boolean isServerProcess() {
 		return VirtualCore.get().isServiceProcess();
 	}
 

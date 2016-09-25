@@ -1,12 +1,11 @@
 package com.lody.virtual.client.core;
 
 import android.os.Build;
-import android.provider.Settings;
 
 import com.lody.virtual.client.hook.base.PatchDelegate;
 import com.lody.virtual.client.hook.delegate.AppInstrumentation;
 import com.lody.virtual.client.hook.patchs.account.AccountManagerPatch;
-import com.lody.virtual.client.hook.patchs.alerm.AlarmManagerPatch;
+import com.lody.virtual.client.hook.patchs.alarm.AlarmManagerPatch;
 import com.lody.virtual.client.hook.patchs.am.ActivityManagerPatch;
 import com.lody.virtual.client.hook.patchs.am.HCallbackHook;
 import com.lody.virtual.client.hook.patchs.appops.AppOpsManagerPatch;
@@ -21,6 +20,7 @@ import com.lody.virtual.client.hook.patchs.dropbox.DropBoxManagerPatch;
 import com.lody.virtual.client.hook.patchs.graphics.GraphicsStatsPatch;
 import com.lody.virtual.client.hook.patchs.imms.MmsPatch;
 import com.lody.virtual.client.hook.patchs.input.InputMethodManagerPatch;
+import com.lody.virtual.client.hook.patchs.isms.ISmsPatch;
 import com.lody.virtual.client.hook.patchs.isub.ISubPatch;
 import com.lody.virtual.client.hook.patchs.job.JobPatch;
 import com.lody.virtual.client.hook.patchs.libcore.LibCorePatch;
@@ -76,19 +76,24 @@ public final class PatchManager {
 		Reflect.on(settingClass).field("sNameValueCache").set("mContentProvider", null);
 	}
 
-	public static void fixAllSettings() {
-		try {
-			fixSetting(Settings.System.class);
-			fixSetting(Settings.Secure.class);
-			fixSetting(Settings.Global.class);
-		} catch (Throwable e) {
-			// No class def
-		}
-	}
-
 	void injectAll() throws Throwable {
 		for (Injectable injectable : injectableMap.values()) {
 			injectable.inject();
+		}
+		// XXX: Lazy inject the Instrumentation,
+		// this is important in many cases.
+		addPatch(AppInstrumentation.getDefault());
+	}
+
+	public void checkAll() {
+		for (Injectable injectable : injectableMap.values()) {
+			if (injectable.isEnvBad()) {
+				try {
+					injectable.inject();
+				} catch (Throwable e) {
+					e.printStackTrace();
+				}
+			}
 		}
 	}
 
@@ -105,7 +110,6 @@ public final class PatchManager {
 			throw new IllegalStateException("PatchManager Has been initialized.");
 		}
 		injectInternal();
-		fixAllSettings();
 		PatchManagerHolder.sInit = true;
 
 	}
@@ -125,8 +129,7 @@ public final class PatchManager {
 			addPatch(new PackageManagerPatch());
 			// ## End
 			addPatch(HCallbackHook.getDefault());
-			addPatch(AppInstrumentation.getDefault());
-
+			addPatch(new ISmsPatch());
 			addPatch(new ISubPatch());
 			addPatch(new DropBoxManagerPatch());
 			addPatch(new NotificationManagerPatch());

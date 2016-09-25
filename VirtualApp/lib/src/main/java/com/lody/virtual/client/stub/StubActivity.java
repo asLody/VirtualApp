@@ -3,12 +3,14 @@ package com.lody.virtual.client.stub;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
-import android.widget.Toast;
+import android.text.TextUtils;
 
-import com.lody.virtual.BuildConfig;
 import com.lody.virtual.client.core.PatchManager;
+import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.client.hook.patchs.am.HCallbackHook;
+import com.lody.virtual.client.local.VActivityManager;
 import com.lody.virtual.helper.proto.StubActivityRecord;
+import com.lody.virtual.os.VUserHandle;
 
 /**
  * @author Lody
@@ -16,29 +18,24 @@ import com.lody.virtual.helper.proto.StubActivityRecord;
  */
 public abstract class StubActivity extends Activity {
 
-	private static final boolean DEBUG = BuildConfig.DEBUG;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
-		Intent stubIntent = getIntent();
-		try {
-			PatchManager.getInstance().checkEnv(HCallbackHook.class);
-		} catch (Throwable e) {
-			e.printStackTrace();
-		}
 		// Note:
 		// ClassLoader of savedInstanceState is not exist now.
 		super.onCreate(null);
-		StubActivityRecord r = new StubActivityRecord(stubIntent);
-		if (r.intent == null) {
-			if (DEBUG) {
-				Toast.makeText(this, "Ops...", Toast.LENGTH_SHORT).show();
-			}
-		} else {
-			Intent intent = r.intent;
-			startActivity(intent);
-		}
 		finish();
+		Intent stubIntent = getIntent();
+		StubActivityRecord r = new StubActivityRecord(stubIntent);
+		if (r.intent != null) {
+			if (TextUtils.equals(r.info.processName, VirtualRuntime.getProcessName()) && r.userId == VUserHandle.myUserId()) {
+				PatchManager.getInstance().checkEnv(HCallbackHook.class);
+				Intent intent = r.intent;
+				startActivity(intent);
+			} else {
+				VActivityManager.get().startActivity(r.intent, r.userId);
+			}
+		}
 	}
 
 
