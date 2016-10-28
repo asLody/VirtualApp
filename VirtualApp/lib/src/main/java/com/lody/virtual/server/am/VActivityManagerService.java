@@ -364,13 +364,13 @@ public class VActivityManagerService extends IActivityManager.Stub {
 
 	@Override
 	public void setServiceForeground(ComponentName className, IBinder token, int id, Notification notification,
-			boolean keepNotification, int userId) {
+									 boolean keepNotification, int userId) {
 
 	}
 
 	@Override
 	public int bindService(IBinder caller, IBinder token, Intent service, String resolvedType,
-			IServiceConnection connection, int flags, int userId) {
+						   IServiceConnection connection, int flags, int userId) {
 		synchronized (this) {
 			ServiceInfo serviceInfo = resolveServiceInfo(service, userId);
 			if (serviceInfo == null) {
@@ -595,51 +595,51 @@ public class VActivityManagerService extends IActivityManager.Stub {
 	private void attachClient(int pid, final IBinder clientBinder) {
 		final IVClient client = IVClient.Stub.asInterface(clientBinder);
 		if (client == null) {
-            killProcess(pid);
-            return;
-        }
+			killProcess(pid);
+			return;
+		}
 		IInterface thread = null;
 		try {
-            thread = ApplicationThreadNative.asInterface.call(client.getAppThread());
-        } catch (RemoteException e) {
-            // process has dead
-        }
+			thread = ApplicationThreadNative.asInterface.call(client.getAppThread());
+		} catch (RemoteException e) {
+			// process has dead
+		}
 		if (thread == null) {
-            killProcess(pid);
-            return;
-        }
+			killProcess(pid);
+			return;
+		}
 		ProcessRecord app = null;
 		try {
-            IBinder token = client.getToken();
-            if (token instanceof ProcessRecord) {
-                app = (ProcessRecord) token;
-            }
-        } catch (RemoteException e) {
-            // process has dead
-        }
+			IBinder token = client.getToken();
+			if (token instanceof ProcessRecord) {
+				app = (ProcessRecord) token;
+			}
+		} catch (RemoteException e) {
+			// process has dead
+		}
 		if (app == null) {
-            killProcess(pid);
-            return;
-        }
+			killProcess(pid);
+			return;
+		}
 		try {
-            final ProcessRecord record = app;
-            clientBinder.linkToDeath(new DeathRecipient() {
-                @Override
-                public void binderDied() {
-                    clientBinder.unlinkToDeath(this, 0);
-                    onProcessDead(record);
-                }
-            }, 0);
-        } catch (RemoteException e) {
-            e.printStackTrace();
-        }
+			final ProcessRecord record = app;
+			clientBinder.linkToDeath(new DeathRecipient() {
+				@Override
+				public void binderDied() {
+					clientBinder.unlinkToDeath(this, 0);
+					onProcessDead(record);
+				}
+			}, 0);
+		} catch (RemoteException e) {
+			e.printStackTrace();
+		}
 		app.client = client;
 		app.appThread = thread;
 		app.pid = pid;
 		synchronized (mProcessNames) {
-            mProcessNames.put(app.processName, app.vuid, app);
-            mPidsSelfLocked.put(app.pid, app);
-        }
+			mProcessNames.put(app.processName, app.vuid, app);
+			mPidsSelfLocked.put(app.pid, app);
+		}
 	}
 
 	private void onProcessDead(ProcessRecord record) {
@@ -677,8 +677,8 @@ public class VActivityManagerService extends IActivityManager.Stub {
 		}
 		int vpid = queryFreeVPidForProcess();
 		if (vpid == -1) {
-            return null;
-        }
+			return null;
+		}
 		app = performStartProcessLocked(uid, vpid, info, processName);
 		if (app != null) {
 			app.pkgList.add(info.packageName);
@@ -872,7 +872,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
 	/**
 	 * Should guard by {@link VActivityManagerService#mPidsSelfLocked}
 	 * @param pid pid
-     */
+	 */
 	public ProcessRecord findProcessLocked(int pid) {
 		return mPidsSelfLocked.get(pid);
 	}
@@ -904,8 +904,8 @@ public class VActivityManagerService extends IActivityManager.Stub {
 	}
 
 	public void sendOrderedBroadcastAsUser(Intent intent, VUserHandle user, String receiverPermission,
-			BroadcastReceiver resultReceiver, Handler scheduler, int initialCode,
-			String initialData, Bundle initialExtras) {
+										   BroadcastReceiver resultReceiver, Handler scheduler, int initialCode,
+										   String initialData, Bundle initialExtras) {
 		Context context = VirtualCore.get().getContext();
 		intent.putExtra("_VA_|_user_id_", user.getIdentifier());
 		// TODO: checkPermission
@@ -933,7 +933,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
 	}
 
 	public boolean handleStaticBroadcast(int appId, ActivityInfo info, Intent intent, BroadcastReceiver receiver,
-			BroadcastReceiver.PendingResult result) {
+										 BroadcastReceiver.PendingResult result) {
 		// Maybe send from System
 		int userId = intent.getIntExtra("_VA_|_user_id_", VUserHandle.USER_ALL);
 		ComponentName component = intent.getParcelableExtra("_VA_|_component_");
@@ -968,7 +968,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
 
 
 	public void handleStaticBroadcastAsUser(int uid, ActivityInfo info, Intent intent, BroadcastReceiver receiver,
-			BroadcastReceiver.PendingResult result) {
+											BroadcastReceiver.PendingResult result) {
 		synchronized (this) {
 			ProcessRecord r = findProcessLocked(info.processName, uid);
 			if (BROADCAST_NOT_STARTED_PKG && r == null) {
