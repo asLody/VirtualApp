@@ -7,7 +7,7 @@ import android.os.Process;
 import com.lody.virtual.client.VClientImpl;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.VirtualRuntime;
-import com.lody.virtual.client.local.VActivityManager;
+import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.helper.proto.AppSetting;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VUserHandle;
@@ -27,8 +27,6 @@ import dalvik.system.DexFile;
 public class IOHook {
 
 	private static final String TAG = IOHook.class.getSimpleName();
-
-	public static boolean ENABLE_IO_HOOK=false;
 
 	private static Map<String, AppSetting> sDexOverrideMap;
 
@@ -53,9 +51,6 @@ public class IOHook {
 	}
 
 	public static String getRedirectedPath(String orgPath) {
-		if(!ENABLE_IO_HOOK){
-			return orgPath;
-		}
 		try {
 			return nativeGetRedirectedPath(orgPath);
 		} catch (Throwable e) {
@@ -65,9 +60,6 @@ public class IOHook {
 	}
 
 	public static String restoreRedirectedPath(String orgPath) {
-		if(!ENABLE_IO_HOOK){
-			return orgPath;
-		}
 		try {
 			return nativeRestoreRedirectedPath(orgPath);
 		} catch (Throwable e) {
@@ -77,9 +69,6 @@ public class IOHook {
 	}
 
 	public static void redirect(String orgPath, String newPath) {
-		if(!ENABLE_IO_HOOK){
-			return;
-		}
 		try {
 			nativeRedirect(orgPath, newPath);
 		} catch (Throwable e) {
@@ -87,37 +76,7 @@ public class IOHook {
 		}
 	}
 
-	public static  void setTurboDex(boolean enable){
-		if(isSupportCpu() && VirtualRuntime.isArt()){
-			try {
-				enableTurboDex(enable?1:0);
-			}catch (Throwable e){
-				VLog.e(TAG, "enableTurboDex",e);
-			}
-		}
-	}
-
-	private static native  void enableTurboDex(int enable);
-
-	public static boolean isSupportCpu() {
-		String ARCH = System.getProperty("os.arch");
-		if (ARCH != null && ((ARCH.contains("arm") && ARCH.contains("v8"))
-				|| (ARCH.contains("86") && ARCH.contains("64")) || ARCH.contains("686"))) {
-			VLog.e(TAG, "no support cpu " + ARCH);
-			return false;
-		}
-		VLog.i(TAG, "support cpu " + ARCH);
-		return true;
-	}
-
 	public static void hook() {
-		if(!ENABLE_IO_HOOK){
-			return;
-		}
-		if (!isSupportCpu()) {
-			ENABLE_IO_HOOK = false;
-			return;
-		}
 		try {
 			nativeHook(Build.VERSION.SDK_INT);
 		} catch (Throwable e) {

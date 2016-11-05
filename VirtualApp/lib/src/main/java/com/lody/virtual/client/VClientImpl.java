@@ -31,8 +31,8 @@ import com.lody.virtual.client.hook.delegate.AppInstrumentation;
 import com.lody.virtual.client.hook.patchs.am.HCallbackHook;
 import com.lody.virtual.client.hook.providers.ProviderHook;
 import com.lody.virtual.client.hook.secondary.ProxyServiceFactory;
-import com.lody.virtual.client.local.VActivityManager;
-import com.lody.virtual.client.local.VPackageManager;
+import com.lody.virtual.client.ipc.VActivityManager;
+import com.lody.virtual.client.ipc.VPackageManager;
 import com.lody.virtual.client.stub.StubManifest;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.server.secondary.FakeIdentityBinder;
@@ -223,7 +223,7 @@ public final class VClientImpl extends IVClient.Stub {
 				super.start();
 			}
 		});
-		if (data.appInfo.targetSdkVersion < 9) {
+		if (data.appInfo.targetSdkVersion < Build.VERSION_CODES.GINGERBREAD) {
 			StrictMode.ThreadPolicy newPolicy = new StrictMode.ThreadPolicy.Builder(StrictMode.getThreadPolicy()).permitNetwork().build();
 			StrictMode.setThreadPolicy(newPolicy);
 		}
