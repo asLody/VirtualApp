@@ -1,4 +1,4 @@
-package com.lody.virtual.client.local;
+package com.lody.virtual.client.ipc;
 
 import android.app.Activity;
 import android.app.IServiceConnection;
@@ -15,7 +15,6 @@ import android.os.RemoteException;
 
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.VirtualRuntime;
-import com.lody.virtual.client.service.ServiceManagerNative;
 import com.lody.virtual.helper.compat.ActivityManagerCompat;
 import com.lody.virtual.helper.proto.AppTaskInfo;
 import com.lody.virtual.helper.proto.PendingIntentData;
@@ -64,6 +63,18 @@ public class VActivityManager {
 	}
 
 	public int startActivity(Intent intent, ActivityInfo info, IBinder resultTo, Bundle options, String resultWho, int requestCode, int userId) {
+		try {
+			return getService().startActivity(intent, info, resultTo, options, resultWho, requestCode, userId);
+		} catch (RemoteException e) {
+			return VirtualRuntime.crash(e);
+		}
+	}
+
+	public int startActivity(Intent intent, IBinder resultTo, Bundle options, String resultWho, int requestCode, int userId) {
+		ActivityInfo info = VirtualCore.get().resolveActivityInfo(intent, userId);
+		if (info == null) {
+			return ActivityManagerCompat.START_INTENT_NOT_RESOLVED;
+		}
 		try {
 			return getService().startActivity(intent, info, resultTo, options, resultWho, requestCode, userId);
 		} catch (RemoteException e) {

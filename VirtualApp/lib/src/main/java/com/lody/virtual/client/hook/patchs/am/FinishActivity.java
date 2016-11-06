@@ -6,8 +6,8 @@ import android.os.IBinder;
 import android.util.TypedValue;
 
 import com.lody.virtual.client.hook.base.Hook;
-import com.lody.virtual.client.local.ActivityClientRecord;
-import com.lody.virtual.client.local.VActivityManager;
+import com.lody.virtual.client.ipc.ActivityClientRecord;
+import com.lody.virtual.client.ipc.VActivityManager;
 
 import java.lang.reflect.Method;
 
@@ -15,7 +15,7 @@ import java.lang.reflect.Method;
  * @author Lody
  */
 
-public class FinishActivity extends Hook {
+/*package*/ class FinishActivity extends Hook {
 	@Override
 	public String getName() {
 		return "finishActivity";

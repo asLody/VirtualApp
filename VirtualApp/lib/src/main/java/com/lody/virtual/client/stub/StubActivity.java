@@ -8,7 +8,7 @@ import android.text.TextUtils;
 import com.lody.virtual.client.core.PatchManager;
 import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.client.hook.patchs.am.HCallbackHook;
-import com.lody.virtual.client.local.VActivityManager;
+import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.helper.proto.StubActivityRecord;
 import com.lody.virtual.os.VUserHandle;
 
@@ -18,27 +18,27 @@ import com.lody.virtual.os.VUserHandle;
  */
 public abstract class StubActivity extends Activity {
 
-
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
-		// Note:
-		// ClassLoader of savedInstanceState is not exist now.
+		// The savedInstanceState's classLoader is not exist.
 		super.onCreate(null);
 		finish();
+        // It seems that we have conflict with the other Android-Plugin-Framework.
 		Intent stubIntent = getIntent();
+        // Try to acquire the actually component information.
 		StubActivityRecord r = new StubActivityRecord(stubIntent);
 		if (r.intent != null) {
 			if (TextUtils.equals(r.info.processName, VirtualRuntime.getProcessName()) && r.userId == VUserHandle.myUserId()) {
+                // Retry to inject the HCallback to instead of the exist one.
 				PatchManager.getInstance().checkEnv(HCallbackHook.class);
 				Intent intent = r.intent;
 				startActivity(intent);
 			} else {
+                // Start the target Activity in other process.
 				VActivityManager.get().startActivity(r.intent, r.userId);
 			}
 		}
 	}
-
-
 
 	public static class C0 extends StubActivity {
 	}
