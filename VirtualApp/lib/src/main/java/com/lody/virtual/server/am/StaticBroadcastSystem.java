@@ -48,13 +48,14 @@ public class StaticBroadcastSystem {
 				receivers = new ArrayList<>();
 				mReceivers.put(p.packageName, receivers);
 			}
-			IntentFilter componentFilter = new IntentFilter(String.format("_VA_%s_%s", info.packageName, info.name));
+			String componentAction = String.format("_VA_%s_%s", info.packageName, info.name);
+			IntentFilter componentFilter = new IntentFilter(componentAction);
 			BroadcastReceiver r = new StaticBroadcastReceiver(setting.appId, info, componentFilter);
 			mContext.registerReceiver(r, componentFilter, null, mScheduler);
 			receivers.add(r);
 			for (IntentFilter filter : filters) {
 				IntentFilter cloneFilter = new IntentFilter(filter);
-				modifyFilter(cloneFilter);
+				redirectFilterActions(cloneFilter);
 				r = new StaticBroadcastReceiver(setting.appId, info, cloneFilter);
 				mContext.registerReceiver(r, cloneFilter, null, mScheduler);
 				receivers.add(r);
@@ -62,7 +63,7 @@ public class StaticBroadcastSystem {
 		}
 	}
 
-	private void modifyFilter(IntentFilter filter) {
+	private void redirectFilterActions(IntentFilter filter) {
 		List<String> actions = mirror.android.content.IntentFilter.mActions.get(filter);
 		ListIterator<String> iterator = actions.listIterator();
 		while (iterator.hasNext()) {
@@ -71,9 +72,9 @@ public class StaticBroadcastSystem {
 				iterator.remove();
 				continue;
 			}
-			String newAction = SpecialComponentList.modifyAction(action);
-			if (newAction != null) {
-				iterator.set(newAction);
+			String protectedAction = SpecialComponentList.protectAction(action);
+			if (protectedAction != null) {
+				iterator.set(protectedAction);
 			}
 		}
 	}
@@ -95,6 +96,7 @@ public class StaticBroadcastSystem {
 	private final class StaticBroadcastReceiver extends BroadcastReceiver {
 		private int appId;
 		private ActivityInfo info;
+		@SuppressWarnings("unused")
 		private IntentFilter filter;
 
 		private StaticBroadcastReceiver(int appId, ActivityInfo info, IntentFilter filter) {
@@ -105,18 +107,18 @@ public class StaticBroadcastSystem {
 
 		@Override
 		public void onReceive(Context context, Intent intent) {
-			if (!mApp.isBooting()) {
-				if (!isInitialStickyBroadcast()
-						&& (intent.getFlags() & FLAG_RECEIVER_REGISTERED_ONLY) == 0) {
-					return;
-				}
-				PendingResult result = goAsync();
-				synchronized (mAMS) {
-					if (!mAMS.handleStaticBroadcast(appId, info, intent, this, result)) {
-						result.finish();
-					}
-				}
+			if (mApp.isBooting()) {
+				return;
 			}
+			if ((intent.getFlags() & FLAG_RECEIVER_REGISTERED_ONLY) != 0) {
+                return;
+            }
+			PendingResult result = goAsync();
+			synchronized (mAMS) {
+                if (!mAMS.handleStaticBroadcast(appId, info, intent, this, result)) {
+                    result.finish();
+                }
+            }
 		}
 	}
 }

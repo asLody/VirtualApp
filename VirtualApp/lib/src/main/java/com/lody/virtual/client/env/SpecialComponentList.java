@@ -14,66 +14,76 @@ import java.util.Map;
  */
 public final class SpecialComponentList {
 
-	private static final List<String> ACTION_BLACK_LIST = new ArrayList<String>(1);
+    private static String PROTECT_ACTION_PREFIX = "_VA_protected_";
 
-	private static final Map<String, String> MODIFY_ACTION_MAP = new HashMap<>();
-	private static final HashSet<String> WHITE_PERMISSION = new HashSet<>();
+    private static final List<String> ACTION_BLACK_LIST = new ArrayList<String>(1);
 
-	static {
-		ACTION_BLACK_LIST.add("android.appwidget.action.APPWIDGET_UPDATE");
-		MODIFY_ACTION_MAP.put(Intent.ACTION_PACKAGE_ADDED, Constants.ACTION_PACKAGE_ADDED);
-		MODIFY_ACTION_MAP.put(Intent.ACTION_PACKAGE_REMOVED, Constants.ACTION_PACKAGE_REMOVED);
-		MODIFY_ACTION_MAP.put(Intent.ACTION_PACKAGE_CHANGED, Constants.ACTION_PACKAGE_CHANGED);
-		MODIFY_ACTION_MAP.put("android.intent.action.USER_ADDED", Constants.ACTION_USER_ADDED);
-		MODIFY_ACTION_MAP.put("android.intent.action.USER_REMOVED", Constants.ACTION_USER_REMOVED);
+    private static final Map<String, String> PROTECTED_ACTION_MAP = new HashMap<>(5);
+    private static final HashSet<String> WHITE_PERMISSION = new HashSet<>(3);
 
-		WHITE_PERMISSION.add("com.google.android.gms.settings.SECURITY_SETTINGS");
-		WHITE_PERMISSION.add("com.google.android.apps.plus.PRIVACY_SETTINGS");
-		WHITE_PERMISSION.add(Manifest.permission.ACCOUNT_MANAGER);
-	}
+    static {
+        ACTION_BLACK_LIST.add("android.appwidget.action.APPWIDGET_UPDATE");
 
-	/**
-	 * 是否为黑名单Action
-	 * 
-	 * @param action
-	 *            Action
-	 */
-	public static boolean isActionInBlackList(String action) {
-		return ACTION_BLACK_LIST.contains(action);
-	}
+        WHITE_PERMISSION.add("com.google.android.gms.settings.SECURITY_SETTINGS");
+        WHITE_PERMISSION.add("com.google.android.apps.plus.PRIVACY_SETTINGS");
+        WHITE_PERMISSION.add(Manifest.permission.ACCOUNT_MANAGER);
 
-	/**
-	 * 添加一个黑名单 Action
-	 * 
-	 * @param action
-	 *            action
-	 */
-	public static void addBlackAction(String action) {
-		ACTION_BLACK_LIST.add(action);
-	}
+        PROTECTED_ACTION_MAP.put(Intent.ACTION_PACKAGE_ADDED, Constants.ACTION_PACKAGE_ADDED);
+        PROTECTED_ACTION_MAP.put(Intent.ACTION_PACKAGE_REMOVED, Constants.ACTION_PACKAGE_REMOVED);
+        PROTECTED_ACTION_MAP.put(Intent.ACTION_PACKAGE_CHANGED, Constants.ACTION_PACKAGE_CHANGED);
+        PROTECTED_ACTION_MAP.put("android.intent.action.USER_ADDED", Constants.ACTION_USER_ADDED);
+        PROTECTED_ACTION_MAP.put("android.intent.action.USER_REMOVED", Constants.ACTION_USER_REMOVED);
+    }
 
-	public static String modifyAction(String originAction) {
-		String newAction = MODIFY_ACTION_MAP.get(originAction);
-		if (newAction == null) {
-			return String.format("_VA_protected_%s", originAction);
-		}
-		return newAction;
-	}
+    /**
+     * Check if the action in the BlackList.
+     *
+     * @param action Action
+     */
+    public static boolean isActionInBlackList(String action) {
+        return ACTION_BLACK_LIST.contains(action);
+    }
 
-	public static String restoreAction(String action) {
-		if (action == null) {
-			return null;
-		}
-		for (Map.Entry<String, String> next : MODIFY_ACTION_MAP.entrySet()) {
-			String modifiedAction = next.getValue();
-			if (modifiedAction.equals(action)) {
-				return next.getKey();
-			}
-		}
-		return action.length() > "_VA_protected_".length() ?  action.substring("_VA_protected_".length()) : null;
-	}
+    /**
+     * Add an action to the BlackList.
+     *
+     * @param action action
+     */
+    public static void addBlackAction(String action) {
+        ACTION_BLACK_LIST.add(action);
+    }
 
-	public static boolean isWhitePermission(String permission) {
-		return WHITE_PERMISSION.contains(permission);
-	}
+    public static String protectAction(String originAction) {
+        if (originAction == null) {
+            return null;
+        }
+        if (originAction.startsWith("_VA_")) {
+            return originAction;
+        }
+        String newAction = PROTECTED_ACTION_MAP.get(originAction);
+        if (newAction == null) {
+            newAction = PROTECT_ACTION_PREFIX + originAction;
+        }
+        return newAction;
+    }
+
+    public static String unprotectAction(String action) {
+        if (action == null) {
+            return null;
+        }
+        if (action.startsWith(PROTECT_ACTION_PREFIX)) {
+            return action.substring(PROTECT_ACTION_PREFIX.length());
+        }
+        for (Map.Entry<String, String> next : PROTECTED_ACTION_MAP.entrySet()) {
+            String modifiedAction = next.getValue();
+            if (modifiedAction.equals(action)) {
+                return next.getKey();
+            }
+        }
+        return null;
+    }
+
+    public static boolean isWhitePermission(String permission) {
+        return WHITE_PERMISSION.contains(permission);
+    }
 }

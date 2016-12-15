@@ -43,6 +43,7 @@ import java.util.List;
 import java.util.Map;
 
 import mirror.android.app.ActivityThread;
+import mirror.android.app.ActivityThreadNMR1;
 import mirror.android.app.ContextImpl;
 import mirror.android.app.ContextImplICS;
 import mirror.android.app.ContextImplKitkat;
@@ -51,6 +52,7 @@ import mirror.android.app.LoadedApk;
 import mirror.android.renderscript.RenderScriptCacheDir;
 import mirror.android.view.HardwareRenderer;
 import mirror.android.view.RenderScript;
+import mirror.android.view.ThreadedRenderer;
 import mirror.com.android.internal.content.ReferrerIntent;
 import mirror.dalvik.system.VMRuntime;
 
@@ -176,11 +178,20 @@ public final class VClientImpl extends IVClient.Stub {
 		} else {
 			intent = data.intent;
 		}
-		ActivityThread.performNewIntents.call(
-				VirtualCore.mainThread(),
-				data.token,
-				Collections.singletonList(intent)
-		);
+		if (Build.VERSION.SDK_INT <= 24) {
+            ActivityThread.performNewIntents.call(
+                    VirtualCore.mainThread(),
+                    data.token,
+                    Collections.singletonList(intent)
+            );
+		} else {
+            ActivityThreadNMR1.performNewIntents.call(
+                    VirtualCore.mainThread(),
+                    data.token,
+                    Collections.singletonList(intent),
+                    true
+            );
+        }
 	}
 
 	public void bindApplication(final String packageName, final String processName) {
@@ -238,9 +249,15 @@ public final class VClientImpl extends IVClient.Stub {
 		} else {
 			codeCacheDir = context.getCacheDir();
 		}
-		if (HardwareRenderer.setupDiskCache != null) {
-			HardwareRenderer.setupDiskCache.call(codeCacheDir);
-		}
+		if (Build.VERSION.SDK_INT < 24) {
+            if (HardwareRenderer.setupDiskCache != null) {
+                HardwareRenderer.setupDiskCache.call(codeCacheDir);
+            }
+        } else {
+            if (ThreadedRenderer.setupDiskCache != null) {
+                ThreadedRenderer.setupDiskCache.call(codeCacheDir);
+            }
+        }
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
 			if (RenderScriptCacheDir.setupDiskCache != null) {
 				RenderScriptCacheDir.setupDiskCache.call(codeCacheDir);
@@ -266,7 +283,6 @@ public final class VClientImpl extends IVClient.Stub {
 			if (ContextImplKitkat.mExternalFilesDirs != null) {
 				ContextImplKitkat.mExternalFilesDirs.set(context, new File[] {filesDir});
 			}
-
 		}
 		Object boundApp = fixBoundApp(mBoundApplication);
 		mBoundApplication.info = ContextImpl.mPackageInfo.get(context);
@@ -298,13 +314,6 @@ public final class VClientImpl extends IVClient.Stub {
 			}
 		}
 		VActivityManager.get().appDoneExecuting();
-		Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
-			@Override
-			public void uncaughtException(Thread thread, Throwable ex) {
-				ex.printStackTrace();
-				Process.killProcess(Process.myPid());
-			}
-		});
 	}
 
 	private Context createPackageContext(String packageName) {

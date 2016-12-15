@@ -788,7 +788,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
 				for (int i = 0; i < uids.size(); i++) {
 					ProcessRecord r = uids.valueAt(i);
 					if (userId != VUserHandle.USER_ALL) {
-						if (!(getUserId(userId) == userId)) {
+                        if (r.userId != userId) {
 							continue;
 						}
 					}
@@ -890,7 +890,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
 			int N = mPidsSelfLocked.size();
 			while (N-- > 0) {
 				ProcessRecord r = mPidsSelfLocked.valueAt(N);
-				if (r.vuid == userHandle) {
+                if (r.userId == userHandle) {
 					killProcess(r.pid);
 				}
 			}
@@ -946,7 +946,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
 		if (realIntent == null) {
 			realIntent = intent;
 		}
-		String originAction = SpecialComponentList.restoreAction(realIntent.getAction());
+		String originAction = SpecialComponentList.unprotectAction(realIntent.getAction());
 		if (originAction != null) {
 			realIntent.setAction(originAction);
 		}
@@ -975,14 +975,14 @@ public class VActivityManagerService extends IActivityManager.Stub {
 				r = startProcessIfNeedLocked(info.processName, getUserId(uid), info.packageName);
 			}
 			if (r != null && r.appThread != null) {
-				handleBroadcastIntent(r.appThread, getUserId(uid), info, intent, receiver.isOrderedBroadcast(),
+				performScheduleReceiver(r.appThread, getUserId(uid), info, intent, receiver.isOrderedBroadcast(),
 						result);
 			}
 		}
 	}
 
-	private void handleBroadcastIntent(IInterface thread, int sendingUser, ActivityInfo info, Intent intent,
-									   boolean sync, BroadcastReceiver.PendingResult result) {
+	private void performScheduleReceiver(IInterface thread, int sendingUser, ActivityInfo info, Intent intent,
+										 boolean sync, BroadcastReceiver.PendingResult result) {
 
 		ComponentName componentName = ComponentUtils.toComponentName(info);
 		if (intent.getComponent() != null && !componentName.equals(intent.getComponent())) {
