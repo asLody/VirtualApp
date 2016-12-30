@@ -13,31 +13,35 @@ import io.virtualapp.home.models.AppRepository;
  */
 public class ListAppPresenterImpl implements ListAppContract.ListAppPresenter {
 
-    private Activity mActivity;
-    private ListAppContract.ListAppView mView;
-    private AppDataSource mRepository;
+	private Activity mActivity;
+	private ListAppContract.ListAppView mView;
+	private AppDataSource mRepository;
 
-    public ListAppPresenterImpl(Activity activity, ListAppContract.ListAppView view) {
-        mActivity = activity;
-        mView = view;
-        mRepository = new AppRepository(activity);
-        mView.setPresenter(this);
-    }
+	private int from;
 
-    @Override
-    public void start() {
-        mView.setPresenter(this);
-        mView.startLoading();
-        mRepository
-                .getInstalledApps(mActivity)
-                .done(mView::loadFinish);
-    }
+	public ListAppPresenterImpl(Activity activity, ListAppContract.ListAppView view, int fromWhere) {
+		mActivity = activity;
+		mView = view;
+		mRepository = new AppRepository(activity);
+		mView.setPresenter(this);
+		this.from = fromWhere;
+	}
 
-    @Override
-    public void selectApp(AppModel model) {
-        Intent data = new Intent();
-        data.putExtra(VCommends.EXTRA_APP_MODEL, model);
-        mActivity.setResult(Activity.RESULT_OK, data);
-        mActivity.finish();
-    }
+	@Override
+	public void start() {
+		mView.setPresenter(this);
+		mView.startLoading();
+		if (from == ListAppContract.SELECT_APP_FROM_SYSTEM)
+			mRepository.getInstalledApps(mActivity).done(mView::loadFinish);
+		else
+			mRepository.getSdCardApps(mActivity).done(mView::loadFinish);
+	}
+
+	@Override
+	public void selectApp(AppModel model) {
+		Intent data = new Intent();
+		data.putExtra(VCommends.EXTRA_APP_MODEL, model);
+		mActivity.setResult(Activity.RESULT_OK, data);
+		mActivity.finish();
+	}
 }

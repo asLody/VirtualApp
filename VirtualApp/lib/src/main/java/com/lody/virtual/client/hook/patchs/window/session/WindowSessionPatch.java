@@ -1,46 +1,34 @@
 package com.lody.virtual.client.hook.patchs.window.session;
 
-import com.lody.virtual.client.hook.base.HookObject;
-import com.lody.virtual.client.hook.base.Patch;
-import com.lody.virtual.client.hook.base.PatchObject;
+import android.os.IInterface;
 
-import android.view.IWindowSession;
+import com.lody.virtual.client.hook.base.HookDelegate;
+import com.lody.virtual.client.hook.base.Patch;
+import com.lody.virtual.client.hook.base.PatchDelegate;
 
 /**
  * @author Lody
- *
- *
- * @see IWindowSession
  */
-@Patch({Hook_Add.class, Hook_AddToDisplay.class, Hook_AddToDisplayWithoutInputChannel.class,
-		Hook_AddWithoutInputChannel.class, Hook_Relayout.class})
-public class WindowSessionPatch extends PatchObject<IWindowSession, HookObject<IWindowSession>> {
+@Patch({Add.class, AddToDisplay.class, AddToDisplayWithoutInputChannel.class,
+		AddWithoutInputChannel.class, Relayout.class})
+public class WindowSessionPatch extends PatchDelegate<HookDelegate<IInterface>> {
 
-	private IWindowSession session;
-
-	public WindowSessionPatch(IWindowSession session) {
-		this.session = session;
-		this.hookObject = initHookObject();
-		applyHooks();
+	public WindowSessionPatch(IInterface session) {
+		super(new HookDelegate(session));
 	}
 
 	@Override
-	public HookObject<IWindowSession> initHookObject() {
-		return new HookObject<IWindowSession>(session);
-	}
-
-	@Override
-	public void applyHooks() {
-		super.applyHooks();
+	public void onBindHooks() {
+		super.onBindHooks();
 	}
 
 	@Override
 	public void inject() throws Throwable {
-		// Not use it
+		// <EMPTY>
 	}
 
 	@Override
 	public boolean isEnvBad() {
-		return session != null;
+		return getHookDelegate().getProxyInterface() != null;
 	}
 }

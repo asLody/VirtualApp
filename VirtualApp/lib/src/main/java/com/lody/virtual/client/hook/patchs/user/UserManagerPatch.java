@@ -1,41 +1,43 @@
 package com.lody.virtual.client.hook.patchs.user;
 
-import com.lody.virtual.client.hook.base.Patch;
-import com.lody.virtual.client.hook.base.PatchObject;
-import com.lody.virtual.client.hook.binders.HookUserBinder;
-
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.os.Build;
-import android.os.IUserManager;
-import android.os.ServiceManager;
+
+import com.lody.virtual.client.hook.base.PatchBinderDelegate;
+import com.lody.virtual.client.hook.base.ReplaceCallingPkgHook;
+import com.lody.virtual.client.hook.base.ResultStaticHook;
+
+import java.util.Collections;
+
+import mirror.android.os.IUserManager;
 
 /**
  * @author Lody
  *
- *
- * @see IUserManager
  */
-@Patch({Hook_GetApplicationRestrictions.class, Hook_GetApplicationRestrictionsForUser.class,
-		Hook_GetSerialNumberForUser.class, Hook_GetUserCount.class, Hook_GetUserForSerialNumber.class,
-		Hook_GetUserInfo.class, Hook_GetUserProfiles.class, Hook_GetUserRestrictions.class,
-		Hook_HasUserRestriction.class, Hook_IsUserRunning.class, Hook_IsUserRunningOrStopping.class,
-		Hook_SetApplicationRestrictions.class, Hook_SetRestrictionsChallenge.class,})
 @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
-public class UserManagerPatch extends PatchObject<IUserManager, HookUserBinder> {
+public class UserManagerPatch extends PatchBinderDelegate {
 
-	@Override
-	protected HookUserBinder initHookObject() {
-		return new HookUserBinder();
+	public UserManagerPatch() {
+		super(IUserManager.Stub.TYPE, Context.USER_SERVICE);
 	}
 
 	@Override
-	public void inject() throws Throwable {
-		getHookObject().injectService(Context.USER_SERVICE);
-	}
-
-	@Override
-	public boolean isEnvBad() {
-		return getHookObject() != ServiceManager.getService(Context.USER_SERVICE);
+	protected void onBindHooks() {
+		super.onBindHooks();
+		addHook(new ReplaceCallingPkgHook("setApplicationRestrictions"));
+		addHook(new ReplaceCallingPkgHook("getApplicationRestrictions"));
+		addHook(new ReplaceCallingPkgHook("getApplicationRestrictionsForUser"));
+		addHook(new ResultStaticHook("getProfileParent", null));
+		addHook(new ResultStaticHook("getUserIcon", null));
+		addHook(new ResultStaticHook("getUserInfo", null));
+		addHook(new ResultStaticHook("getDefaultGuestRestrictions", null));
+		addHook(new ResultStaticHook("setDefaultGuestRestrictions", null));
+		addHook(new ResultStaticHook("removeRestrictions", null));
+		addHook(new ResultStaticHook("getUsers", Collections.EMPTY_LIST));
+		addHook(new ResultStaticHook("createUser", null));
+		addHook(new ResultStaticHook("createProfileForUser", null));
+		addHook(new ResultStaticHook("getProfiles", Collections.EMPTY_LIST));
 	}
 }

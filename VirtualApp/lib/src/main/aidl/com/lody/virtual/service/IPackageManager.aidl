@@ -13,37 +13,46 @@ import android.content.IntentFilter;
 import android.content.pm.PermissionInfo;
 import android.content.pm.PermissionGroupInfo;
 
+import com.lody.virtual.helper.proto.ReceiverInfo;
+import com.lody.virtual.helper.proto.VParceledListSlice;
+
 interface IPackageManager {
 
-        String[] getPackagesForPid(int pid);
+        int getPackageUid(String packageName, int userId);
 
-        int checkPermission(String permName, String pkgName);
+        String[] getPackagesForUid(int vuid);
 
-        PackageInfo getPackageInfo(String packageName, int flags);
+        List<String> getSharedLibraries(String pkgName);
 
-        ActivityInfo getActivityInfo(in ComponentName componentName, int flags);
+        int checkPermission(String permName, String pkgName, int userId);
 
-         ActivityInfo getReceiverInfo(in ComponentName componentName, int flags);
+        PackageInfo getPackageInfo(String packageName, int flags, int userId);
 
-         ServiceInfo getServiceInfo(in ComponentName componentName, int flags);
+        ActivityInfo getActivityInfo(in ComponentName componentName, int flags, int userId);
 
-         ProviderInfo getProviderInfo(in ComponentName componentName, int flags);
+        boolean activitySupportsIntent(in ComponentName component, in Intent intent,
+                                           										  in String resolvedType);
+         ActivityInfo getReceiverInfo(in ComponentName componentName, int flags, int userId);
 
-         ResolveInfo resolveIntent(in Intent intent, in String resolvedType, int flags);
+         ServiceInfo getServiceInfo(in ComponentName componentName, int flags, int userId);
 
-         List<ResolveInfo> queryIntentActivities(in Intent intent,in  String resolvedType, int flags);
+         ProviderInfo getProviderInfo(in ComponentName componentName, int flags, int userId);
 
-         List<ResolveInfo> queryIntentReceivers(in Intent intent, String resolvedType, int flags);
+         ResolveInfo resolveIntent(in Intent intent, in String resolvedType, int flags, int userId);
 
-         ResolveInfo resolveService(in Intent intent, String resolvedType, int flags);
+         List<ResolveInfo> queryIntentActivities(in Intent intent,in  String resolvedType, int flags, int userId);
 
-         List<ResolveInfo> queryIntentServices(in Intent intent, String resolvedType, int flags);
+         List<ResolveInfo> queryIntentReceivers(in Intent intent, String resolvedType, int flags, int userId);
 
-         List<ResolveInfo> queryIntentContentProviders(in Intent intent, String resolvedType, int flags);
+         ResolveInfo resolveService(in Intent intent, String resolvedType, int flags, int userId);
 
-         List<PackageInfo> getInstalledPackages(int flags);
+         List<ResolveInfo> queryIntentServices(in Intent intent, String resolvedType, int flags, int userId);
 
-         List<ApplicationInfo> getInstalledApplications(int flags);
+         List<ResolveInfo> queryIntentContentProviders(in Intent intent, String resolvedType, int flags, int userId);
+
+         VParceledListSlice getInstalledPackages(int flags, int userId);
+
+         VParceledListSlice getInstalledApplications(int flags, int userId);
 
          PermissionInfo getPermissionInfo(in String name, int flags);
 
@@ -53,12 +62,13 @@ interface IPackageManager {
 
          List<PermissionGroupInfo> getAllPermissionGroups(int flags);
 
-         ProviderInfo resolveContentProvider(in String name, int flags);
+         ProviderInfo resolveContentProvider(in String name, int flags, int userId);
 
-         ApplicationInfo getApplicationInfo(in String packageName, int flags);
+         ApplicationInfo getApplicationInfo(in String packageName, int flags, int userId);
 
-         List<ActivityInfo> getReceivers(in String packageName ,int flags);
+         VParceledListSlice queryContentProviders(in String processName, int vuid, int flags);
 
-         List<IntentFilter> getReceiverIntentFilter(in ActivityInfo info);
+         List<ReceiverInfo> queryReceivers(in String processName, int vuid, int flags);
 
+         List<String> querySharedPackages(in String packageName);
 }

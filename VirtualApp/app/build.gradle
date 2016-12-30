@@ -2,13 +2,13 @@ apply plugin: 'com.android.application'
 apply plugin: 'me.tatarka.retrolambda'
 
 android {
-    compileSdkVersion 23
-    buildToolsVersion "23.0.3"
+    compileSdkVersion 25
+    buildToolsVersion "25.0.0"
 
     defaultConfig {
         applicationId "io.virtualapp"
-        minSdkVersion 16
-        targetSdkVersion 22
+        minSdkVersion 15
+        targetSdkVersion 21
         versionCode 1
         versionName "1.0"
     }
@@ -49,4 +49,6 @@ dependencies {
     debugCompile 'com.github.moduth:blockcanary:1.0.2'
     releaseCompile 'com.github.moduth:blockcanary-no-op:1.0.2'
     compile project(':lib')
+    compile 'com.github.castorflex.smoothprogressbar:library:1.1.0'
+    compile 'com.yanzhenjie:recyclerview-swipe:1.0.1'
 }

@@ -1,45 +1,34 @@
 package com.lody.virtual.client.hook.base;
 
-import java.lang.reflect.Method;
-
-import com.lody.virtual.client.core.VirtualCore;
-import com.lody.virtual.helper.proto.AppInfo;
-
 import android.content.Context;
 import android.content.pm.PackageManager;
+
+import com.lody.virtual.client.VClientImpl;
+import com.lody.virtual.client.core.VirtualCore;
+
+import java.lang.reflect.Method;
 
 /**
  * @author Lody
  *
  */
-public abstract class Hook<T extends PatchObject> {
-
-	private T patchObject;
-
+public abstract class Hook {
+	
 	private boolean enable = true;
 
-	/**
-	 * 这个构造器必须有,用于依赖注入.
-	 *
-	 * @param patchObject
-	 *            注入对象
-	 */
-	public Hook(T patchObject) {
-		this.patchObject = patchObject;
-	}
-
-	/**
-	 * @return Hook的方法名
-	 */
 	public abstract String getName();
 
-	/**
-	 * Hook回调
-	 */
-	public abstract Object onHook(Object who, Method method, Object... args) throws Throwable;
+	public boolean beforeCall(Object who, Method method, Object... args) {
+		return true;
+	}
 
-	public PatchObject getPatchObject() {
-		return patchObject;
+	public Object call(Object who, Method method, Object... args) throws Throwable {
+		return method.invoke(who, args);
+	}
+
+
+	public Object afterCall(Object who, Method method, Object[] args, Object result) throws Throwable {
+		return result;
 	}
 
 	public boolean isEnable() {
@@ -51,38 +40,45 @@ public abstract class Hook<T extends PatchObject> {
 	}
 
 	public final boolean isAppPkg(String pkg) {
-		return VirtualCore.getCore().isAppInstalled(pkg);
+		return VirtualCore.get().isAppInstalled(pkg);
 	}
 
 	public final String getHostPkg() {
-		return VirtualCore.getCore().getHostPkg();
+		return VirtualCore.get().getHostPkg();
 	}
 
-	public final PackageManager getPM() {
+	protected final PackageManager getPM() {
 		return VirtualCore.getPM();
 	}
 
 	protected final Context getHostContext() {
-		return VirtualCore.getCore().getContext();
-	}
-
-	protected final Context getHostApp() {
-		return VirtualCore.getCore().getApplication();
-	}
-
-	protected final AppInfo findAppInfo(String pkg) {
-		return VirtualCore.getCore().findApp(pkg);
+		return VirtualCore.get().getContext();
 	}
 
 	protected final boolean isAppProcess() {
-		return VirtualCore.getCore().isVAppProcess();
+		return VirtualCore.get().isVAppProcess();
+	}
+
+	protected final boolean isServerProcess() {
+		return VirtualCore.get().isServerProcess();
 	}
 
 	protected final boolean isMainProcess() {
-		return VirtualCore.getCore().isMainProcess();
+		return VirtualCore.get().isMainProcess();
 	}
 
-	protected final PackageManager getUnhookPM() {
-		return VirtualCore.getCore().getUnHookPackageManager();
+
+	protected final int getBaseVUid() {
+		return VClientImpl.getClient().getBaseVUid();
+	}
+
+	protected final int getRealUid() {
+		return VirtualCore.get().myUid();
+	}
+
+
+	@Override
+	public String toString() {
+		return "Hook${ " + getName() + " }";
 	}
 }

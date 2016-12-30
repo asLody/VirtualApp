@@ -1,7 +1,10 @@
 package com.lody.virtual.client.hook.utils;
 
 import com.lody.virtual.client.core.VirtualCore;
-import com.lody.virtual.helper.utils.ArrayIndex;
+import com.lody.virtual.helper.utils.ArrayUtils;
+
+import java.util.Arrays;
+import java.util.HashSet;
 
 /**
  * @author Lody
@@ -9,43 +12,57 @@ import com.lody.virtual.helper.utils.ArrayIndex;
  */
 public class HookUtils {
 
-	public static void replaceFirstAppPkg(Object[] args) {
-		int index = ArrayIndex.indexOfFirst(args, String.class);
+	public static String replaceFirstAppPkg(Object[] args) {
+		if (args == null) {
+			return null;
+		}
+		int index = ArrayUtils.indexOfFirst(args, String.class);
 		if (index != -1) {
 			String pkg = (String) args[index];
-			if (VirtualCore.getCore().isAppInstalled(pkg)) {
-				args[index] = VirtualCore.getCore().getHostPkg();
-			}
+			args[index] = VirtualCore.get().getHostPkg();
+			return pkg;
+		}
+		return null;
+	}
+
+	public static String replaceLastAppPkg(Object[] args) {
+		int index = ArrayUtils.indexOfLast(args, String.class);
+		if (index != -1) {
+			String pkg = (String) args[index];
+			args[index] = VirtualCore.get().getHostPkg();
+			return pkg;
+		}
+		return null;
+	}
+
+	public static String replaceSequenceAppPkg(Object[] args, int sequence) {
+		int index = ArrayUtils.indexOf(args, String.class, sequence);
+		if (index != -1) {
+			String pkg = (String) args[index];
+			args[index] = VirtualCore.get().getHostPkg();
+			return pkg;
+		}
+		return null;
+	}
+
+	public static Class<?>[] getAllInterface(Class clazz){
+		HashSet<Class<?>> classes = new HashSet<>();
+		getAllInterfaces(clazz,classes);
+		Class<?>[] result=new Class[classes.size()];
+		classes.toArray(result);
+		return result;
+	}
+
+
+	public static void getAllInterfaces(Class clazz, HashSet<Class<?>> interfaceCollection) {
+		Class<?>[] classes = clazz.getInterfaces();
+		if (classes.length != 0) {
+			interfaceCollection.addAll(Arrays.asList(classes));
+		}
+		if (clazz.getSuperclass() != Object.class) {
+			getAllInterfaces(clazz.getSuperclass(), interfaceCollection);
 		}
 	}
 
-	public static void replaceAppPkg(Object[] args) {
-		for (int N = 0; N < args.length; N++) {
-			if (args[N] instanceof String && VirtualCore.getCore().isAppInstalled((String) args[N])) {
-				args[N] = VirtualCore.getCore().getHostPkg();
-				break;
-			}
-		}
-	}
-
-	public static void replaceLastAppPkg(Object[] args) {
-		int index = ArrayIndex.indexOfLast(args, String.class);
-		if (index != -1) {
-			String pkg = (String) args[index];
-			if (VirtualCore.getCore().isAppInstalled(pkg)) {
-				args[index] = VirtualCore.getCore().getHostPkg();
-			}
-		}
-	}
-
-	public static void replaceSequenceAppPkg(Object[] args, int sequence) {
-		int index = ArrayIndex.indexOf(args, String.class, sequence);
-		if (index != -1) {
-			String pkg = (String) args[index];
-			if (VirtualCore.getCore().isAppInstalled(pkg)) {
-				args[index] = VirtualCore.getCore().getHostPkg();
-			}
-		}
-	}
 
 }

@@ -1,14 +1,67 @@
 package com.lody.virtual.helper.utils;
 
 import android.content.ComponentName;
+import android.content.Intent;
 import android.content.pm.ActivityInfo;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.ComponentInfo;
+import android.content.pm.PackageInfo;
+import android.os.Build;
+
+import com.lody.virtual.client.core.VirtualCore;
+import com.lody.virtual.client.env.SpecialComponentList;
+import com.lody.virtual.helper.compat.ObjectsCompat;
+
+import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_INSTANCE;
 
 /**
  * @author Lody
  *
  */
 public class ComponentUtils {
+
+	public static String getTaskAffinity(ActivityInfo info) {
+		if (info.launchMode == LAUNCH_SINGLE_INSTANCE) {
+			return "_#SI#_" + info.packageName + "/" + info.name;
+		} else if (info.taskAffinity == null && info.applicationInfo.taskAffinity == null) {
+			return info.packageName;
+		} else if (info.taskAffinity != null) {
+			return info.taskAffinity;
+		}
+		return info.applicationInfo.taskAffinity;
+	}
+
+	public static boolean isSameIntent(Intent a, Intent b) {
+		if (a != null && b != null) {
+			if (!ObjectsCompat.equals(a.getAction(), b.getAction())) {
+				return false;
+			}
+			if (!ObjectsCompat.equals(a.getData(), b.getData())) {
+				return false;
+			}
+			if (!ObjectsCompat.equals(a.getType(), b.getType())) {
+				return false;
+			}
+			Object pkgA = a.getPackage();
+			if (pkgA == null && a.getComponent() != null) {
+				pkgA = a.getComponent().getPackageName();
+			}
+			String pkgB = b.getPackage();
+			if (pkgB == null && b.getComponent() != null) {
+				pkgB = b.getComponent().getPackageName();
+			}
+			if (!ObjectsCompat.equals(pkgA, pkgB)) {
+				return false;
+			}
+			if (!ObjectsCompat.equals(a.getComponent(), b.getComponent())) {
+				return false;
+			}
+			if (!ObjectsCompat.equals(a.getCategories(), b.getCategories())) {
+				return false;
+			}
+		}
+		return true;
+	}
 
 	public static String getProcessName(ComponentInfo componentInfo) {
 		String processName = componentInfo.processName;
@@ -17,19 +70,6 @@ public class ComponentUtils {
 			componentInfo.processName = processName;
 		}
 		return processName;
-	}
-
-	public static String getTaskAffinity(ActivityInfo activityInfo) {
-		if (activityInfo.launchMode == ActivityInfo.LAUNCH_SINGLE_INSTANCE) {
-			return "SINGLE_INSTANCE_" + activityInfo.packageName + "/" + activityInfo.name;
-		}
-		if (activityInfo.taskAffinity == null && activityInfo.applicationInfo.taskAffinity == null) {
-			return activityInfo.packageName;
-		}
-		if (activityInfo.taskAffinity != null) {
-			return activityInfo.taskAffinity;
-		}
-		return activityInfo.applicationInfo.taskAffinity;
 	}
 
 	public static boolean isSameComponent(ComponentInfo first, ComponentInfo second) {
@@ -46,5 +86,57 @@ public class ComponentUtils {
 
 	public static ComponentName toComponentName(ComponentInfo componentInfo) {
 		return new ComponentName(componentInfo.packageName, componentInfo.name);
+	}
+
+	public static boolean isSystemApp(PackageInfo packageInfo) {
+		return packageInfo != null && packageInfo.applicationInfo != null
+				&& (ApplicationInfo.FLAG_SYSTEM & packageInfo.applicationInfo.flags) != 0;
+	}
+
+	public static boolean isSystemApp(ApplicationInfo applicationInfo) {
+		return applicationInfo != null && (ApplicationInfo.FLAG_SYSTEM & applicationInfo.flags) != 0;
+	}
+
+
+	public static boolean isStubComponent(Intent intent) {
+		return intent != null
+				&& intent.getComponent() != null
+				&& VirtualCore.get().getHostPkg().equals(intent.getComponent().getPackageName());
+	}
+
+	public static Intent redirectBroadcastIntent(Intent intent, int userId) {
+        Intent newIntent = intent.cloneFilter();
+		ComponentName component = intent.getComponent();
+		String pkg = intent.getPackage();
+		if (component != null) {
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1) {
+                if (intent.getSelector() != null) {
+                    intent.setPackage(component.getPackageName());
+                }
+            }
+			newIntent.setComponent(null);
+			newIntent.setPackage(null);
+			newIntent.putExtra("_VA_|_user_id_", userId);
+			newIntent.setAction(String.format("_VA_%s_%s", component.getPackageName(), component.getClassName()));
+			newIntent.putExtra("_VA_|_component_", component);
+			newIntent.putExtra("_VA_|_intent_", new Intent(intent));
+		} else if (pkg != null) {
+			newIntent.setPackage(null);
+			newIntent.putExtra("_VA_|_user_id_", userId);
+			newIntent.putExtra("_VA_|_creator_", pkg);
+			newIntent.putExtra("_VA_|_intent_", new Intent(intent));
+            String protectedAction = SpecialComponentList.protectAction(intent.getAction());
+            if (protectedAction != null) {
+                newIntent.setAction(protectedAction);
+            }
+		} else {
+			newIntent.putExtra("_VA_|_user_id_", userId);
+			newIntent.putExtra("_VA_|_intent_", new Intent(intent));
+            String protectedAction = SpecialComponentList.protectAction(intent.getAction());
+            if (protectedAction != null) {
+                newIntent.setAction(protectedAction);
+            }
+		}
+        return newIntent;
 	}
 }

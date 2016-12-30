@@ -11,14 +11,17 @@ import io.virtualapp.home.models.AppModel;
  * @version 1.0
  */
 public class ListAppContract {
-    interface ListAppView extends BaseView<ListAppPresenter> {
+	public static final int SELECT_APP_FROM_SYSTEM = 0;
+	public static final int SELECT_APP_FROM_SD_CARD = 1;
 
-        void startLoading();
+	interface ListAppView extends BaseView<ListAppPresenter> {
 
-        void loadFinish(List<AppModel> models);
-    }
+		void startLoading();
 
-    interface ListAppPresenter extends BasePresenter {
-        void selectApp(AppModel model);
-    }
+		void loadFinish(List<AppModel> models);
+	}
+
+	interface ListAppPresenter extends BasePresenter {
+		void selectApp(AppModel model);
+	}
 }

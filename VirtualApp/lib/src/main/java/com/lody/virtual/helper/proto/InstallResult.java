@@ -9,27 +9,27 @@ import android.os.Parcelable;
  */
 public class InstallResult implements Parcelable {
 
-	public static final Creator<InstallResult> CREATOR = new Creator<InstallResult>() {
-		public InstallResult createFromParcel(Parcel source) {
-			return new InstallResult(source);
-		}
-
-		public InstallResult[] newArray(int size) {
-			return new InstallResult[size];
-		}
-	};
 	public boolean isSuccess;
 	public boolean isUpdate;
-	public Problem problem;
-	public String installedPackageName;
+	public String packageName;
+	public String error;
 
 	public InstallResult() {
 	}
 
 	protected InstallResult(Parcel in) {
 		this.isSuccess = in.readByte() != 0;
-		this.problem = in.readParcelable(Problem.class.getClassLoader());
-		this.installedPackageName = in.readString();
+		this.isUpdate = in.readByte() != 0;
+		this.packageName = in.readString();
+		this.error = in.readString();
+	}
+
+	@Override
+	public void writeToParcel(Parcel dest, int flags) {
+		dest.writeByte((byte) (isSuccess ? 1 : 0));
+		dest.writeByte((byte) (isUpdate ? 1 : 0));
+		dest.writeString(packageName);
+		dest.writeString(error);
 	}
 
 	@Override
@@ -37,10 +37,21 @@ public class InstallResult implements Parcelable {
 		return 0;
 	}
 
-	@Override
-	public void writeToParcel(Parcel dest, int flags) {
-		dest.writeByte(isSuccess ? (byte) 1 : (byte) 0);
-		dest.writeParcelable(this.problem, 0);
-		dest.writeString(this.installedPackageName);
+	public static final Creator<InstallResult> CREATOR = new Creator<InstallResult>() {
+		@Override
+		public InstallResult createFromParcel(Parcel in) {
+			return new InstallResult(in);
+		}
+
+		@Override
+		public InstallResult[] newArray(int size) {
+			return new InstallResult[size];
+		}
+	};
+
+	public static InstallResult makeFailure(String error) {
+		InstallResult res = new InstallResult();
+		res.error = error;
+		return res;
 	}
 }

@@ -1,21 +1,23 @@
 package com.lody.virtual.client.hook.delegate;
 
 import android.app.Activity;
-import android.app.ActivityThread;
 import android.app.Application;
 import android.app.Instrumentation;
+import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.os.Bundle;
+import android.os.IBinder;
 
-import com.lody.virtual.client.core.PatchManager;
 import com.lody.virtual.client.core.VirtualCore;
-import com.lody.virtual.client.hook.modifiers.ActivityModifier;
-import com.lody.virtual.client.hook.modifiers.ContextModifier;
+import com.lody.virtual.client.fixer.ActivityFixer;
+import com.lody.virtual.client.fixer.ContextFixer;
 import com.lody.virtual.client.interfaces.Injectable;
-import com.lody.virtual.client.local.LocalActivityManager;
-import com.lody.virtual.client.local.LocalActivityRecord;
+import com.lody.virtual.client.ipc.ActivityClientRecord;
+import com.lody.virtual.client.ipc.VActivityManager;
+import com.lody.virtual.helper.compat.ActivityManagerCompat;
+import com.lody.virtual.helper.compat.BundleCompat;
 
-import java.lang.reflect.Field;
+import mirror.android.app.ActivityThread;
 
 /**
  * @author Lody
@@ -23,6 +25,7 @@ import java.lang.reflect.Field;
 public final class AppInstrumentation extends InstrumentationDelegate implements Injectable {
 
 	private static final String TAG = AppInstrumentation.class.getSimpleName();
+
 	private static AppInstrumentation gDefault;
 
 	private AppInstrumentation(Instrumentation base) {
@@ -41,75 +44,77 @@ public final class AppInstrumentation extends InstrumentationDelegate implements
 	}
 
 	private static AppInstrumentation create() {
-		Instrumentation instrumentation = getCurrentInstrumentation();
+		Instrumentation instrumentation = ActivityThread.mInstrumentation.get(VirtualCore.mainThread());
 		if (instrumentation instanceof AppInstrumentation) {
 			return (AppInstrumentation) instrumentation;
 		}
 		return new AppInstrumentation(instrumentation);
 	}
 
-	public static Instrumentation getCurrentInstrumentation() {
-		return VirtualCore.mainThread().getInstrumentation();
-	}
 
 	@Override
 	public void inject() throws Throwable {
-		Field f_mInstrumentation = ActivityThread.class.getDeclaredField("mInstrumentation");
-		if (!f_mInstrumentation.isAccessible()) {
-			f_mInstrumentation.setAccessible(true);
-		}
-		f_mInstrumentation.set(VirtualCore.mainThread(), this);
+		ActivityThread.mInstrumentation.set(VirtualCore.mainThread(), this);
 	}
 
 	@Override
 	public boolean isEnvBad() {
-		return getCurrentInstrumentation() != this;
+		return ActivityThread.mInstrumentation.get(VirtualCore.mainThread()) != this;
 	}
 
 	@Override
 	public void callActivityOnCreate(Activity activity, Bundle icicle) {
-		PatchManager.getInstance().fixContext(activity);
-		String pkg = activity.getPackageName();
-		boolean isApp = VirtualCore.getCore().isAppInstalled(pkg);
-		if (isApp) {
-            LocalActivityRecord r = LocalActivityManager.getInstance().onActivityCreate(activity);
-			ContextModifier.modifyContext(activity);
-			ActivityModifier.fixActivity(activity);
-            ActivityInfo info = null;
-            if (r != null) {
-                info = r.activityInfo;
+        VirtualCore.get().getComponentDelegate().beforeActivityCreate(activity);
+		IBinder token = mirror.android.app.Activity.mToken.get(activity);
+		ActivityClientRecord r = VActivityManager.get().getActivityRecord(token);
+		if (r != null) {
+            r.activity = activity;
+        }
+		ContextFixer.fixContext(activity);
+		ActivityFixer.fixActivity(activity);
+		ActivityInfo info = null;
+		if (r != null) {
+            info = r.info;
+        }
+		if (info != null) {
+            if (info.theme != 0) {
+                activity.setTheme(info.theme);
             }
-            if (info != null) {
-                if (activity.getRequestedOrientation() == ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-                        && info.screenOrientation != ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED) {
-                    activity.setRequestedOrientation(info.screenOrientation);
-                }
+            if (activity.getRequestedOrientation() == ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+                    && info.screenOrientation != ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED) {
+                activity.setRequestedOrientation(info.screenOrientation);
             }
-		}
+        }
 		super.callActivityOnCreate(activity, icicle);
 	}
 
 	@Override
 	public void callActivityOnResume(Activity activity) {
-		String pkg = activity.getPackageName();
-		boolean isApp = VirtualCore.getCore().isAppInstalled(pkg);
-		if (isApp) {
-			LocalActivityManager.getInstance().onActivityResumed(activity);
-		}
+        VirtualCore.get().getComponentDelegate().beforeActivityResume(activity);
+		VActivityManager.get().onActivityResumed(activity);
 		super.callActivityOnResume(activity);
+		Intent intent = activity.getIntent();
+		Bundle bundle = intent.getBundleExtra("_VA_|_sender_");
+		if (bundle != null) {
+			IBinder loadingPageToken = BundleCompat.getBinder(bundle, "_VA_|_loading_token_");
+			ActivityManagerCompat.finishActivity(loadingPageToken, -1, null);
+		}
 	}
 
 	@Override
-    public void callActivityOnDestroy(Activity activity) {
-        String pkg = activity.getPackageName();
-        boolean isApp = VirtualCore.getCore().isAppInstalled(pkg);
-        if (isApp) {
-            LocalActivityManager.getInstance().onActivityDestroy(activity);
-        }
-        super.callActivityOnDestroy(activity);
-    }
+	public void callActivityOnDestroy(Activity activity) {
+        VirtualCore.get().getComponentDelegate().beforeActivityDestroy(activity);
+		super.callActivityOnDestroy(activity);
+	}
 
-    @Override
+	@Override
+	public void callActivityOnPause(Activity activity) {
+        VirtualCore.get().getComponentDelegate().beforeActivityPause(activity);
+		super.callActivityOnPause(activity);
+	}
+
+
+	@Override
 	public void callApplicationOnCreate(Application app) {
 		super.callApplicationOnCreate(app);
 	}

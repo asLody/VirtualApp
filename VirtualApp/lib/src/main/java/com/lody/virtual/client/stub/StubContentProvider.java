@@ -1,20 +1,14 @@
 package com.lody.virtual.client.stub;
 
-import com.lody.virtual.client.core.AppSandBox;
+import android.os.Bundle;
+import android.os.ConditionVariable;
+import android.os.IBinder;
+import android.os.Process;
+
+import com.lody.virtual.client.VClientImpl;
 import com.lody.virtual.client.core.VirtualCore;
-import com.lody.virtual.client.env.ServiceEnv;
-import com.lody.virtual.helper.ExtraConstants;
 import com.lody.virtual.helper.compat.BundleCompat;
 import com.lody.virtual.helper.component.BaseContentProvider;
-import com.lody.virtual.helper.proto.AppInfo;
-import com.lody.virtual.service.interfaces.IServiceEnvironment;
-
-import android.app.IServiceConnection;
-import android.content.Intent;
-import android.content.pm.ServiceInfo;
-import android.os.Bundle;
-import android.os.IBinder;
-import android.os.RemoteException;
 
 /**
  * @author Lody
@@ -22,88 +16,29 @@ import android.os.RemoteException;
  */
 public abstract class StubContentProvider extends BaseContentProvider {
 
-	private final ServiceEnvBinder mServiceEnvBinder = new ServiceEnvBinder();
-
 	@Override
 	public Bundle call(String method, String arg, Bundle extras) {
-		if (method.equals("enterProcess")) {
-			VirtualCore core = VirtualCore.getCore();
-			try {
-				while (core.getApplication() == null) {
-					Thread.sleep(50);
-				}
-				while (AppSandBox.isInstalling()) {
-					Thread.sleep(50);
-				}
-				Thread.sleep(50);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-			return null;
-		} else {
-			Bundle bundle = new Bundle();
-			BundleCompat.putBinder(bundle, ExtraConstants.EXTRA_BINDER, mServiceEnvBinder);
-			return bundle;
+		if ("_VA_|_init_process_".equals(method)) {
+			return initProcess(extras);
 		}
+		return null;
 	}
 
-	@Deprecated
-	private static class ServiceEnvBinder extends IServiceEnvironment.Stub {
-
-		@Override
-		public void handleStartService(Intent intent, ServiceInfo serviceInfo) throws RemoteException {
-			AppInfo appInfo = VirtualCore.getCore().findApp(serviceInfo.packageName);
-			if (appInfo != null) {
-				ServiceEnv.getEnv().handleStartService(appInfo, intent, serviceInfo);
-			}
+	private Bundle initProcess(Bundle extras) {
+		ConditionVariable lock = VirtualCore.get().getInitLock();
+		if (lock != null) {
+			lock.block();
 		}
-
-		@Override
-		public int handleStopService(ServiceInfo serviceInfo) throws RemoteException {
-			if (serviceInfo != null) {
-				AppInfo appInfo = VirtualCore.getCore().findApp(serviceInfo.packageName);
-				if (appInfo != null) {
-					ServiceEnv.getEnv().handleStopService(appInfo, serviceInfo);
-					return 1;
-				}
-			}
-			return 0;
-		}
-
-		@Override
-		public boolean handleStopServiceToken(IBinder token, ServiceInfo serviceInfo, int startId)
-				throws RemoteException {
-			if (serviceInfo != null) {
-				AppInfo appInfo = VirtualCore.getCore().findApp(serviceInfo.packageName);
-				if (appInfo != null) {
-					ServiceEnv.getEnv().handleStopServiceToken(appInfo, serviceInfo, startId);
-					return true;
-				}
-			}
-			return false;
-		}
-
-		@Override
-		public boolean handleUnbindService(ServiceInfo serviceInfo, IServiceConnection connection)
-				throws RemoteException {
-			if (serviceInfo != null && connection != null) {
-				ServiceEnv.getEnv().handleUnbindService(connection);
-				return true;
-			}
-			return false;
-		}
-
-		@Override
-		public int handleBindService(IBinder token, Intent service, ServiceInfo serviceInfo,
-				IServiceConnection connection) throws RemoteException {
-			AppInfo appInfo = VirtualCore.getCore().findApp(serviceInfo.packageName);
-			if (appInfo != null) {
-				ServiceEnv.getEnv().handleBindService(appInfo, service, serviceInfo, connection);
-				return 1;
-			}
-			return 0;
-		}
+		IBinder token = BundleCompat.getBinder(extras,"_VA_|_binder_");
+		int vuid = extras.getInt("_VA_|_vuid_");
+		VClientImpl client = VClientImpl.getClient();
+		client.initProcess(token, vuid);
+		Bundle res = new Bundle();
+		BundleCompat.putBinder(res, "_VA_|_client_", client.asBinder());
+		res.putInt("_VA_|_pid_", Process.myPid());
+		return res;
 	}
+
 
 	public static class C0 extends StubContentProvider {
 	}
@@ -167,5 +102,244 @@ public abstract class StubContentProvider extends BaseContentProvider {
 
 	public static class C20 extends StubContentProvider {
 	}
+
+	public static class C21 extends StubContentProvider {
+	}
+
+	public static class C22 extends StubContentProvider {
+	}
+
+	public static class C23 extends StubContentProvider {
+	}
+
+	public static class C24 extends StubContentProvider {
+	}
+
+	public static class C25 extends StubContentProvider {
+	}
+
+	public static class C26 extends StubContentProvider {
+	}
+
+	public static class C27 extends StubContentProvider {
+	}
+
+	public static class C28 extends StubContentProvider {
+	}
+
+	public static class C29 extends StubContentProvider {
+	}
+
+	public static class C30 extends StubContentProvider {
+	}
+
+	public static class C31 extends StubContentProvider {
+	}
+
+	public static class C32 extends StubContentProvider {
+	}
+
+	public static class C33 extends StubContentProvider {
+	}
+
+	public static class C34 extends StubContentProvider {
+	}
+
+	public static class C35 extends StubContentProvider {
+	}
+
+	public static class C36 extends StubContentProvider {
+	}
+
+	public static class C37 extends StubContentProvider {
+	}
+
+	public static class C38 extends StubContentProvider {
+	}
+
+	public static class C39 extends StubContentProvider {
+	}
+
+	public static class C40 extends StubContentProvider {
+	}
+
+	public static class C41 extends StubContentProvider {
+	}
+
+	public static class C42 extends StubContentProvider {
+	}
+
+	public static class C43 extends StubContentProvider {
+	}
+
+	public static class C44 extends StubContentProvider {
+	}
+
+	public static class C45 extends StubContentProvider {
+	}
+
+	public static class C46 extends StubContentProvider {
+	}
+
+	public static class C47 extends StubContentProvider {
+	}
+
+	public static class C48 extends StubContentProvider {
+	}
+
+	public static class C49 extends StubContentProvider {
+	}
+
+	public static class C50 extends StubContentProvider {
+	}
+
+	public static class C51 extends StubContentProvider {
+	}
+
+	public static class C52 extends StubContentProvider {
+	}
+
+	public static class C53 extends StubContentProvider {
+	}
+
+	public static class C54 extends StubContentProvider {
+	}
+
+	public static class C55 extends StubContentProvider {
+	}
+
+	public static class C56 extends StubContentProvider {
+	}
+
+	public static class C57 extends StubContentProvider {
+	}
+
+	public static class C58 extends StubContentProvider {
+	}
+
+	public static class C59 extends StubContentProvider {
+	}
+
+	public static class C60 extends StubContentProvider {
+	}
+
+	public static class C61 extends StubContentProvider {
+	}
+
+	public static class C62 extends StubContentProvider {
+	}
+
+	public static class C63 extends StubContentProvider {
+	}
+
+	public static class C64 extends StubContentProvider {
+	}
+
+	public static class C65 extends StubContentProvider {
+	}
+
+	public static class C66 extends StubContentProvider {
+	}
+
+	public static class C67 extends StubContentProvider {
+	}
+
+	public static class C68 extends StubContentProvider {
+	}
+
+	public static class C69 extends StubContentProvider {
+	}
+
+	public static class C70 extends StubContentProvider {
+	}
+
+	public static class C71 extends StubContentProvider {
+	}
+
+	public static class C72 extends StubContentProvider {
+	}
+
+	public static class C73 extends StubContentProvider {
+	}
+
+	public static class C74 extends StubContentProvider {
+	}
+
+	public static class C75 extends StubContentProvider {
+	}
+
+	public static class C76 extends StubContentProvider {
+	}
+
+	public static class C77 extends StubContentProvider {
+	}
+
+	public static class C78 extends StubContentProvider {
+	}
+
+	public static class C79 extends StubContentProvider {
+	}
+
+	public static class C80 extends StubContentProvider {
+	}
+
+	public static class C81 extends StubContentProvider {
+	}
+
+	public static class C82 extends StubContentProvider {
+	}
+
+	public static class C83 extends StubContentProvider {
+	}
+
+	public static class C84 extends StubContentProvider {
+	}
+
+	public static class C85 extends StubContentProvider {
+	}
+
+	public static class C86 extends StubContentProvider {
+	}
+
+	public static class C87 extends StubContentProvider {
+	}
+
+	public static class C88 extends StubContentProvider {
+	}
+
+	public static class C89 extends StubContentProvider {
+	}
+
+	public static class C90 extends StubContentProvider {
+	}
+
+	public static class C91 extends StubContentProvider {
+	}
+
+	public static class C92 extends StubContentProvider {
+	}
+
+	public static class C93 extends StubContentProvider {
+	}
+
+	public static class C94 extends StubContentProvider {
+	}
+
+	public static class C95 extends StubContentProvider {
+	}
+
+	public static class C96 extends StubContentProvider {
+	}
+
+	public static class C97 extends StubContentProvider {
+	}
+
+	public static class C98 extends StubContentProvider {
+	}
+
+	public static class C99 extends StubContentProvider {
+	}
+
+
 
 }
