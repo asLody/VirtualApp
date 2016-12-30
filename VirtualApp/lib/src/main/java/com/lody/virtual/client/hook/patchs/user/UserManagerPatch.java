@@ -3,36 +3,29 @@ package com.lody.virtual.client.hook.patchs.user;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.os.Build;
-import android.os.IUserManager;
-import android.os.ServiceManager;
 
-import com.lody.virtual.client.hook.base.PatchObject;
+import com.lody.virtual.client.hook.base.PatchBinderDelegate;
 import com.lody.virtual.client.hook.base.ReplaceCallingPkgHook;
 import com.lody.virtual.client.hook.base.ResultStaticHook;
-import com.lody.virtual.client.hook.binders.HookUserBinder;
+
+import java.util.Collections;
+
+import mirror.android.os.IUserManager;
 
 /**
  * @author Lody
  *
- *
- * @see IUserManager
  */
 @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
-public class UserManagerPatch extends PatchObject<IUserManager, HookUserBinder> {
+public class UserManagerPatch extends PatchBinderDelegate {
 
-	@Override
-	protected HookUserBinder initHookObject() {
-		return new HookUserBinder();
+	public UserManagerPatch() {
+		super(IUserManager.Stub.TYPE, Context.USER_SERVICE);
 	}
 
 	@Override
-	public void inject() throws Throwable {
-		getHookObject().injectService(Context.USER_SERVICE);
-	}
-
-	@Override
-	protected void applyHooks() {
-		super.applyHooks();
+	protected void onBindHooks() {
+		super.onBindHooks();
 		addHook(new ReplaceCallingPkgHook("setApplicationRestrictions"));
 		addHook(new ReplaceCallingPkgHook("getApplicationRestrictions"));
 		addHook(new ReplaceCallingPkgHook("getApplicationRestrictionsForUser"));
@@ -42,10 +35,9 @@ public class UserManagerPatch extends PatchObject<IUserManager, HookUserBinder> 
 		addHook(new ResultStaticHook("getDefaultGuestRestrictions", null));
 		addHook(new ResultStaticHook("setDefaultGuestRestrictions", null));
 		addHook(new ResultStaticHook("removeRestrictions", null));
-	}
-
-	@Override
-	public boolean isEnvBad() {
-		return getHookObject() != ServiceManager.getService(Context.USER_SERVICE);
+		addHook(new ResultStaticHook("getUsers", Collections.EMPTY_LIST));
+		addHook(new ResultStaticHook("createUser", null));
+		addHook(new ResultStaticHook("createProfileForUser", null));
+		addHook(new ResultStaticHook("getProfiles", Collections.EMPTY_LIST));
 	}
 }

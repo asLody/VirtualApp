@@ -1,66 +1,49 @@
 package com.lody.virtual.client.hook.patchs.window;
 
-import com.lody.virtual.client.hook.base.Patch;
-import com.lody.virtual.client.hook.base.PatchObject;
-import com.lody.virtual.client.hook.binders.HookWindowManagerBinder;
-import com.lody.virtual.helper.utils.Reflect;
-
 import android.content.Context;
-import android.os.ServiceManager;
-import android.view.IWindowManager;
-import android.view.WindowManagerGlobal;
+import android.os.Build;
+
+import com.lody.virtual.client.hook.base.Patch;
+import com.lody.virtual.client.hook.base.PatchBinderDelegate;
+import com.lody.virtual.client.hook.base.StaticHook;
+
+import mirror.android.view.Display;
+import mirror.android.view.IWindowManager;
+import mirror.android.view.WindowManagerGlobal;
+import mirror.com.android.internal.policy.PhoneWindow;
 
 /**
  * @author Lody
- *
- *
- * @see IWindowManager
  */
-@Patch({Hook_OverridePendingAppTransition.class, Hook_OverridePendingAppTransitionInPlace.class, Hook_OpenSession.class,
-		Hook_SetAppStartingWindow.class})
-public class WindowManagerPatch extends PatchObject<IWindowManager, HookWindowManagerBinder> {
+@Patch({OverridePendingAppTransition.class, OverridePendingAppTransitionInPlace.class, OpenSession.class,
+		SetAppStartingWindow.class})
+public class WindowManagerPatch extends PatchBinderDelegate {
 
-	@Override
-	protected HookWindowManagerBinder initHookObject() {
-		return new HookWindowManagerBinder();
+	public WindowManagerPatch() {
+		super(IWindowManager.Stub.TYPE, Context.WINDOW_SERVICE);
 	}
 
 	@Override
 	public void inject() throws Throwable {
-
-		getHookObject().injectService(Context.WINDOW_SERVICE);
-		IWindowManager hookedWM = getHookObject().getProxyObject();
-		try {
-			Reflect.on(WindowManagerGlobal.class).set("sWindowManagerService", hookedWM);
-		} catch (Throwable e) {
-			// Ignore
-		}
-
-		Class<?> phoneWindowHolderClass = null;
-		try {
-			phoneWindowHolderClass = Class.forName("com.android.internal.policy.impl.PhoneWindow$WindowManagerHolder");
-		} catch (Throwable e) {
-			// Ignore
-		}
-		if (phoneWindowHolderClass == null) {
-			try {
-				phoneWindowHolderClass = Class
-						.forName("com.android.internal.policy.impl.PhoneWindow$WindowManagerHolder");
-			} catch (Throwable e) {
-				// Ignore
+		super.inject();
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+			if (WindowManagerGlobal.sWindowManagerService != null) {
+				WindowManagerGlobal.sWindowManagerService.set(getHookDelegate().getProxyInterface());
+			}
+		} else {
+			if (Display.sWindowManager != null) {
+				Display.sWindowManager.set(getHookDelegate().getProxyInterface());
 			}
 		}
-		if (phoneWindowHolderClass != null) {
-			try {
-				Reflect.on(phoneWindowHolderClass).set("sWindowManager", hookedWM);
-			} catch (Throwable e) {
-				// Ignore
-			}
+		if (PhoneWindow.TYPE != null) {
+			PhoneWindow.sWindowManager.set(getHookDelegate().getProxyInterface());
 		}
 	}
 
 	@Override
-	public boolean isEnvBad() {
-		return ServiceManager.getService(Context.WINDOW_SERVICE) != getHookObject();
+	protected void onBindHooks() {
+		super.onBindHooks();
+		addHook(new StaticHook("addAppToken"));
+		addHook(new StaticHook("setScreenCaptureDisabled"));
 	}
 }

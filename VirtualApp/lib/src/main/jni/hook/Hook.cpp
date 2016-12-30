@@ -1,25 +1,22 @@
 //
-// Created by Xfast on 2016/7/21.
+// VirtualApp Native Project
 //
 #include "Hook.h"
 
 static std::map<std::string/*orig_path*/, std::string/*new_path*/> IORedirectMap;
 static std::map<std::string/*orig_path*/, std::string/*new_path*/> RootIORedirectMap;
-
 static inline void hook_template(const char *lib_so, const char *symbol, void *new_func, void **old_func) {
-    LOGI("hook symbol=%s, new_func=%p, old_func=%p", symbol, new_func, *old_func);
     void *handle = dlopen(lib_so, RTLD_GLOBAL | RTLD_LAZY);
     if (handle == NULL) {
-        LOGW("can't hook %s in %s: 'dlopen' %s FAILED!!!", symbol, lib_so, lib_so);
+        LOGW("Ops: unable to find the so : %s.", lib_so);
         return;
     }
     void *addr = dlsym(handle, symbol);
     if (addr == NULL) {
-        LOGW("can't hook %s in %s: 'dlsym' %s func FAILED!!!", symbol, lib_so, symbol);
+        LOGW("Ops: unable to find the symbol : %s.", symbol);
         return;
     }
     elfHookDirect((unsigned int) (addr), new_func, old_func);
-    LOGI("Hook %s in %s SUCCESS!", symbol, lib_so);
     dlclose(handle);
 }
 
@@ -28,7 +25,8 @@ static inline void hook_template(const char *lib_so, const char *symbol, void *n
 
 static inline bool startWith(const std::string &str, const std::string &prefix)
 {
-    return str.find(prefix) == 0;
+    return str.compare(0, prefix.length(), prefix) == 0;
+    //return str.find(prefix) == 0;
 }
 
 
@@ -65,8 +63,8 @@ const char *match_redirected_path(const char *_path) {
     }
 
     for (iterator = IORedirectMap.begin(); iterator != IORedirectMap.end(); iterator++) {
-        std::string prefix = iterator->first;
-        std::string new_prefix = iterator->second;
+        const std::string& prefix = iterator->first;
+        const std::string& new_prefix = iterator->second;
         if (startWith(path, prefix)) {
             std::string new_path = new_prefix + path.substr(prefix.length(), path.length());
             return strdup(new_path.c_str());
@@ -77,7 +75,7 @@ const char *match_redirected_path(const char *_path) {
 
 
 void HOOK::redirect(const char *org_path, const char *new_path) {
-    LOGI("native add redirect: from %s to %s", org_path, new_path);
+    LOGI("Start redirect : from %s to %s", org_path, new_path);
     add_pair(org_path, new_path);
 }
 
@@ -91,12 +89,11 @@ const char *HOOK::query(const char *org_path) {
 
 
 const char *HOOK::restore(const char *path) {
-
+    return path;
 }
 
 
 
-// we hook system call
 __BEGIN_DECLS
 
 // dlopen //TODO
@@ -152,7 +149,7 @@ HOOK_DEF(int, fstatat, int dirfd, const char *pathname, struct stat *buf, int fl
 // int fstat(const char *pathname, struct stat *buf, int flags);
 HOOK_DEF(int, fstat, const char *pathname, struct stat *buf) {
     const char *redirect_path = match_redirected_path(pathname);
-    int ret = syscall(__NR_fstatat64, redirect_path, buf);
+    int ret = syscall(__NR_fstat64, redirect_path, buf);
     FREE(redirect_path, pathname);
     return ret;
 }
@@ -450,7 +447,6 @@ HOOK_DEF(int ,execve, const char *pathname, char *const argv[], char *const envp
 
 // int kill(pid_t pid, int sig);
 HOOK_DEF(int ,kill, pid_t pid, int sig) {
-    LOGE(",,, kill, pid=%d, sig=%d", pid, sig);
     extern JavaVM *g_vm;
     extern jclass g_jclass;
     JNIEnv *env = NULL;
@@ -458,7 +454,6 @@ HOOK_DEF(int ,kill, pid_t pid, int sig) {
     g_vm->AttachCurrentThread(&env, NULL);
     jmethodID  method = env->GetStaticMethodID(g_jclass, JAVA_CALLBACK__ON_KILL_PROCESS, JAVA_CALLBACK__ON_KILL_PROCESS_SIGNATURE);
     env->CallStaticVoidMethod(g_jclass, method, pid, sig);
-    LOGE(",,, kill, Done ! callbacked to Java");
     int ret = syscall(__NR_kill, pid, sig);
     return ret;
 }
@@ -468,10 +463,7 @@ __END_DECLS
 
 
 
-
-
 void HOOK::hook(int api_level) {
-    LOGI("Begin IO hooks...");
 
     //通用型
     HOOK_IO(__getcwd);
@@ -484,6 +476,7 @@ void HOOK::hook(int api_level) {
     HOOK_IO(chroot);
     HOOK_IO(truncate64);
     HOOK_IO(kill);
+
 //    HOOK_IO(execve);
 //    HOOK_IO(strncmp);
 //    HOOK_IO(strstr);
@@ -491,9 +484,6 @@ void HOOK::hook(int api_level) {
 //    HOOK_IO(vfork);
 
     if (api_level < ANDROID_L) {
-        //xxx型
-//        HOOK_IO(fchmod);
-//        HOOK_IO(fstat);
         HOOK_IO(link);
         HOOK_IO(symlink);
         HOOK_IO(readlink);
@@ -512,7 +502,6 @@ void HOOK::hook(int api_level) {
     }
 
     if (api_level >= ANDROID_L) {
-        ///xxxat型
         HOOK_IO(linkat);
         HOOK_IO(symlinkat);
         HOOK_IO(readlinkat);
@@ -528,5 +517,4 @@ void HOOK::hook(int api_level) {
         HOOK_IO(faccessat);
     }
 
-    LOGI("End IO hooks SUCCESS!!!");
 }

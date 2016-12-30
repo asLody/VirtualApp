@@ -4,11 +4,14 @@
 
 About
 -----
-Likes `LBE Parallel Space`, **VirtualApp** is an open platform for Android that allows you to create a `Virtual Space`,
+**VirtualApp** is an open platform for Android that allows you to create a `Virtual Space`,
 you can install and run apk inside. Beyond that, VirtualApp is also a `Plugin Framework`,
 the plugins running on VirtualApp does not require any constraints.
 VirtualApp does **not** require root, it is running on the `local process`.
 
+NOTICE
+-------
+This project has been authorized by the business.
 
 Background
 ----------
@@ -21,45 +24,49 @@ in the end, it evolved into a `Virtual Container`.
 
 Get started
 -----------
+If you use latest android studio (version 2.0 or above), please disable `Instant Run`.
+Open `Setting | Build,Exception,Deployment`, and disable `Enable Instant Run to hot swap...`
 
-1. VirtualApp use the `@hide API`, 
-so you must use our `android.jar` replace the old one **(Android-SDK/platforms/android-23/{android.jar})**. 
+1. Add **all permissions** your host and your plugins need to use.
 
-2. Add **all permissions** your host and your plugins need to use.
-
-3. Goto your Application and insert the following code:
+2. Goto your Application and insert the following code:
 ```java
     @Override
     protected void attachBaseContext(Context base) {
         super.attachBaseContext(base);
         try {
-            VirtualCore.getCore().startup(base);
+            VirtualCore.get().startup(base);
         } catch (Throwable e) {
             e.printStackTrace();
         }
     }
 ```
 
-4. For **Install a virtual App**, use this function:
+3. For **Install a virtual App**, use this function:
 ```java
-    VirtualCore.getCore().installApp({APK PATH}, flags);
+    VirtualCore.get().installApp({APK PATH}, flags);
     
 ```
 
-5. For **Launch a virtual App**, use this function:
+4. For **Launch a virtual App**, use this function:
 ```java
-    VirtualCore.getCore().launchApp({PackageName});
+    //VirtualApp support multi-user-mode which can run multiple instances of a same app.
+    //if you don't need this feature, just set `{userId}` to 0.
+    Intent intent = VirtualCore.get().getLaunchIntent({PackageName}, {userId});
+    VActivityManager.get().startActivity(intent, {userId});
 ```
 
-6. For **uninstall a virtual App**, use this function:
+5. For **uninstall a virtual App**, use this function:
 ```java
-    VirtualCore.getCore().uninstallApp({PackageName});
+    VirtualCore.get().uninstallApp({PackageName});
 ```
 
-7. If you need to get the `details of App`, use this function:
+6. If you need to get the `details of App`, use this function:
 ```java
-    VirtualCore.getCore().findApp({PackageName});
+    VirtualCore.get().findApp({PackageName});
 ```
+
+More details, please read the source code of demo app, :-)
 
 Documentation
 -------------
@@ -68,7 +75,7 @@ VirtualApp currently has **no documentation**, If you are interested in VirtualA
 
 License
 -------
-LGPL 3.0
+GPL 3.0
 
 About Author
 ------------

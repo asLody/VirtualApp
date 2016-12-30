@@ -1,45 +1,40 @@
 package com.lody.virtual.client.hook.patchs.notification;
 
-import android.app.INotificationManager;
-import android.app.NotificationManager;
 import android.os.Build;
-import android.widget.Toast;
+import android.os.IInterface;
 
-import com.lody.virtual.client.hook.base.HookObject;
+import com.lody.virtual.client.hook.base.HookDelegate;
 import com.lody.virtual.client.hook.base.Patch;
-import com.lody.virtual.client.hook.base.PatchObject;
+import com.lody.virtual.client.hook.base.PatchDelegate;
 import com.lody.virtual.client.hook.base.ReplaceCallingPkgHook;
+import com.lody.virtual.client.hook.base.StaticHook;
 
-import java.lang.reflect.Field;
+import mirror.android.app.NotificationManager;
+import mirror.android.widget.Toast;
 
 /**
  * @author Lody
  *
- *
- * @see INotificationManager
- * @see NotificationManager
- * @see Toast
+ * @see android.app.NotificationManager
+ * @see android.widget.Toast
  */
-@Patch({Hook_CancelAllNotifications.class,
-		Hook_EnqueueNotificationWithTag.class, Hook_CancelNotificationWithTag.class,
-		Hook_EnqueueNotificationWithTagPriority.class, Hook_EnqueueNotification.class})
-public class NotificationManagerPatch extends PatchObject<INotificationManager, HookObject<INotificationManager>> {
+@Patch({CancelAllNotifications.class, EnqueueNotificationWithTag.class, CancelNotificationWithTag.class,
+		EnqueueNotificationWithTagPriority.class, EnqueueNotification.class})
+public class NotificationManagerPatch extends PatchDelegate<HookDelegate<IInterface>> {
 
-	public static INotificationManager getNM() {
-		return NotificationManager.getService();
+	public NotificationManagerPatch() {
+		super(new HookDelegate<IInterface>(NotificationManager.getService.call()));
 	}
 
 	@Override
-	protected HookObject<INotificationManager> initHookObject() {
-		return new HookObject<INotificationManager>(getNM());
-	}
-
-	@Override
-	protected void applyHooks() {
-		super.applyHooks();
+	protected void onBindHooks() {
+		super.onBindHooks();
 		addHook(new ReplaceCallingPkgHook("enqueueToast"));
 		addHook(new ReplaceCallingPkgHook("cancelToast"));
 		addHook(new ReplaceCallingPkgHook("areNotificationsEnabledForPackage"));
+		addHook(new StaticHook("registerListener"));
+		addHook(new StaticHook("unregisterListener"));
+		addHook(new StaticHook("getAppActiveNotifications"));
 		if ("samsung".equalsIgnoreCase(Build.BRAND)) {
 			addHook(new ReplaceCallingPkgHook("removeEdgeNotification"));
 		}
@@ -47,21 +42,12 @@ public class NotificationManagerPatch extends PatchObject<INotificationManager, 
 
 	@Override
 	public void inject() throws Throwable {
-		HookObject<INotificationManager> hookedNM = getHookObject();
-		Field f_sService = NotificationManager.class.getDeclaredField("sService");
-		f_sService.setAccessible(true);
-		f_sService.set(null, hookedNM.getProxyObject());
-		try {
-			f_sService = Toast.class.getDeclaredField("sService");
-			f_sService.setAccessible(true);
-			f_sService.set(null, hookedNM.getProxyObject());
-		} catch (Throwable e) {
-			// Ignore
-		}
+		NotificationManager.sService.set(getHookDelegate().getProxyInterface());
+		Toast.sService.set(getHookDelegate().getProxyInterface());
 	}
 
 	@Override
 	public boolean isEnvBad() {
-		return getNM() != getHookObject().getProxyObject();
+		return NotificationManager.getService.call() != getHookDelegate().getProxyInterface();
 	}
 }

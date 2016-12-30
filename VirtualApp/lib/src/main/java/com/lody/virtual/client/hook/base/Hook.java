@@ -3,8 +3,8 @@ package com.lody.virtual.client.hook.base;
 import android.content.Context;
 import android.content.pm.PackageManager;
 
+import com.lody.virtual.client.VClientImpl;
 import com.lody.virtual.client.core.VirtualCore;
-import com.lody.virtual.helper.proto.AppInfo;
 
 import java.lang.reflect.Method;
 
@@ -13,31 +13,23 @@ import java.lang.reflect.Method;
  *
  */
 public abstract class Hook {
-
+	
 	private boolean enable = true;
 
-	/**
-	 * @return Hook的方法名
-	 */
 	public abstract String getName();
 
-	public boolean beforeHook(Object who, Method method, Object... args) {
+	public boolean beforeCall(Object who, Method method, Object... args) {
 		return true;
 	}
 
-
-	/**
-	 * Hook回调
-	 */
-	public Object onHook(Object who, Method method, Object... args) throws Throwable {
+	public Object call(Object who, Method method, Object... args) throws Throwable {
 		return method.invoke(who, args);
 	}
 
 
-	public Object afterHook(Object who, Method method, Object[] args, Object result) throws Throwable {
+	public Object afterCall(Object who, Method method, Object[] args, Object result) throws Throwable {
 		return result;
 	}
-
 
 	public boolean isEnable() {
 		return enable;
@@ -48,11 +40,11 @@ public abstract class Hook {
 	}
 
 	public final boolean isAppPkg(String pkg) {
-		return VirtualCore.getCore().isAppInstalled(pkg);
+		return VirtualCore.get().isAppInstalled(pkg);
 	}
 
 	public final String getHostPkg() {
-		return VirtualCore.getCore().getHostPkg();
+		return VirtualCore.get().getHostPkg();
 	}
 
 	protected final PackageManager getPM() {
@@ -60,26 +52,33 @@ public abstract class Hook {
 	}
 
 	protected final Context getHostContext() {
-		return VirtualCore.getCore().getContext();
-	}
-
-	protected final AppInfo findAppInfo(String pkg) {
-		return VirtualCore.getCore().findApp(pkg);
+		return VirtualCore.get().getContext();
 	}
 
 	protected final boolean isAppProcess() {
-		return VirtualCore.getCore().isVAppProcess();
+		return VirtualCore.get().isVAppProcess();
 	}
 
-	protected final boolean isServiceProcess() {
-		return VirtualCore.getCore().isServiceProcess();
+	protected final boolean isServerProcess() {
+		return VirtualCore.get().isServerProcess();
 	}
 
 	protected final boolean isMainProcess() {
-		return VirtualCore.getCore().isMainProcess();
+		return VirtualCore.get().isMainProcess();
 	}
 
-	protected final PackageManager getUnhookPM() {
-		return VirtualCore.getCore().getUnHookPackageManager();
+
+	protected final int getBaseVUid() {
+		return VClientImpl.getClient().getBaseVUid();
+	}
+
+	protected final int getRealUid() {
+		return VirtualCore.get().myUid();
+	}
+
+
+	@Override
+	public String toString() {
+		return "Hook${ " + getName() + " }";
 	}
 }

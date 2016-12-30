@@ -13,7 +13,7 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 
-import com.lody.virtual.helper.utils.Reflect;
+import mirror.com.android.internal.R_Hide;
 
 /**
  * @author Lody
@@ -27,10 +27,9 @@ public final class ActivityFixer {
 	public static void fixActivity(Activity activity) {
 		Context baseContext = activity.getBaseContext();
 		try {
-			Reflect styleable = Reflect.on(com.android.internal.R.styleable.class);
-			TypedArray typedArray = activity.obtainStyledAttributes((int[]) styleable.get("Window"));
+			TypedArray typedArray = activity.obtainStyledAttributes((R_Hide.styleable.Window.get()));
 			if (typedArray != null) {
-				boolean showWallpaper = typedArray.getBoolean((Integer) styleable.get("Window_windowShowWallpaper"),
+				boolean showWallpaper = typedArray.getBoolean(R_Hide.styleable.Window_windowShowWallpaper.get(),
 						false);
 				if (showWallpaper) {
 					activity.getWindow().setBackgroundDrawable(WallpaperManager.getInstance(activity).getDrawable());
@@ -46,13 +45,17 @@ public final class ActivityFixer {
 			ApplicationInfo applicationInfo = baseContext.getApplicationInfo();
 			PackageManager pm = activity.getPackageManager();
 			if (intent != null && activity.isTaskRoot()) {
-				String label = "" + applicationInfo.loadLabel(pm);
-				Bitmap icon = null;
-				Drawable drawable = applicationInfo.loadIcon(pm);
-				if (drawable instanceof BitmapDrawable) {
-					icon = ((BitmapDrawable) drawable).getBitmap();
+				try {
+					String label = applicationInfo.loadLabel(pm) + "";
+					Bitmap icon = null;
+					Drawable drawable = applicationInfo.loadIcon(pm);
+					if (drawable instanceof BitmapDrawable) {
+						icon = ((BitmapDrawable) drawable).getBitmap();
+					}
+					activity.setTaskDescription(new ActivityManager.TaskDescription(label, icon));
+				} catch (Throwable e) {
+					e.printStackTrace();
 				}
-				activity.setTaskDescription(new ActivityManager.TaskDescription(label, icon));
 			}
 
 		}

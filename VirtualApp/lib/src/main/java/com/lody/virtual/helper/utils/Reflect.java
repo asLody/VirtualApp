@@ -476,7 +476,7 @@ public class Reflect {
     public <P> P as(Class<P> proxyType) {
         final boolean isMap = (object instanceof Map);
         final InvocationHandler handler = new InvocationHandler() {
-            @Override
+            @Mark
             public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
                 String name = method.getName();
                 try {
@@ -528,7 +528,7 @@ public class Reflect {
     /**
      * {@inheritDoc}
      */
-    @Override
+    @Mark
     public int hashCode() {
         return object.hashCode();
     }
@@ -536,7 +536,7 @@ public class Reflect {
     /**
      * {@inheritDoc}
      */
-    @Override
+    @Mark
     public boolean equals(Object obj) {
         return obj instanceof Reflect && object.equals(((Reflect) obj).get());
 
@@ -545,7 +545,7 @@ public class Reflect {
     /**
      * {@inheritDoc}
      */
-    @Override
+    @Mark
     public String toString() {
         return object.toString();
     }
@@ -563,11 +563,70 @@ public class Reflect {
         }
     }
 
+
     /**
      * 用来表示null的类.
      *
      * @author Lody
      */
     private static class NULL {
+    }
+
+    /**
+     * 智能调用 但是只调用类本身声明方法 按照优先级 匹配
+     *
+     * 1.完全匹配
+     * 2.形参 Object...
+     * 3.名字相同 无参数
+     * @param name
+     * @param args
+     * @return
+     * @throws ReflectException
+     */
+    public Reflect callBest(String name, Object... args) throws ReflectException {
+        Class<?>[] types = types(args);
+        Class<?> type = type();
+
+        Method bestMethod = null;
+        int level = 0;
+        for (Method method : type.getDeclaredMethods()) {
+            if (isSimilarSignature(method, name, types)) {
+                bestMethod = method;
+                level = 2;
+                break;
+            }
+            if (matchObjectMethod(method, name, types)) {
+                bestMethod = method;
+                level = 1;
+                continue;
+            }
+            if (method.getName().equals(name) && method.getParameterTypes().length == 0 && level == 0) {
+                bestMethod = method;
+            }
+        }
+        if (bestMethod != null) {
+            if(level == 0){
+                args = new Object[0];
+            }
+            if (level == 1) {
+                Object[] args2 = {args};
+                args = args2;
+            }
+            return on(bestMethod, object, args);
+        }else{
+            throw new ReflectException("no method found for " + name, new NoSuchMethodException("No best method " + name + " with params " + Arrays.toString(types)
+                    + " could be found on type " + type() + "."));
+        }
+    }
+
+    private boolean matchObjectMethod(Method possiblyMatchingMethod, String desiredMethodName,
+                                     Class<?>[] desiredParamTypes) {
+        return possiblyMatchingMethod.getName().equals(desiredMethodName)
+                && matchObject(possiblyMatchingMethod.getParameterTypes());
+    }
+
+    private boolean matchObject(Class<?>[] parameterTypes) {
+        Class<Object[]> c = Object[].class;
+        return parameterTypes.length > 0 && parameterTypes[0].isAssignableFrom(c);
     }
 }

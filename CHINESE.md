@@ -1,13 +1,4 @@
 [![VA banner](https://raw.githubusercontent.com/asLody/VirtualApp/master/banner.png)](https://github.com/asLody/VirtualApp)
-
-
-给`微商双开神器`的警告
-----------------------
-经过验证发现，`微商双开神器`将VirtualApp的`演示App`的界面改为绿色，并添加`微信支付`（售价28元），
-广州市比目网络科技有限公司的这一敛财行为，严重侵害了作者的利益。请在1个月内下架你们的产品。
-再次申明，VA可以使用于商业项目中，但这种赤裸裸的敛财行为，是严格禁止的。
-
-
 关于
 ---
 **VirtualApp**是一个**App虚拟引擎**的完整实现（简称`VA`）。
@@ -15,6 +6,9 @@ VirtualApp允许你在App内创建一个虚拟空间，你可以在虚拟空间�
 
 运行在`VA`中的APK无需在外部安装，即VA支持**免安装运行APK**。
 
+注意
+-----
+VirtualApp已申请国家专利, 并获得软件著作权保护, 当你的行为对项目或是项目作者构成利益冲突时,我们将追究法律责任.
 
 讨论技术话题
 ----------
@@ -33,22 +27,18 @@ VirtualApp允许你在App内创建一个虚拟空间，你可以在虚拟空间�
         }
     }
 ```
-
 3. For **Install a virtual App**, use this function:
 ```java
     VirtualCore.getCore().installApp({APK PATH}, flags);
 ```
-
 4. For **Launch a virtual App**, use this function:
 ```java
     VirtualCore.getCore().launchApp({PackageName});
 ```
-
 5. For **uninstall a virtual App**, use this function:
 ```java
     VirtualCore.getCore().uninstallApp({PackageName});
 ```
-
 6. If you need to get the `details of App`, use this function:
 ```java
     VirtualCore.getCore().findApp({PackageName});
@@ -58,11 +48,12 @@ VirtualApp允许你在App内创建一个虚拟空间，你可以在虚拟空间�
 文档
 -------------
 
-VirtualApp 目前暂时**没有文档**，Please read the fucking source code。
+<https://github.com/prife/VirtualAppDoc>
+ 
 
 License
 -------
-LGPL 3.0
+GPL 3.0
 
 关于Author
 ------------

@@ -1,36 +1,64 @@
 package com.lody.virtual.client.hook.patchs.vibrator;
 
-import com.lody.virtual.client.hook.base.Patch;
-import com.lody.virtual.client.hook.base.PatchObject;
-import com.lody.virtual.client.hook.binders.HookVibratorBinder;
-
 import android.content.Context;
-import android.os.IVibratorService;
-import android.os.ServiceManager;
+
+import com.lody.virtual.client.hook.base.PatchBinderDelegate;
+import com.lody.virtual.client.hook.base.ReplaceCallingPkgHook;
+
+import java.lang.reflect.Method;
+
+import mirror.com.android.internal.os.IVibratorService;
 
 /**
  * @author Lody
  *
- *
- * @see IVibratorService
  * @see android.os.Vibrator
  */
-@Patch({Hook_Vibrate.class, Hook_VibratePattern.class})
-public class VibratorPatch extends PatchObject<IVibratorService, HookVibratorBinder> {
+public class VibratorPatch extends PatchBinderDelegate {
 
-	@Override
-	protected HookVibratorBinder initHookObject() {
-		return new HookVibratorBinder();
-	}
+    public VibratorPatch() {
+        super(IVibratorService.Stub.TYPE, Context.VIBRATOR_SERVICE);
+    }
 
-	@Override
-	public void inject() throws Throwable {
-		getHookObject().injectService(Context.VIBRATOR_SERVICE);
-	}
-
-	@Override
-	public boolean isEnvBad() {
-		return getHookObject() != ServiceManager.getService(Context.VIBRATOR_SERVICE);
-	}
-
+    @Override
+    protected void onBindHooks() {
+        //Samsung
+        addHook(new ReplaceCallingPkgHook("vibrateMagnitude") {
+            @Override
+            public boolean beforeCall(Object who, Method method, Object... args) {
+                if (args[0] instanceof Integer) {
+                    args[0] = getRealUid();
+                }
+                return super.beforeCall(who, method, args);
+            }
+        });
+        //Samsung
+        addHook(new ReplaceCallingPkgHook("vibratePatternMagnitude") {
+            @Override
+            public boolean beforeCall(Object who, Method method, Object... args) {
+                if (args[0] instanceof Integer) {
+                    args[0] = getRealUid();
+                }
+                return super.beforeCall(who, method, args);
+            }
+        });
+        addHook(new ReplaceCallingPkgHook("vibrate") {
+            @Override
+            public boolean beforeCall(Object who, Method method, Object... args) {
+                if (args[0] instanceof Integer) {
+                    args[0] = getRealUid();
+                }
+                return super.beforeCall(who, method, args);
+            }
+        });
+        addHook(new ReplaceCallingPkgHook("vibratePattern") {
+            @Override
+            public boolean beforeCall(Object who, Method method, Object... args) {
+                if (args[0] instanceof Integer) {
+                    args[0] = getRealUid();
+                }
+                return super.beforeCall(who, method, args);
+            }
+        });
+    }
 }

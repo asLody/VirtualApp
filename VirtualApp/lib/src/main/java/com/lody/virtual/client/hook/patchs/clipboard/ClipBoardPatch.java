@@ -1,36 +1,30 @@
 package com.lody.virtual.client.hook.patchs.clipboard;
 
 import android.content.Context;
-import android.content.IClipboard;
 import android.os.Build;
-import android.os.ServiceManager;
 
-import com.lody.virtual.client.hook.base.PatchObject;
+import com.lody.virtual.client.hook.base.PatchBinderDelegate;
 import com.lody.virtual.client.hook.base.ReplaceLastPkgHook;
-import com.lody.virtual.client.hook.binders.HookClipboardBinder;
+
+import mirror.android.content.ClipboardManager;
 
 /**
  * @author Lody
  *
- *
- * @see IClipboard
+ * @see ClipboardManager
  */
-public class ClipBoardPatch extends PatchObject<IClipboard, HookClipboardBinder> {
-	@Override
-	protected HookClipboardBinder initHookObject() {
-		return new HookClipboardBinder();
+public class ClipBoardPatch extends PatchBinderDelegate {
+
+	public ClipBoardPatch() {
+		//FIXME: Is ClipboardManager.getService() correct?
+		super(ClipboardManager.getService.call(), Context.CLIPBOARD_SERVICE);
 	}
 
 	@Override
-	public void inject() throws Throwable {
-		getHookObject().injectService(Context.CLIPBOARD_SERVICE);
-	}
-
-	@Override
-	protected void applyHooks() {
-		super.applyHooks();
+	protected void onBindHooks() {
+		super.onBindHooks();
 		addHook(new ReplaceLastPkgHook("getPrimaryClip"));
-		if (Build.VERSION.SDK_INT > 17) {
+		if (Build.VERSION.SDK_INT > Build.VERSION_CODES.JELLY_BEAN_MR1) {
 			addHook(new ReplaceLastPkgHook("setPrimaryClip"));
 			addHook(new ReplaceLastPkgHook("getPrimaryClipDescription"));
 			addHook(new ReplaceLastPkgHook("hasPrimaryClip"));
@@ -39,10 +33,4 @@ public class ClipBoardPatch extends PatchObject<IClipboard, HookClipboardBinder>
 			addHook(new ReplaceLastPkgHook("hasClipboardText"));
 		}
 	}
-
-	@Override
-	public boolean isEnvBad() {
-		return ServiceManager.getService(Context.CLIPBOARD_SERVICE) != getHookObject();
-	}
-
 }

@@ -1,5 +1,5 @@
 //
-// Created by Xfast on 2016/7/21.
+// VirtualApp Native Project
 //
 
 #ifndef NDK_HOOK_H
@@ -19,7 +19,7 @@
 
 
 #define HOOK_IO(func) hook_template("libc.so", #func, (void*) new_##func, (void**) &org_##func)
-
+#define DEX2OAT_BIN "/system/bin/dex2oat"
 #define HOOK_DEF(ret, func, ...) \
   ret (*org_##func)(__VA_ARGS__); \
   ret new_##func(__VA_ARGS__)

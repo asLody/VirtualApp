@@ -13,27 +13,33 @@ import com.lody.virtual.client.env.Constants;
 import com.lody.virtual.helper.utils.OSUtils;
 
 /**
- * Created by 247321453 on 2016/7/17.
- * 通知栏的宽度适配
+ * Created by 247321453 on 2016/7/17. 通知栏的宽度适配
  */
 class WidthCompat {
     private final static String TAG = WidthCompat.class.getSimpleName();
+    private volatile int mWidth = 0;
 
     public int getNotificationWidth(Context context, int width, int height, int padding) {
-        //默认
+        if (mWidth > 0) {
+            return mWidth;
+        }
+        // 默认
         int w = getDefaultWidth(width, padding);
         if (OSUtils.getInstance().isEmui()) {
-            //华为emui
+            // 华为emui
             w = getEMUINotificationWidth(context, width, height);
         } else if (OSUtils.getInstance().isMiui()) {
             if (Build.VERSION.SDK_INT >= 21) {
-                padding = Math.round(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 10f, context.getResources().getDisplayMetrics()));
+                padding = Math.round(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 10f,
+                        context.getResources().getDisplayMetrics()));
                 w = getMIUINotificationWidth(context, width - padding * 2, height);
             } else {
-                padding = Math.round(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 25f, context.getResources().getDisplayMetrics()));
+                padding = Math.round(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 25f,
+                        context.getResources().getDisplayMetrics()));
                 w = getMIUINotificationWidth(context, width - padding * 2, height);
             }
         }
+        mWidth = w;
         return w;
     }
 
@@ -43,14 +49,16 @@ class WidthCompat {
         return width;
     }
 
+
     private int getMIUINotificationWidth(Context context, int width, int height) {
-        //status_bar_notification_row
-        //adaptive
-        //content
+        // status_bar_notification_row
+        // adaptive
+        // content
         try {
-            Context systemUi = context.createPackageContext(Constants.SYSTEM_UI_PKG, Context.CONTEXT_IGNORE_SECURITY | Context.CONTEXT_INCLUDE_CODE);
+            Context systemUi = context.createPackageContext(Constants.SYSTEM_UI_PKG,
+                    Context.CONTEXT_IGNORE_SECURITY | Context.CONTEXT_INCLUDE_CODE);
             int layoutId = getSystemId(systemUi, "status_bar_notification_row", "layout");
-            //status_bar_notification_row
+            // status_bar_notification_row
             if (layoutId != 0) {
                 ViewGroup viewGroup = createViewGroup(systemUi, layoutId);
 
@@ -58,7 +66,7 @@ class WidthCompat {
                 if (lid == 0) {
                     lid = getSystemId(systemUi, "content", "id");
                 } else {
-                    //miui5的子view不存在的空指针
+                    // miui5的子view不存在的空指针
                     View child = viewGroup.findViewById(lid);
                     if (child != null && child instanceof ViewGroup) {
                         ((ViewGroup) child).addView(new View(systemUi));
@@ -76,13 +84,13 @@ class WidthCompat {
                         View child = viewGroup.getChildAt(i);
                         if (FrameLayout.class.isInstance(child) || "LatestItemView".equals(child.getClass().getName())
                                 || "SizeAdaptiveLayout".equals(child.getClass().getName())) {
-                            return width - child.getLeft() - child.getPaddingLeft() - child.getPaddingRight();//(LinearLayout)child;
+                            return width - child.getLeft() - child.getPaddingLeft() - child.getPaddingRight();// (LinearLayout)child;
                         }
                     }
                 }
             }
         } catch (Exception e) {
-
+            // Ops
         }
         return width;
     }
@@ -92,7 +100,8 @@ class WidthCompat {
      */
     private int getEMUINotificationWidth(Context context, int width, int height) {
         try {
-            Context systemUi = context.createPackageContext(Constants.SYSTEM_UI_PKG, Context.CONTEXT_IGNORE_SECURITY);
+            Context systemUi = context.createPackageContext(Constants.SYSTEM_UI_PKG,
+                    Context.CONTEXT_IGNORE_SECURITY | Context.CONTEXT_INCLUDE_CODE);
             int layoutId = getSystemId(systemUi, "time_axis", "layout");
             if (layoutId != 0) {
                 ViewGroup viewGroup = createViewGroup(systemUi, layoutId);
@@ -106,7 +115,7 @@ class WidthCompat {
                     for (int i = 0; i < count; i++) {
                         View child = viewGroup.getChildAt(i);
                         if (LinearLayout.class.isInstance(child)) {
-                            //(LinearLayout)child;
+                            // (LinearLayout)child;
                             return width - child.getLeft() - child.getPaddingLeft() - child.getPaddingRight();
                         }
                     }
@@ -125,15 +134,15 @@ class WidthCompat {
         try {
             return (ViewGroup) LayoutInflater.from(context).inflate(layoutId, null);
         } catch (Throwable e) {
-            e.printStackTrace();
+//            VLog.w(TAG, "systemui view:" + VLog.getStackTraceString(e));
+//			e.printStackTrace();
         }
         return new FrameLayout(context);
     }
 
     private void layout(View view, int width, int height) {
         view.layout(0, 0, width, height);
-        view.measure(
-                View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.AT_MOST),
+        view.measure(View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.AT_MOST),
                 View.MeasureSpec.makeMeasureSpec(height, View.MeasureSpec.AT_MOST));
         view.layout(0, 0, width, height);
     }
