@@ -1,25 +1,19 @@
 package com.lody.virtual.client.hook.patchs.pm;
 
-import java.lang.reflect.Method;
+import android.content.ComponentName;
 
 import com.lody.virtual.client.hook.base.Hook;
 
-import android.content.ComponentName;
+import java.lang.reflect.Method;
 
 /**
  * @author Lody
  *
+ * @see android.content.pm.IPackageManager#setComponentEnabledSetting(ComponentName, int, int, int)
+ *
+ *
  */
-/* package */ class Hook_SetComponentEnabledSetting extends Hook<PackageManagerPatch> {
-	/**
-	 * 这个构造器必须有,用于依赖注入.
-	 *
-	 * @param patchObject
-	 *            注入对象
-	 */
-	public Hook_SetComponentEnabledSetting(PackageManagerPatch patchObject) {
-		super(patchObject);
-	}
+/* package */ class Hook_SetComponentEnabledSetting extends Hook {
 
 	@Override
 	public String getName() {
@@ -28,16 +22,7 @@ import android.content.ComponentName;
 
 	@Override
 	public Object onHook(Object who, Method method, Object... args) throws Throwable {
-		ComponentName componentName = (ComponentName) args[0];
-		if (componentName != null) {
-			String pkgName = componentName.getPackageName();
-			if (pkgName != null) {
-				if (isAppPkg(pkgName)) {
-					return 0;
-				}
-			}
-		}
-		return method.invoke(who, args);
+		return 0;
 	}
 
 	@Override

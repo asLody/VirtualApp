@@ -1,30 +1,21 @@
 package com.lody.virtual.client.hook.patchs.pm;
 
-import java.lang.reflect.Method;
-
-import com.lody.virtual.client.local.LocalPackageManager;
 import com.lody.virtual.client.hook.base.Hook;
+import com.lody.virtual.client.local.LocalPackageManager;
 
-import android.content.Intent;
+import java.lang.reflect.Method;
 
 /**
  * @author Lody
  *
  *         <p/>
  *         Android 4.4+
+ *
+ *         @see android.content.pm.IPackageManager#queryContentProviders(String, int, int)
+ *
  */
 @SuppressWarnings("unchecked")
-/* package */ class Hook_QueryContentProviders extends Hook<PackageManagerPatch> {
-
-	/**
-	 * 这个构造器必须有,用于依赖注入.
-	 *
-	 * @param patchObject
-	 *            注入对象
-	 */
-	public Hook_QueryContentProviders(PackageManagerPatch patchObject) {
-		super(patchObject);
-	}
+/* package */ class Hook_QueryContentProviders extends Hook {
 
 	@Override
 	public String getName() {
@@ -33,8 +24,9 @@ import android.content.Intent;
 
 	@Override
 	public Object onHook(Object who, Method method, Object... args) throws Throwable {
-		return LocalPackageManager.getInstance().queryIntentContentProviders((Intent) args[0], (String) args[1],
-				(Integer) args[2]);
+		String processName = (String) args[0];
+		int flags = (int) args[2];
+		return LocalPackageManager.getInstance().queryContentProviders(processName, flags);
 	}
 
 }

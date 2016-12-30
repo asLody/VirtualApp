@@ -20,16 +20,21 @@ public class InstallResult implements Parcelable {
 	};
 	public boolean isSuccess;
 	public boolean isUpdate;
-	public Problem problem;
-	public String installedPackageName;
+	public String packageName;
+	public String error;
 
 	public InstallResult() {
 	}
 
+	public static InstallResult makeFailure(String error) {
+		InstallResult res = new InstallResult();
+		res.error = error;
+		return res;
+	}
+
 	protected InstallResult(Parcel in) {
 		this.isSuccess = in.readByte() != 0;
-		this.problem = in.readParcelable(Problem.class.getClassLoader());
-		this.installedPackageName = in.readString();
+		this.packageName = in.readString();
 	}
 
 	@Override
@@ -40,7 +45,6 @@ public class InstallResult implements Parcelable {
 	@Override
 	public void writeToParcel(Parcel dest, int flags) {
 		dest.writeByte(isSuccess ? (byte) 1 : (byte) 0);
-		dest.writeParcelable(this.problem, 0);
-		dest.writeString(this.installedPackageName);
+		dest.writeString(this.packageName);
 	}
 }

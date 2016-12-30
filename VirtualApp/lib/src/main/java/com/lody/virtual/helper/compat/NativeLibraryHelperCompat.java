@@ -1,19 +1,19 @@
 package com.lody.virtual.helper.compat;
 
+import android.annotation.TargetApi;
+import android.os.Build;
+
+import com.android.internal.content.NativeLibraryHelper;
+import com.lody.virtual.client.core.VirtualCore;
+import com.lody.virtual.helper.utils.Reflect;
+import com.lody.virtual.helper.utils.VLog;
+
 import java.io.File;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-
-import com.android.internal.content.NativeLibraryHelper;
-import com.lody.virtual.client.core.VirtualCore;
-import com.lody.virtual.helper.utils.Reflect;
-import com.lody.virtual.helper.utils.XLog;
-
-import android.annotation.TargetApi;
-import android.os.Build;
 
 public class NativeLibraryHelperCompat {
 
@@ -25,7 +25,6 @@ public class NativeLibraryHelperCompat {
 		} else {
 			return copyNativeBinariesBeforeL(apkFile, sharedLibraryDir);
 		}
-
 	}
 
 	private static int copyNativeBinariesBeforeL(File apkFile, File sharedLibraryDir) {
@@ -54,7 +53,7 @@ public class NativeLibraryHelperCompat {
 			if (VMRuntimeCompat.is64Bit() && isVM64(abiSet)) {
 				if (Build.SUPPORTED_64_BIT_ABIS.length > 0) {
 					int abiIndex = NativeLibraryHelper.findSupportedAbi(handle, Build.SUPPORTED_64_BIT_ABIS);
-					XLog.d(TAG, "ABI Index = %s [%s].", abiIndex, apkFile.getPath());
+					VLog.d(TAG, "ABI Index = %s [%s].", abiIndex, apkFile.getPath());
 					if (abiIndex >= 0) {
 						abi = Build.SUPPORTED_64_BIT_ABIS[abiIndex];
 					}
@@ -62,7 +61,7 @@ public class NativeLibraryHelperCompat {
 			} else {
 				if (Build.SUPPORTED_32_BIT_ABIS.length > 0) {
 					int abiIndex = NativeLibraryHelper.findSupportedAbi(handle, Build.SUPPORTED_32_BIT_ABIS);
-					XLog.d(TAG, "ABI Index = %s [%s].", abiIndex, apkFile.getPath());
+					VLog.d(TAG, "ABI Index = %s [%s].", abiIndex, apkFile.getPath());
 					if (abiIndex >= 0) {
 						abi = Build.SUPPORTED_32_BIT_ABIS[abiIndex];
 					}
@@ -70,14 +69,14 @@ public class NativeLibraryHelperCompat {
 			}
 
 			if (abi == null) {
-				XLog.e(TAG, "Not match any abi [%s].", apkFile.getPath());
+				VLog.e(TAG, "Not match any abi [%s].", apkFile.getPath());
 				return -1;
 			} else {
-				XLog.d(TAG, "Choose ABI : %s [%s].", abi, apkFile.getPath());
+				VLog.d(TAG, "Choose ABI : %s [%s].", abi, apkFile.getPath());
 			}
 			return NativeLibraryHelper.copyNativeBinaries(handle, sharedLibraryDir, abi);
 		} catch (Throwable e) {
-			XLog.d(TAG, "copyNativeBinaries with error : %s", e.getLocalizedMessage());
+			VLog.d(TAG, "copyNativeBinaries with error : %s", e.getLocalizedMessage());
 			e.printStackTrace();
 		}
 
@@ -119,10 +118,10 @@ public class NativeLibraryHelperCompat {
 					supportedABIs.add(supportedAbi);
 				}
 			}
-			XLog.d(TAG, "supportedABIs : %s [%s].", supportedABIs, apk);
+			VLog.d(TAG, "supportedABIs : %s [%s].", supportedABIs, apk);
 			return supportedABIs;
 		} catch (Exception e) {
-			XLog.e(TAG, "Get supportedABIs failure: %s.", e.getMessage());
+			VLog.e(TAG, "Get supportedABIs failure: %s.", e.getMessage());
 		}
 
 		return null;

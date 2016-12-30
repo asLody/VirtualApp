@@ -2,33 +2,27 @@ package com.lody.virtual.client.hook.patchs.am;
 
 import android.app.IActivityManager;
 import android.app.IApplicationThread;
+import android.content.IContentProvider;
+import android.os.IBinder;
 
 import com.lody.virtual.client.core.VirtualCore;
-import com.lody.virtual.client.env.Constants;
 import com.lody.virtual.client.hook.base.Hook;
+import com.lody.virtual.client.hook.providers.ProviderHook;
 import com.lody.virtual.client.local.LocalContentManager;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 
 /**
  * @author Lody
  *
  *
- * @see IActivityManager#getContentProvider(IApplicationThread, String, int,
- *      boolean) 原型: public ContentProviderHolder
- *      getContentProvider(IApplicationThread caller, String name)
+ * @see IActivityManager#getContentProvider(IApplicationThread, String, int, boolean)
+ * @see IActivityManager#getContentProviderExternal(String, int, IBinder)
+ *
  */
-/* package */ class Hook_GetContentProvider extends Hook<ActivityManagerPatch> {
-
-	/**
-	 * 这个构造器必须有,用于依赖注入.
-	 *
-	 * @param patchObject
-	 *            注入对象
-	 */
-	public Hook_GetContentProvider(ActivityManagerPatch patchObject) {
-		super(patchObject);
-	}
+/* package */ class Hook_GetContentProvider extends Hook {
 
 	@Override
 	public String getName() {
@@ -37,19 +31,29 @@ import java.lang.reflect.Method;
 
 	@Override
 	public Object onHook(Object who, Method method, Object... args) throws Throwable {
-		int N = getProviderNameIndex();
-		String name = (String) args[N];
-		if (Constants.GMS_PKG.equals(name)) {
-			// 隔离Gms
-			return null;
-		}
+		String name = (String) args[getProviderNameIndex()];
+		IActivityManager.ContentProviderHolder holder = null;
 		if (!VirtualCore.getCore().isHostProvider(name)) {
-			IActivityManager.ContentProviderHolder holder = LocalContentManager.getDefault().getContentProvider(name);
-			if (holder != null) {
-				return holder;
+			holder = LocalContentManager.getDefault().getContentProvider(name);
+		}
+		if (holder == null) {
+			try {
+				holder = (IActivityManager.ContentProviderHolder) method.invoke(who, args);
+			} catch (InvocationTargetException e) {
+				if (e.getCause() instanceof SecurityException) {
+					return null;
+				}
+				throw e.getCause();
 			}
 		}
-		return method.invoke(who, args);
+		ProviderHook.HookFetcher fetcher = ProviderHook.fetchHook(name);
+		if (fetcher != null) {
+			IContentProvider provider = holder.provider;
+			ProviderHook hook = fetcher.fetch(provider);
+			holder.provider = (IContentProvider) Proxy.newProxyInstance(provider.getClass().getClassLoader(),
+					new Class[]{IContentProvider.class}, hook);
+		}
+		return holder;
 	}
 
 	public int getProviderNameIndex() {

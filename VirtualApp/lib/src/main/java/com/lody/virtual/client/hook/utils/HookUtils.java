@@ -1,7 +1,7 @@
 package com.lody.virtual.client.hook.utils;
 
 import com.lody.virtual.client.core.VirtualCore;
-import com.lody.virtual.helper.utils.ArrayIndex;
+import com.lody.virtual.helper.utils.ArrayUtils;
 
 /**
  * @author Lody
@@ -9,14 +9,16 @@ import com.lody.virtual.helper.utils.ArrayIndex;
  */
 public class HookUtils {
 
-	public static void replaceFirstAppPkg(Object[] args) {
-		int index = ArrayIndex.indexOfFirst(args, String.class);
+	public static String replaceFirstAppPkg(Object[] args) {
+		int index = ArrayUtils.indexOfFirst(args, String.class);
 		if (index != -1) {
 			String pkg = (String) args[index];
 			if (VirtualCore.getCore().isAppInstalled(pkg)) {
 				args[index] = VirtualCore.getCore().getHostPkg();
 			}
+            return pkg;
 		}
+        return null;
 	}
 
 	public static void replaceAppPkg(Object[] args) {
@@ -29,7 +31,7 @@ public class HookUtils {
 	}
 
 	public static void replaceLastAppPkg(Object[] args) {
-		int index = ArrayIndex.indexOfLast(args, String.class);
+		int index = ArrayUtils.indexOfLast(args, String.class);
 		if (index != -1) {
 			String pkg = (String) args[index];
 			if (VirtualCore.getCore().isAppInstalled(pkg)) {
@@ -39,7 +41,7 @@ public class HookUtils {
 	}
 
 	public static void replaceSequenceAppPkg(Object[] args, int sequence) {
-		int index = ArrayIndex.indexOf(args, String.class, sequence);
+		int index = ArrayUtils.indexOf(args, String.class, sequence);
 		if (index != -1) {
 			String pkg = (String) args[index];
 			if (VirtualCore.getCore().isAppInstalled(pkg)) {

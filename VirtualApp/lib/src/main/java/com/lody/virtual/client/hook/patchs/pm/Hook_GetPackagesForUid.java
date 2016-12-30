@@ -1,9 +1,14 @@
 package com.lody.virtual.client.hook.patchs.pm;
 
-import java.lang.reflect.Method;
+import android.os.Process;
 
-import com.lody.virtual.client.core.AppSandBox;
+import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.hook.base.Hook;
+import com.lody.virtual.helper.proto.AppInfo;
+
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Lody
@@ -11,16 +16,7 @@ import com.lody.virtual.client.hook.base.Hook;
  *
  * @see android.content.pm.IPackageManager#getPackagesForUid(int)
  */
-/* package */ class Hook_GetPackagesForUid extends Hook<PackageManagerPatch> {
-	/**
-	 * 这个构造器必须有,用于依赖注入.
-	 *
-	 * @param patchObject
-	 *            注入对象
-	 */
-	public Hook_GetPackagesForUid(PackageManagerPatch patchObject) {
-		super(patchObject);
-	}
+/* package */ class Hook_GetPackagesForUid extends Hook {
 
 	@Override
 	public String getName() {
@@ -28,9 +24,19 @@ import com.lody.virtual.client.hook.base.Hook;
 	}
 
 	@Override
+	public boolean beforeHook(Object who, Method method, Object... args) {
+		int uid = (int) args[0];
+		return uid == Process.myUid();
+	}
+
+	@Override
 	public Object onHook(Object who, Method method, Object... args) throws Throwable {
-		return AppSandBox.getInstalledPackages();
-		// return method.invoke(who, args);
+		List<AppInfo> appInfos = VirtualCore.getCore().getAllApps();
+		List<String> appList = new ArrayList<>(appInfos.size());
+		for (AppInfo appInfo : appInfos) {
+			appList.add(appInfo.packageName);
+		}
+		return appList.toArray(new String[appInfos.size()]);
 	}
 
 	@Override

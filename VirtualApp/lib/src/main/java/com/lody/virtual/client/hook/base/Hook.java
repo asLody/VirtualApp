@@ -1,46 +1,43 @@
 package com.lody.virtual.client.hook.base;
 
-import java.lang.reflect.Method;
+import android.content.Context;
+import android.content.pm.PackageManager;
 
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.helper.proto.AppInfo;
 
-import android.content.Context;
-import android.content.pm.PackageManager;
+import java.lang.reflect.Method;
 
 /**
  * @author Lody
  *
  */
-public abstract class Hook<T extends PatchObject> {
-
-	private T patchObject;
+public abstract class Hook {
 
 	private boolean enable = true;
-
-	/**
-	 * 这个构造器必须有,用于依赖注入.
-	 *
-	 * @param patchObject
-	 *            注入对象
-	 */
-	public Hook(T patchObject) {
-		this.patchObject = patchObject;
-	}
 
 	/**
 	 * @return Hook的方法名
 	 */
 	public abstract String getName();
 
+	public boolean beforeHook(Object who, Method method, Object... args) {
+		return true;
+	}
+
+
 	/**
 	 * Hook回调
 	 */
-	public abstract Object onHook(Object who, Method method, Object... args) throws Throwable;
-
-	public PatchObject getPatchObject() {
-		return patchObject;
+	public Object onHook(Object who, Method method, Object... args) throws Throwable {
+		return method.invoke(who, args);
 	}
+
+
+	public Object afterHook(Object who, Method method, Object[] args, Object result) throws Throwable {
+		return result;
+	}
+
 
 	public boolean isEnable() {
 		return enable;
@@ -58,16 +55,12 @@ public abstract class Hook<T extends PatchObject> {
 		return VirtualCore.getCore().getHostPkg();
 	}
 
-	public final PackageManager getPM() {
+	protected final PackageManager getPM() {
 		return VirtualCore.getPM();
 	}
 
 	protected final Context getHostContext() {
 		return VirtualCore.getCore().getContext();
-	}
-
-	protected final Context getHostApp() {
-		return VirtualCore.getCore().getApplication();
 	}
 
 	protected final AppInfo findAppInfo(String pkg) {
@@ -76,6 +69,10 @@ public abstract class Hook<T extends PatchObject> {
 
 	protected final boolean isAppProcess() {
 		return VirtualCore.getCore().isVAppProcess();
+	}
+
+	protected final boolean isServiceProcess() {
+		return VirtualCore.getCore().isServiceProcess();
 	}
 
 	protected final boolean isMainProcess() {

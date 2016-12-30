@@ -2,6 +2,7 @@
 package com.lody.virtual.service;
 
 import com.lody.virtual.helper.proto.VComponentInfo;
+import com.lody.virtual.service.interfaces.IProcessObserver;
 
 interface IProcessManager {
 
@@ -15,11 +16,7 @@ interface IProcessManager {
 
     boolean isAppProcess(String processName);
 
-    void mapProcessName(String stubProcessName, String pluginProcessName);
-
-    String getMapAppProcessName(String stubProcessName);
-
-    boolean isAppPID(int pid);
+    boolean isAppPid(int pid);
 
     String getAppProcessName(int pid);
 
@@ -33,6 +30,9 @@ interface IProcessManager {
 
     void dump();
 
+    void registerProcessObserver(in IProcessObserver observer);
+
+    void unregisterProcessObserver(in IProcessObserver observer);
 
 
 }

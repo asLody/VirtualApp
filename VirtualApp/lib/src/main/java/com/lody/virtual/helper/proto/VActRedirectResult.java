@@ -1,6 +1,7 @@
 package com.lody.virtual.helper.proto;
 
 import android.content.pm.ActivityInfo;
+import android.os.IBinder;
 import android.os.Parcel;
 import android.os.Parcelable;
 
@@ -9,6 +10,51 @@ import android.os.Parcelable;
  *
  */
 public class VActRedirectResult implements Parcelable {
+
+	public ActivityInfo stubActInfo;
+	public int flags;
+	public IBinder replaceToken;
+	public IBinder newIntentToken;
+	public IBinder targetClient;
+	public boolean justReturn;
+
+	public VActRedirectResult() {
+		justReturn = true;
+	}
+
+	public VActRedirectResult(IBinder newIntentToken, IBinder targetClient) {
+		this.newIntentToken = newIntentToken;
+		this.targetClient = targetClient;
+	}
+
+	public VActRedirectResult(ActivityInfo stubActInfo, int flags) {
+		this.stubActInfo = stubActInfo;
+		this.flags = flags;
+	}
+
+	@Override
+	public int describeContents() {
+		return 0;
+	}
+
+	@Override
+	public void writeToParcel(Parcel dest, int flags) {
+		dest.writeParcelable(this.stubActInfo, flags);
+		dest.writeInt(this.flags);
+		dest.writeStrongBinder(this.replaceToken);
+		dest.writeStrongBinder(this.newIntentToken);
+		dest.writeStrongBinder(this.targetClient);
+		dest.writeByte((byte) (justReturn ? 1 : 0));
+	}
+
+	protected VActRedirectResult(Parcel in) {
+		this.stubActInfo = in.readParcelable(ActivityInfo.class.getClassLoader());
+		this.flags = in.readInt();
+		this.replaceToken = in.readStrongBinder();
+		this.newIntentToken = in.readStrongBinder();
+		this.targetClient = in.readStrongBinder();
+		this.justReturn = in.readByte() == 1;
+	}
 
 	public static final Creator<VActRedirectResult> CREATOR = new Creator<VActRedirectResult>() {
 		@Override
@@ -21,38 +67,4 @@ public class VActRedirectResult implements Parcelable {
 			return new VActRedirectResult[size];
 		}
 	};
-	public ActivityInfo stubActInfo;
-	/**
-	 * 已经拦截Activity的启动,转为其它的操作,比如onNewIntent...
-	 */
-	public boolean intercepted;
-	public int flags;
-
-
-	public VActRedirectResult() {
-		this.intercepted = true;
-	}
-
-	public VActRedirectResult(ActivityInfo stubActInfo, int flags) {
-		this.stubActInfo = stubActInfo;
-		this.flags = flags;
-	}
-
-	protected VActRedirectResult(Parcel in) {
-		this.stubActInfo = in.readParcelable(ActivityInfo.class.getClassLoader());
-		this.intercepted = in.readByte() != 0;
-		this.flags = in.readInt();
-	}
-
-	@Override
-	public int describeContents() {
-		return 0;
-	}
-
-	@Override
-	public void writeToParcel(Parcel dest, int flags) {
-		dest.writeParcelable(this.stubActInfo, flags);
-		dest.writeByte(this.intercepted ? (byte) 1 : (byte) 0);
-		dest.writeInt(this.flags);
-	}
 }

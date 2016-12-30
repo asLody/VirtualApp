@@ -1,32 +1,20 @@
 package com.lody.virtual.client.hook.patchs.pm;
 
-import java.lang.reflect.Method;
-import java.util.List;
-
-import com.lody.virtual.client.local.LocalPackageManager;
-import com.lody.virtual.client.hook.base.Hook;
-import com.lody.virtual.helper.compat.ParceledListSliceCompat;
-
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+
+import com.lody.virtual.client.hook.base.Hook;
+import com.lody.virtual.client.local.LocalPackageManager;
+import com.lody.virtual.helper.compat.ParceledListSliceCompat;
+
+import java.lang.reflect.Method;
+import java.util.List;
 
 /**
  * @author Lody
  *
  */
-/* package */ class Hook_GetInstalledApplications extends Hook<PackageManagerPatch> {
-
-	private final char[] mLock = new char[0];
-
-	/**
-	 * 这个构造器必须有,用于依赖注入.
-	 *
-	 * @param patchObject
-	 *            注入对象
-	 */
-	public Hook_GetInstalledApplications(PackageManagerPatch patchObject) {
-		super(patchObject);
-	}
+/* package */ class Hook_GetInstalledApplications extends Hook {
 
 	@Override
 	public String getName() {
@@ -40,6 +28,7 @@ import android.content.pm.PackageManager;
 		List<ApplicationInfo> appInfos = LocalPackageManager.getInstance().getInstalledApplications(flags);
 		if (isMainProcess()) {
 			PackageManager hostPM = getUnhookPM();
+			//noinspection WrongConstant
 			appInfos.addAll(hostPM.getInstalledApplications(flags));
 		}
 		if (ParceledListSliceCompat.isReturnParceledListSlice(method)) {

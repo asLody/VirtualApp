@@ -7,8 +7,8 @@ android {
 
     defaultConfig {
         applicationId "io.virtualapp"
-        minSdkVersion 16
-        targetSdkVersion 22
+        minSdkVersion 15
+        targetSdkVersion 21
         versionCode 1
         versionName "1.0"
     }
@@ -49,4 +49,5 @@ dependencies {
     debugCompile 'com.github.moduth:blockcanary:1.0.2'
     releaseCompile 'com.github.moduth:blockcanary-no-op:1.0.2'
     compile project(':lib')
+    compile 'com.google.android.gms:play-services-appindexing:8.1.0'
 }

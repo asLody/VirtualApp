@@ -16,6 +16,8 @@ import android.os.RemoteException;
 
 import com.lody.virtual.client.env.RuntimeEnv;
 import com.lody.virtual.client.service.ServiceManagerNative;
+import com.lody.virtual.helper.proto.ReceiverInfo;
+import com.lody.virtual.helper.proto.VParceledListSlice;
 import com.lody.virtual.service.IPackageManager;
 
 import java.util.List;
@@ -33,7 +35,7 @@ public class LocalPackageManager {
 		return sMgr;
 	}
 
-	public IPackageManager getInterface() {
+	public synchronized IPackageManager getInterface() {
 		if (mRemote == null) {
 			synchronized (LocalPackageManager.class) {
 				if (mRemote == null) {
@@ -71,7 +73,8 @@ public class LocalPackageManager {
 
 	public List<ApplicationInfo> getInstalledApplications(int flags) {
 		try {
-			return getInterface().getInstalledApplications(flags);
+			//noinspection unchecked
+			return getInterface().getInstalledApplications(flags).getList();
 		} catch (RemoteException e) {
 			return RuntimeEnv.crash(e);
 		}
@@ -109,7 +112,7 @@ public class LocalPackageManager {
 		}
 	}
 
-	public List<PackageInfo> getInstalledPackages(int flags) {
+	public VParceledListSlice getInstalledPackages(int flags) {
 		try {
 			return getInterface().getInstalledPackages(flags);
 		} catch (RemoteException e) {
@@ -181,14 +184,6 @@ public class LocalPackageManager {
 		}
 	}
 
-	public List<ActivityInfo> getReceivers(String packageName, int flags) {
-		try {
-			return getInterface().getReceivers(packageName, flags);
-		} catch (RemoteException e) {
-			return RuntimeEnv.crash(e);
-		}
-	}
-
 	public List<IntentFilter> getReceiverIntentFilter(ActivityInfo info) {
 		try {
 			return getInterface().getReceiverIntentFilter(info);
@@ -221,9 +216,27 @@ public class LocalPackageManager {
 		}
 	}
 
-	public String[] getPackagesForPid(int pid) {
+	public boolean activitySupportsIntent(ComponentName component, Intent intent, String resolvedType) {
 		try {
-			return getInterface().getPackagesForPid(pid);
+			return getInterface().activitySupportsIntent(component, intent, resolvedType);
+		} catch (RemoteException e) {
+			return RuntimeEnv.crash(e);
+		}
+	}
+
+	public List<ProviderInfo> queryContentProviders(String processName, int flags) {
+		try {
+			//noinspection unchecked
+			return getInterface().queryContentProviders(processName, flags).getList();
+		} catch (RemoteException e) {
+			return RuntimeEnv.crash(e);
+		}
+	}
+
+	public List<ReceiverInfo> queryReceivers(String processName, int flags) {
+		try {
+			//noinspection unchecked
+			return getInterface().queryReceivers(processName, flags);
 		} catch (RemoteException e) {
 			return RuntimeEnv.crash(e);
 		}

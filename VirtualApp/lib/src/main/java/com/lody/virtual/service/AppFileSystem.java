@@ -6,6 +6,7 @@ import android.content.pm.PackageManager;
 
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.helper.utils.FileIO;
+import com.lody.virtual.helper.utils.VLog;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -14,16 +15,15 @@ import java.util.List;
 /**
  * @author Lody
  *
+ *  VA File System.
  *
- *         插件的文件系统
  */
 public class AppFileSystem {
 
 	private static final String TAG = AppFileSystem.class.getSimpleName();
 
-	// 目录结构
 	// app_VApps
-	// ----com.XXX.XXX
+	// ---- { PackageName }
 	// --------apk
 	// ------------base.apk
 	// --------lib
@@ -39,12 +39,11 @@ public class AppFileSystem {
 	private static final String FILES_DIR_NAME = "files";
 	private static final String PLUGIN_ROOT_DIR_NAME = "VApps";
 
-	private Context context;
-
 	private AppFileSystem() {
-		context = VirtualCore.getCore().getContext();
 		File rootDir = getAppRootDir();
-		rootDir.mkdirs();
+		if (!rootDir.exists() && !rootDir.mkdirs()) {
+			VLog.w(TAG, "Warning: unable to create the folder: " + rootDir.getPath());
+		}
 	}
 
 	public static AppFileSystem getDefault() {
@@ -52,7 +51,7 @@ public class AppFileSystem {
 	}
 
 	public List<File> getAllApps() {
-		List<File> apkFiles = new ArrayList<File>(5);
+		List<File> apkFiles = new ArrayList<File>(6);
 		File baseDir = getAppRootDir();
 		File[] packageDirs = baseDir.listFiles();
 		if (packageDirs != null) {
@@ -81,8 +80,8 @@ public class AppFileSystem {
 
 	public File getAppPackageFolder(String packageName) {
 		File file = new File(getAppRootDir(), packageName);
-		if (!file.exists()) {
-			file.mkdirs();
+		if (!file.exists() && !file.mkdirs()) {
+			VLog.w(TAG, "Warning: unable to create the folder : " + file.getPath());
 		}
 		return file;
 	}
@@ -103,8 +102,8 @@ public class AppFileSystem {
 	 * 删除一个插件
 	 * 
 	 * @param packageName
-	 *            插件包名
-	 * @return 删除是否成功
+	 *            app Package name
+	 * @return result
 	 */
 	public boolean deleteApp(String packageName) {
 		File baseDir = getAppRootDir();
@@ -113,7 +112,7 @@ public class AppFileSystem {
 	}
 
 	public File getAppRootDir() {
-		return context.getDir(PLUGIN_ROOT_DIR_NAME, Context.MODE_PRIVATE);
+		return VirtualCore.getCore().getContext().getDir(PLUGIN_ROOT_DIR_NAME, Context.MODE_PRIVATE);
 	}
 
 	public File getAppAssetFolder(String pkgName) {
