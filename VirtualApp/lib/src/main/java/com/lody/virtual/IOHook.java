@@ -50,40 +50,6 @@ public class IOHook {
 		}
 	}
 
-	public static String getRedirectedPath(String origPath) {
-		try {
-			return nativeGetRedirectedPath(origPath);
-		} catch (Throwable e) {
-			VLog.e(TAG, VLog.getStackTraceString(e));
-		}
-		return null;
-	}
-
-	public static String restoreRedirectedPath(String origPath) {
-		try {
-			return nativeRestoreRedirectedPath(origPath);
-		} catch (Throwable e) {
-			VLog.e(TAG, VLog.getStackTraceString(e));
-		}
-		return null;
-	}
-
-	public static void redirect(String origPath, String newPath) {
-		try {
-			nativeRedirect(origPath, newPath);
-		} catch (Throwable e) {
-			VLog.e(TAG, VLog.getStackTraceString(e));
-		}
-	}
-
-	public static void hook() {
-		try {
-			nativeHook(Build.VERSION.SDK_INT);
-		} catch (Throwable e) {
-			VLog.e(TAG, VLog.getStackTraceString(e));
-		}
-	}
-
 	private static Method openDexFileNative;
 	static {
 		String methodName =
@@ -105,13 +71,6 @@ public class IOHook {
 			nativeHookNative(openDexFileNative, VirtualRuntime.isArt(), Build.VERSION.SDK_INT);
 		} catch (Throwable e) {
 			VLog.e(TAG, VLog.getStackTraceString(e));
-		}
-	}
-
-	public static void onKillProcess(int pid, int signal) {
-		VLog.e(TAG, "killProcess: pid = %d, signal = %d.", pid, signal);
-		if (pid == android.os.Process.myPid()) {
-			VLog.e(TAG, VLog.getStackTraceString(new Throwable()));
 		}
 	}
 
@@ -149,18 +108,9 @@ public class IOHook {
 
 
 
-    private static native void nativeHookNative(Object method, boolean isArt, int apiLevel);
+	private static native void nativeHookNative(Object method, boolean isArt, int apiLevel);
 
 	private static native void nativeMark();
-
-
-	private static native String nativeRestoreRedirectedPath(String redirectedPath);
-
-	private static native String nativeGetRedirectedPath(String orgPath);
-
-	private static native void nativeRedirect(String orgPath, String newPath);
-
-	private static native void nativeHook(int apiLevel);
 
 	public static int onGetUid(int uid) {
 		return VClientImpl.getClient().getBaseVUid();

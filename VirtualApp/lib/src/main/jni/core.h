@@ -9,9 +9,8 @@
 #include <stdlib.h>
 
 
-#include "helper/helper.h"
-#include "hook/HookNative.h"
-#include "hook/Hook.h"
+#include "helper.h"
+#include "HookNative.h"
 
 __BEGIN_DECLS
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved);

@@ -23,12 +23,6 @@
 
 #define JAVA_CLASS "com/lody/virtual/IOHook"
 
-#define JAVA_CALLBACK__ON_KILL_PROCESS "onKillProcess"
-#define JAVA_CALLBACK__ON_KILL_PROCESS_SIGNATURE "(II)V"
-
-#define JAVA_CALLBACK__BINDER__ON_GET_CALLING_UID "onGetCallingUid"
-#define JAVA_CALLBACK__BINDER__ON_GET_CALLING_UID_SIGNATURE "(I)I"
-
 #define ANDROID_L    21
 
 

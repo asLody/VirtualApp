@@ -19,41 +19,8 @@ void hook_native(JNIEnv *env, jclass jclazz, jobject javaMethod, jboolean isArt,
 }
 
 
-void hook_io(JNIEnv *env, jclass jclazz, jint apiLevel) {
-    static bool hasHooked = false;
-    if (hasHooked) {
-        return;
-    }
-    HOOK::hook(apiLevel);
-    hasHooked = true;
-}
-
-void redirect(JNIEnv *env, jclass jclazz, jstring orgPath, jstring newPath) {
-    const char *org_path = env->GetStringUTFChars(orgPath, NULL);
-    const char *new_path = env->GetStringUTFChars(newPath, NULL);
-    HOOK::redirect(org_path, new_path);
-}
-
-jstring query(JNIEnv *env, jclass jclazz, jstring orgPath) {
-    const char *org_path = env->GetStringUTFChars(orgPath, NULL);
-    const char *redirected_path = HOOK::query(org_path);
-    return env->NewStringUTF(redirected_path);
-}
-
-jstring restore(JNIEnv *env, jclass jclazz, jstring redirectedPath) {
-    const char *redirected_path = env->GetStringUTFChars(redirectedPath, NULL);
-    const char *org_path = HOOK::restore(redirected_path);
-    return env->NewStringUTF(org_path);
-}
-
-
 
 static JNINativeMethod gMethods[] = {
-        NATIVE_METHOD((void *) hook_io,  "nativeHook",                  "(I)V"),
-        NATIVE_METHOD((void *) redirect, "nativeRedirect",              "(Ljava/lang/String;Ljava/lang/String;)V"),
-        NATIVE_METHOD((void *) query,    "nativeGetRedirectedPath",     "(Ljava/lang/String;)Ljava/lang/String;"),
-        NATIVE_METHOD((void *) restore,  "nativeRestoreRedirectedPath", "(Ljava/lang/String;)Ljava/lang/String;"),
-
         NATIVE_METHOD((void *) hook_native, "nativeHookNative", "(Ljava/lang/Object;ZI)V"),
 };
 
