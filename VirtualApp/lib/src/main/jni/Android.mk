@@ -11,17 +11,7 @@ LOCAL_C_INCLUDES += $(LOCAL_PATH)/helper
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/MSHook
 
 LOCAL_SRC_FILES := core.cpp \
-				   hook/Hook.cpp \
-				   hook/HookNative.cpp \
-				   MSHook/hook.cpp \
-				   MSHook/x86_64.cpp \
-				   MSHook/ARM.cpp \
-				   MSHook/Debug.cpp \
-				   MSHook/Hooker.cpp \
-				   MSHook/PosixMemory.cpp \
-				   MSHook/Thumb.cpp \
-				   MSHook/util.cpp \
-				   MSHook/x86.cpp
+				   HookNative.cpp
 
 LOCAL_LDLIBS := -llog
 

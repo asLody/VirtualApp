@@ -12,7 +12,7 @@
 #include <fcntl.h>
 #include <sys/system_properties.h>
 
-#include "../helper/helper.h"
+#include "helper.h"
 
 
 void hookNative(jobject javaMethod, jboolean isArt, jint apiLevel);
