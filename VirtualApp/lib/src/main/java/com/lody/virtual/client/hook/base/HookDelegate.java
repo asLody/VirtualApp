@@ -3,7 +3,6 @@ package com.lody.virtual.client.hook.base;
 import android.text.TextUtils;
 
 import com.lody.virtual.client.hook.utils.HookUtils;
-import com.lody.virtual.client.interfaces.IHookObject;
 import com.lody.virtual.helper.utils.VLog;
 
 import java.lang.reflect.InvocationHandler;
@@ -15,161 +14,153 @@ import java.util.Map;
 
 /**
  * @author Lody
- *
+ *         <p>
+ *         HookHandler uses Java's {@link Proxy} to create a wrapper for existing services.
+ *         <p>
+ *         When any method is called on the wrapper, it checks if there is any {@link Hook} registered
+ *         and enabled for that method. If so, it calls the startUniformer instead of the wrapped implementation.
+ *         <p>
+ *         The whole thing is managed by a {@link PatchDelegate} subclass
  */
 @SuppressWarnings("unchecked")
-public abstract class HookDelegate<T> implements IHookObject {
+public class HookDelegate<T> {
 
-	private static final String TAG = HookDelegate.class.getSimpleName();
-	private T mBaseInterface;
-	private T mProxyInterface;
-	/**
-	 * 内部维护的Hook集合
-	 */
-	private Map<String, Hook> internalHookMapping = new HashMap<String, Hook>();
+    private static final String TAG = HookDelegate.class.getSimpleName();
 
-	@Override
-	public Map<String, Hook> getAllHooks() {
-		return internalHookMapping;
-	}
+    private Map<String, Hook> internalHookTable = new HashMap<String, Hook>();
+    private T mBaseInterface;
+    private T mProxyInterface;
 
 
-	public HookDelegate(Class<?>... proxyInterfaces) {
-		mBaseInterface = createInterface();
-		if (mBaseInterface != null) {
-			if (proxyInterfaces == null) {
-				proxyInterfaces = HookUtils.getAllInterface(mBaseInterface.getClass());
-			}
-			mProxyInterface = (T) Proxy.newProxyInstance(mBaseInterface.getClass().getClassLoader(), proxyInterfaces, new HookHandler());
-		} else {
-			VLog.d(TAG, "Unable to build HookDelegate: %s.", getClass().getName());
-		}
-	}
-
-	public HookDelegate() {
-		this((Class[]) null);
-	}
+    public Map<String, Hook> getAllHooks() {
+        return internalHookTable;
+    }
 
 
-	protected abstract T createInterface();
+    public HookDelegate(T baseInterface, Class<?>... proxyInterfaces) {
+        this.mBaseInterface = baseInterface;
+        if (baseInterface != null) {
+            if (proxyInterfaces == null) {
+                proxyInterfaces = HookUtils.getAllInterface(baseInterface.getClass());
+            }
+            mProxyInterface = (T) Proxy.newProxyInstance(baseInterface.getClass().getClassLoader(), proxyInterfaces, new HookHandler());
+        } else {
+            VLog.d(TAG, "Unable to build HookDelegate: %s.", getClass().getName());
+        }
+    }
 
-	@Override
-	public void copyHooks(IHookObject from) {
-		this.internalHookMapping.putAll(from.getAllHooks());
-	}
+    public HookDelegate(T baseInterface) {
+        this(baseInterface, (Class[]) null);
+    }
 
-	/**
-	 * 添加一个Hook
-	 * 
-	 * @param hook
-	 *            要添加的Hook
-	 */
-	@Override
-	public Hook addHook(Hook hook) {
-		if (hook != null && !TextUtils.isEmpty(hook.getName())) {
-			if (internalHookMapping.containsKey(hook.getName())) {
-				VLog.w(TAG, "Hook(%s) from class(%s) have been added, can't add again.", hook.getName(),
-						hook.getClass().getName());
-				return hook;
-			}
-			internalHookMapping.put(hook.getName(), hook);
-		}
-		return hook;
-	}
+    /**
+     * Copy all hooks from the input HookDelegate.
+     *
+     * @param from the HookDelegate we copy from.
+     */
+    public void copyHooks(HookDelegate from) {
+        this.internalHookTable.putAll(from.getAllHooks());
+    }
 
-	/**
-	 * 移除一个Hook
-	 * 
-	 * @param hookName
-	 *            要移除的Hook名
-	 * @return 移除的Hook
-	 */
-	@Override
-	public Hook removeHook(String hookName) {
-		return internalHookMapping.remove(hookName);
-	}
+    /**
+     * Add a Hook
+     *
+     * @param hook add a Hook
+     */
+    public Hook addHook(Hook hook) {
+        if (hook != null && !TextUtils.isEmpty(hook.getName())) {
+            if (internalHookTable.containsKey(hook.getName())) {
+                VLog.w(TAG, "The Hook(%s, %s) you added has been in existence.", hook.getName(),
+                        hook.getClass().getName());
+                return hook;
+            }
+            internalHookTable.put(hook.getName(), hook);
+        }
+        return hook;
+    }
 
-	/**
-	 * 移除一个Hook
-	 * 
-	 * @param hook
-	 *            要移除的Hook
-	 */
-	@Override
-	public void removeHook(Hook hook) {
-		if (hook != null) {
-			removeHook(hook.getName());
-		}
-	}
+    /**
+     * Remove a startUniformer
+     *
+     * @param hookName The name of target Hook
+     * @return The startUniformer you removed
+     */
+    public Hook removeHook(String hookName) {
+        return internalHookTable.remove(hookName);
+    }
 
-	/**
-	 * 移除全部Hook
-	 */
-	@Override
-	public void removeAllHook() {
-		internalHookMapping.clear();
-	}
+    /**
+     * Remove a startUniformer
+     *
+     * @param hook target Hook
+     */
+    public void removeHook(Hook hook) {
+        if (hook != null) {
+            removeHook(hook.getName());
+        }
+    }
 
-	/**
-	 * 取得指定名称的Hook
-	 *
-	 * @param name
-	 *            Hook名
-	 * @param <H>
-	 *            Hook类型
-	 * @return 指定名称的Hook
-	 */
-	@SuppressWarnings("unchecked")
-	@Override
-	public <H extends Hook> H getHook(String name) {
-		return (H) internalHookMapping.get(name);
-	}
+    /**
+     * 移除全部Hook
+     */
+    public void removeAllHook() {
+        internalHookTable.clear();
+    }
 
-	/**
-	 * @return 包装后的代理对象
-	 */
-	@Override
-	public T getProxyInterface() {
-		return mProxyInterface;
-	}
+    /**
+     * Get the startUniformer by its name.
+     *
+     * @param name name of the Hook
+     * @param <H>  Type of the Hook
+     * @return target startUniformer
+     */
+    @SuppressWarnings("unchecked")
+    public <H extends Hook> H getHook(String name) {
+        return (H) internalHookTable.get(name);
+    }
 
-	/**
-	 * @return 原对象
-	 */
-	@Override
-	public T getBaseInterface() {
-		return mBaseInterface;
-	}
+    /**
+     * @return Proxy interface
+     */
+    public T getProxyInterface() {
+        return mProxyInterface;
+    }
 
-	/**
-	 * @return Hook数量
-	 */
-	@Override
-	public int getHookCount() {
-		return internalHookMapping.size();
-	}
+    /**
+     * @return Origin Interface
+     */
+    public T getBaseInterface() {
+        return mBaseInterface;
+    }
 
-	private class HookHandler implements InvocationHandler {
-		@Override
-		public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-			Hook hook = getHook(method.getName());
-			try {
-				if (hook != null && hook.isEnable()) {
-					if (hook.beforeCall(mBaseInterface, method, args)) {
-						Object res = hook.call(mBaseInterface, method, args);
-						res = hook.afterCall(mBaseInterface, method, args, res);
-						return res;
-					}
-				}
-				return method.invoke(mBaseInterface, args);
-			} catch (InvocationTargetException e) {
-				Throwable cause = e.getTargetException();
-				if (cause != null) {
-					throw cause;
-				}
-				throw e;
-			}
-		}
-	}
+    /**
+     * @return count of the hooks
+     */
+    public int getHookCount() {
+        return internalHookTable.size();
+    }
+
+    private class HookHandler implements InvocationHandler {
+        @Override
+        public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+            Hook hook = getHook(method.getName());
+            try {
+                if (hook != null && hook.isEnable()) {
+                    if (hook.beforeCall(mBaseInterface, method, args)) {
+                        Object res = hook.call(mBaseInterface, method, args);
+                        res = hook.afterCall(mBaseInterface, method, args, res);
+                        return res;
+                    }
+                }
+                return method.invoke(mBaseInterface, args);
+            } catch (InvocationTargetException e) {
+                Throwable cause = e.getTargetException();
+                if (cause != null) {
+                    throw cause;
+                }
+                throw e;
+            }
+        }
+    }
 
 }

@@ -65,6 +65,7 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
         mCrashFab = (FloatingActionButton) findViewById(R.id.home_del);
     }
 
+<<<<<<< HEAD
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
