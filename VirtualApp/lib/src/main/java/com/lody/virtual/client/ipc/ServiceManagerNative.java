@@ -10,7 +10,7 @@ import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.helper.compat.BundleCompat;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.server.ServiceCache;
-import com.lody.virtual.service.interfaces.IServiceFetcher;
+import com.lody.virtual.server.interfaces.IServiceFetcher;
 
 /**
  * @author Lody
@@ -23,9 +23,8 @@ public class ServiceManagerNative {
 	public static final String APP = "app";
 	public static final String ACCOUNT = "account";
 	public static final String JOB = "job";
-	public static final String INTENT_FILTER = "intent_filter";
-	private static final String TAG = ServiceManagerNative.class.getSimpleName();
 	public static final String SERVICE_DEF_AUTH = "virtual.service.BinderProvider";
+	private static final String TAG = ServiceManagerNative.class.getSimpleName();
 	public static String SERVICE_CP_AUTH = "virtual.service.BinderProvider";
 
 	private static IServiceFetcher sFetcher;

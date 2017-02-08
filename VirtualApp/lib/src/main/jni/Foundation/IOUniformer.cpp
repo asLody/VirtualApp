@@ -1,13 +1,15 @@
 //
 // VirtualApp Native Project
 //
+#include <InlineHook/util.h>
 #include "IOUniformer.h"
 
 static std::map<std::string/*orig_path*/, std::string/*new_path*/> IORedirectMap;
 static std::map<std::string/*orig_path*/, std::string/*new_path*/> RootIORedirectMap;
 
 
-static inline void hook_template(const char *lib_so, const char *symbol, void *new_func, void **old_func) {
+static inline void
+hook_template(const char *lib_so, const char *symbol, void *new_func, void **old_func) {
     void *handle = dlopen(lib_so, RTLD_GLOBAL | RTLD_LAZY);
     if (handle == NULL) {
         LOGW("Error: unable to find the SO : %s.", lib_so);
@@ -23,12 +25,11 @@ static inline void hook_template(const char *lib_so, const char *symbol, void *n
 }
 
 
+void onSoLoaded(const char *name, void *handle);
 
 
-static inline bool startWith(const std::string &str, const std::string &prefix)
-{
+static inline bool startWith(const std::string &str, const std::string &prefix) {
     return str.compare(0, prefix.length(), prefix) == 0;
-    //return str.find(prefix) == 0;
 }
 
 
@@ -65,8 +66,8 @@ const char *match_redirected_path(const char *_path) {
     }
 
     for (iterator = IORedirectMap.begin(); iterator != IORedirectMap.end(); iterator++) {
-        const std::string& prefix = iterator->first;
-        const std::string& new_prefix = iterator->second;
+        const std::string &prefix = iterator->first;
+        const std::string &new_prefix = iterator->second;
         if (startWith(path, prefix)) {
             std::string new_path = new_prefix + path.substr(prefix.length(), path.length());
             return strdup(new_path.c_str());
@@ -82,38 +83,51 @@ void IOUniformer::redirect(const char *orig_path, const char *new_path) {
 }
 
 const char *IOUniformer::query(const char *orig_path) {
-    std::map<std::string, std::string>::iterator iterator = IORedirectMap.find(std::string(orig_path));
-    if (iterator == IORedirectMap.end()) {
-        return orig_path;
+    return match_redirected_path(orig_path);
+}
+
+
+const char *IOUniformer::restore(const char *_path) {
+    if (_path == NULL) {
+        return NULL;
     }
-    return iterator->second.c_str();
+    std::string path(_path);
+    if (path.length() <= 1) {
+        return _path;
+    }
+    std::map<std::string, std::string>::iterator iterator;
+    iterator = RootIORedirectMap.find(path);
+    if (iterator != RootIORedirectMap.end()) {
+        return strdup(iterator->second.c_str());
+    }
+    for (iterator = RootIORedirectMap.begin(); iterator != RootIORedirectMap.end(); iterator++) {
+        const std::string &origin = iterator->first;
+        const std::string &redirected = iterator->second;
+        if (path == redirected) {
+            return strdup(origin.c_str());
+        }
+    }
+
+    for (iterator = IORedirectMap.begin(); iterator != IORedirectMap.end(); iterator++) {
+        const std::string &prefix = iterator->first;
+        const std::string &new_prefix = iterator->second;
+        if (startWith(path, new_prefix)) {
+            std::string origin_path = prefix + path.substr(new_prefix.length(), path.length());
+            return strdup(origin_path.c_str());
+        }
+    }
+    return _path;
 }
-
-
-const char *IOUniformer::restore(const char *path) {
-    return path;
-}
-
 
 
 __BEGIN_DECLS
 
-// dlopen //TODO
-// dlsym //TODO
-// dlclose //TODO
-// execve //TODO
-// fork //TODO
-// vfork //TODO
-/**
-// int execve(const char*, char* const*, char* const*);
-HOOK_DEF(int, execve, const char *filename, char *const argv[], char *const envp[]) {
-    const char *redirect_path = match_redirected_path(filename);
-    int ret = syscall(__NR_execve, redirect_path, argv, envp);
-    FREE(redirect_path);
-    return ret;
-}
- */
 
+
+//size_t	 fwrite(const void *, size_t, size_t, FILE *);
+HOOK_DEF(size_t, fwrite, const void *data, size_t start, size_t len, FILE *file) {
+    return orig_fwrite(data, start, len, file);
+}
 
 
 // int faccessat(int dirfd, const char *pathname, int mode, int flags);
@@ -174,7 +188,8 @@ HOOK_DEF(int, mknod, const char *pathname, mode_t mode, dev_t dev) {
 
 
 // int utimensat(int dirfd, const char *pathname, const struct timespec times[2], int flags);
-HOOK_DEF(int, utimensat, int dirfd, const char *pathname, const struct timespec times[2], int flags) {
+HOOK_DEF(int, utimensat, int dirfd, const char *pathname, const struct timespec times[2],
+         int flags) {
     const char *redirect_path = match_redirected_path(pathname);
     int ret = syscall(__NR_utimensat, dirfd, redirect_path, times, flags);
     FREE(redirect_path, pathname);
@@ -256,7 +271,8 @@ HOOK_DEF(int, symlink, const char *oldpath, const char *newpath) {
 
 
 // int linkat(int olddirfd, const char *oldpath, int newdirfd, const char *newpath, int flags);
-HOOK_DEF(int, linkat, int olddirfd, const char *oldpath, int newdirfd, const char *newpath, int flags) {
+HOOK_DEF(int, linkat, int olddirfd, const char *oldpath, int newdirfd, const char *newpath,
+         int flags) {
     const char *redirect_path_old = match_redirected_path(oldpath);
     const char *redirect_path_new = match_redirected_path(newpath);
     int ret = syscall(__NR_linkat, olddirfd, redirect_path_old, newdirfd, redirect_path_new, flags);
@@ -303,7 +319,7 @@ HOOK_DEF(int, chmod, const char *pathname, mode_t mode) {
 
 
 // int chown(const char *path, uid_t owner, gid_t group);
-HOOK_DEF(int, chown ,const char *pathname, uid_t owner, gid_t group) {
+HOOK_DEF(int, chown, const char *pathname, uid_t owner, gid_t group) {
     const char *redirect_path = match_redirected_path(pathname);
     int ret = syscall(__NR_chown, redirect_path, owner, group);
     FREE(redirect_path, pathname);
@@ -313,7 +329,7 @@ HOOK_DEF(int, chown ,const char *pathname, uid_t owner, gid_t group) {
 
 // int lstat(const char *path, struct stat *buf);
 HOOK_DEF(int, lstat, const char *pathname, struct stat *buf) {
-    char *redirect_path = const_cast<char*>(match_redirected_path(pathname));
+    char *redirect_path = const_cast<char *>(match_redirected_path(pathname));
     int ret = syscall(__NR_lstat64, redirect_path, buf);
     FREE(redirect_path, pathname);
     return ret;
@@ -371,7 +387,7 @@ HOOK_DEF(ssize_t, readlink, const char *pathname, char *buf, size_t bufsiz) {
 
 
 // int __statfs64(const char *path, size_t size, struct statfs *stat);
-HOOK_DEF(int, __statfs64, const char*  pathname, size_t size, struct statfs *stat) {
+HOOK_DEF(int, __statfs64, const char *pathname, size_t size, struct statfs *stat) {
     const char *redirect_path = match_redirected_path(pathname);
     int ret = syscall(__NR_statfs64, redirect_path, size, stat);
     FREE(redirect_path, pathname);
@@ -440,50 +456,114 @@ HOOK_DEF(int, lchown, const char *pathname, uid_t owner, gid_t group) {
 }
 
 // int (*origin_execve)(const char *pathname, char *const argv[], char *const envp[]);
-HOOK_DEF(int ,execve, const char *pathname, char *const argv[], char *const envp[]) {
+HOOK_DEF(int, execve, const char *pathname, char *const argv[], char *const envp[]) {
+    LOGD("execve: %s", pathname);
+    for (int i = 0; argv[i] != NULL; ++i) {
+        LOGD("argv[%i] : %s", i, argv[i]);
+    }
+    for (int i = 0; envp[i] != NULL; ++i) {
+        LOGD("envp[%i] : %s", i, envp[i]);
+    }
     const char *redirect_path = match_redirected_path(pathname);
-    int ret = orig_execve(redirect_path, argv, envp);
+    int ret = syscall(__NR_execve, redirect_path, argv, envp);
     FREE(redirect_path, pathname);
     return ret;
 }
 
+HOOK_DEF(void*, dlopen, const char *filename, int flag) {
+    const char *redirect_path = match_redirected_path(filename);
+    void *ret = orig_dlopen(redirect_path, flag);
+    onSoLoaded(filename, ret);
+    LOGD("dlopen : %s, return : %p.", redirect_path, ret);
+    FREE(redirect_path, filename);
+    return ret;
+}
+
+HOOK_DEF(void*, do_dlopen_V19, const char *filename, int flag, const void *extinfo) {
+    const char *redirect_path = match_redirected_path(filename);
+    void *ret = orig_do_dlopen_V19(redirect_path, flag, extinfo);
+    onSoLoaded(filename, ret);
+    LOGD("do_dlopen : %s, return : %p.", redirect_path, ret);
+    FREE(redirect_path, filename);
+    return ret;
+}
+
+HOOK_DEF(void*, do_dlopen_V24, const char *name, int flags, const void *extinfo,
+         void *caller_addr) {
+    const char *redirect_path = match_redirected_path(name);
+    void *ret = orig_do_dlopen_V24(redirect_path, flags, extinfo, caller_addr);
+    onSoLoaded(name, ret);
+    LOGD("do_dlopen : %s, return : %p.", redirect_path, ret);
+    FREE(redirect_path, name);
+    return ret;
+}
+
 // int kill(pid_t pid, int sig);
-HOOK_DEF(int ,kill, pid_t pid, int sig) {
+HOOK_DEF(int, kill, pid_t pid, int sig) {
     extern JavaVM *g_vm;
     extern jclass g_jclass;
     JNIEnv *env = NULL;
     g_vm->GetEnv((void **) &env, JNI_VERSION_1_4);
     g_vm->AttachCurrentThread(&env, NULL);
-    jmethodID  method = env->GetStaticMethodID(g_jclass, "onKillProcess", "(II)V");
+    jmethodID method = env->GetStaticMethodID(g_jclass, "onKillProcess", "(II)V");
     env->CallStaticVoidMethod(g_jclass, method, pid, sig);
     int ret = syscall(__NR_kill, pid, sig);
     return ret;
 }
 
 __END_DECLS
-// end IO hooks
+// end IO DEF
 
+
+void onSoLoaded(const char *name, void *handle) {
+}
+
+
+void hook_dlopen(int api_level) {
+    void *symbol = NULL;
+    if (api_level > 23) {
+        if (findSymbol("__dl__Z9do_dlopenPKciPK17android_dlextinfoPv", "linker",
+                       (unsigned long *) &symbol) == 0) {
+            inlineHookDirect((unsigned int) symbol, (void *) new_do_dlopen_V24,
+                             (void **) &orig_do_dlopen_V24);
+        }
+    } else if (api_level >= 19) {
+        if (findSymbol("__dl__Z9do_dlopenPKciPK17android_dlextinfo", "linker",
+                       (unsigned long *) &symbol) == 0) {
+            inlineHookDirect((unsigned int) symbol, (void *) new_do_dlopen_V19,
+                             (void **) &orig_do_dlopen_V19);
+        }
+    } else {
+        if (findSymbol("__dl_dlopen", "linker",
+                       (unsigned long *) &symbol) == 0) {
+            inlineHookDirect((unsigned int) symbol, (void *) new_dlopen, (void **) &orig_dlopen);
+        }
+    }
+
+}
+
+
+extern "C" size_t strlen(const char *str) {
+    if (str == NULL) return 0;
+    size_t len = 0;
+    for (; *str++ != '\0';) {
+        len++;
+    }
+    return len;
+}
 
 
 void IOUniformer::startUniformer(int api_level) {
 
-    //通用型
     HOOK_IO(__getcwd);
     HOOK_IO(chdir);
     HOOK_IO(truncate);
     HOOK_IO(__statfs64);
-
     HOOK_IO(lchown);
-
     HOOK_IO(chroot);
     HOOK_IO(truncate64);
     HOOK_IO(kill);
-
-//    HOOK_IO(execve);
-//    HOOK_IO(strncmp);
-//    HOOK_IO(strstr);
-//    HOOK_IO(fork);
-//    HOOK_IO(vfork);
+    HOOK_IO(execve);
 
     if (api_level < ANDROID_L) {
         HOOK_IO(link);
@@ -501,22 +581,29 @@ void IOUniformer::startUniformer(int api_level) {
         HOOK_IO(utimes);
         HOOK_IO(__open);
         HOOK_IO(mknod);
-    }
+    } else {
+        HOOK_IO(__open);
+        HOOK_IO(stat);
+        HOOK_IO(lstat);
+        HOOK_IO(chown);
+        HOOK_IO(chmod);
+        HOOK_IO(access);
+        HOOK_IO(rmdir);
+        HOOK_IO(rename);
 
-    if (api_level >= ANDROID_L) {
+        HOOK_IO(__openat);
         HOOK_IO(linkat);
+        HOOK_IO(unlinkat);
         HOOK_IO(symlinkat);
         HOOK_IO(readlinkat);
-        HOOK_IO(unlinkat);
         HOOK_IO(renameat);
         HOOK_IO(mkdirat);
-        HOOK_IO(fchownat);
-        HOOK_IO(utimensat);
-        HOOK_IO(__openat);
         HOOK_IO(mknodat);
+        HOOK_IO(utimensat);
+        HOOK_IO(fchownat);
         HOOK_IO(fstatat);
         HOOK_IO(fchmodat);
         HOOK_IO(faccessat);
     }
-
+    hook_dlopen(api_level);
 }

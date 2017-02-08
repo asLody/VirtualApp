@@ -29,6 +29,30 @@ public class IOHook {
 	private static final String TAG = IOHook.class.getSimpleName();
 
 	private static Map<String, AppSetting> sDexOverrideMap;
+	private static Method openDexFileNative;
+
+	static {
+		try {
+			System.loadLibrary("iohook");
+		} catch (Throwable e) {
+			VLog.e(TAG, VLog.getStackTraceString(e));
+		}
+	}
+
+	static {
+		String methodName =
+				Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT ? "openDexFileNative" : "openDexFile";
+		for (Method method : DexFile.class.getDeclaredMethods()) {
+			if (method.getName().equals(methodName)) {
+				openDexFileNative = method;
+				break;
+			}
+		}
+		if (openDexFileNative == null) {
+			throw new RuntimeException("Unable to find method : " + methodName);
+		}
+		openDexFileNative.setAccessible(true);
+	}
 
 	public static void startDexOverride() {
 		List<AppSetting> appSettings = VirtualCore.get().getAllApps();
@@ -42,21 +66,13 @@ public class IOHook {
 		}
 	}
 
-	static {
-		try {
-			System.loadLibrary("iohook");
-		} catch (Throwable e) {
-			VLog.e(TAG, VLog.getStackTraceString(e));
-		}
-	}
-
 	public static String getRedirectedPath(String origPath) {
 		try {
 			return nativeGetRedirectedPath(origPath);
 		} catch (Throwable e) {
 			VLog.e(TAG, VLog.getStackTraceString(e));
 		}
-		return null;
+		return origPath;
 	}
 
 	public static String restoreRedirectedPath(String origPath) {
@@ -65,7 +81,7 @@ public class IOHook {
 		} catch (Throwable e) {
 			VLog.e(TAG, VLog.getStackTraceString(e));
 		}
-		return null;
+		return origPath;
 	}
 
 	public static void redirect(String origPath, String newPath) {
@@ -82,22 +98,6 @@ public class IOHook {
 		} catch (Throwable e) {
 			VLog.e(TAG, VLog.getStackTraceString(e));
 		}
-	}
-
-	private static Method openDexFileNative;
-	static {
-		String methodName =
-				Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT ? "openDexFileNative" : "openDexFile";
-		for (Method method : DexFile.class.getDeclaredMethods()) {
-			if (method.getName().equals(methodName)) {
-				openDexFileNative = method;
-				break;
-			}
-		}
-		if (openDexFileNative == null) {
-			throw new RuntimeException("Unable to find method : " + methodName);
-		}
-		openDexFileNative.setAccessible(true);
 	}
 
 	public static void hookNative() {
@@ -118,7 +118,7 @@ public class IOHook {
 	public static int onGetCallingUid(int originUid) {
 		int callingPid = Binder.getCallingPid();
 		if (callingPid == Process.myPid()) {
-			return VClientImpl.getClient().getBaseVUid();
+			return VClientImpl.get().getBaseVUid();
 		}
 		if (callingPid == VirtualCore.get().getSystemPid()) {
 			return Process.SYSTEM_UID;
@@ -127,8 +127,8 @@ public class IOHook {
 		if (vuid != -1) {
             return VUserHandle.getAppId(vuid);
         }
-		VLog.d(TAG, "Ops, who are you ? " + callingPid);
-		return VClientImpl.getClient().getBaseVUid();
+		VLog.d(TAG, "Unknown uid: " + callingPid);
+		return VClientImpl.get().getBaseVUid();
 	}
 
 	public static void onOpenDexFileNative(String[] params) {
@@ -163,6 +163,6 @@ public class IOHook {
 	private static native void nativeHook(int apiLevel);
 
 	public static int onGetUid(int uid) {
-		return VClientImpl.getClient().getBaseVUid();
+		return VClientImpl.get().getBaseVUid();
 	}
 }

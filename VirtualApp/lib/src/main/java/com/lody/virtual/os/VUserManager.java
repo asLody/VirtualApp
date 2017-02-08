@@ -5,7 +5,7 @@ import android.os.RemoteException;
 import android.util.Log;
 
 import com.lody.virtual.client.ipc.ServiceManagerNative;
-import com.lody.virtual.service.IUserManager;
+import com.lody.virtual.server.IUserManager;
 
 import java.util.List;
 
@@ -365,7 +365,7 @@ public class VUserManager {
      * @return a value greater than or equal to 1
      */
     public static int getMaxSupportedUsers() {
-        return 9;
+        return Integer.MAX_VALUE;
     }
 
     /**
