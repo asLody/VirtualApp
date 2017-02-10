@@ -54,10 +54,7 @@ public class VirtualRuntime {
 
 	public static <T> T crash(RemoteException e) throws RuntimeException {
 		e.printStackTrace();
-		if (VirtualCore.get().isVAppProcess()) {
-			exit();
-		}
-		throw new RuntimeException(e);
+		throw new DeadServerException(e);
 	}
 
 	public static void exit() {
