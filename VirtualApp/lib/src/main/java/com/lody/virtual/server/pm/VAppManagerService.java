@@ -17,6 +17,7 @@ import com.lody.virtual.helper.compat.PackageParserCompat;
 import com.lody.virtual.helper.proto.AppSetting;
 import com.lody.virtual.helper.proto.InstallResult;
 import com.lody.virtual.helper.utils.FileUtils;
+import com.lody.virtual.helper.utils.ResourcesUtils;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VEnvironment;
 import com.lody.virtual.os.VUserHandle;
@@ -101,6 +102,7 @@ public class VAppManagerService extends IAppManager.Stub {
         return install(apkPath, flags, false);
     }
 
+
     private synchronized InstallResult install(String apkPath, int flags, boolean onlyScan) {
         if (apkPath == null) {
             return InstallResult.makeFailure("apk path = NULL");
@@ -172,6 +174,9 @@ public class VAppManagerService extends IAppManager.Stub {
         if (existOne != null) {
             PackageCache.remove(pkg.packageName);
         }
+        if (!dependSystem) {
+            ResourcesUtils.chmod(appDir);
+        }
         AppSetting appSetting = new AppSetting();
         appSetting.parser = parser;
         appSetting.dependSystem = dependSystem;
@@ -203,6 +208,7 @@ public class VAppManagerService extends IAppManager.Stub {
         }
         return false;
     }
+
 
     public boolean uninstallApp(String pkg) {
         synchronized (PackageCache.sPackageCaches) {
