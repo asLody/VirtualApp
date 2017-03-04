@@ -8,7 +8,7 @@ import com.github.moduth.blockcanary.BlockCanary;
 import com.lody.virtual.client.core.InstallStrategy;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.stub.StubManifest;
-import com.lody.virtual.helper.proto.InstallResult;
+import com.lody.virtual.remote.InstallResult;
 
 import java.io.IOException;
 
@@ -74,8 +74,11 @@ public class VApp extends Application {
             Once.initialise(this);
         } else if (VirtualCore.get().isVAppProcess()) {
             BlockCanary.install(this, new AppBlockCanaryContext());
+            //listener components
             VirtualCore.get().setComponentDelegate(new MyComponentDelegate());
+            //fake phone imei,macAddress,BluetoothAddress
             VirtualCore.get().setPhoneInfoDelegate(new MyPhoneInfoDelegate());
+            //fake task description's icon and title
             VirtualCore.get().setTaskDescriptionDelegate(new MyTaskDescriptionDelegate());
         }
     }

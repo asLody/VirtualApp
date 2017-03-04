@@ -1,7 +1,7 @@
 package com.lody.virtual.helper.utils;
 
-import android.annotation.TargetApi;
 import android.os.Build;
+import android.system.Os;
 import android.text.TextUtils;
 
 import java.io.BufferedOutputStream;
@@ -19,7 +19,6 @@ import java.nio.ByteOrder;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
-import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -27,6 +26,70 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author Lody
  */
 public class FileUtils {
+    public interface FileMode {
+        int MODE_ISUID = 04000;
+        int MODE_ISGID = 02000;
+        int MODE_ISVTX = 01000;
+        int MODE_IRUSR = 00400;
+        int MODE_IWUSR = 00200;
+        int MODE_IXUSR = 00100;
+        int MODE_IRGRP = 00040;
+        int MODE_IWGRP = 00020;
+        int MODE_IXGRP = 00010;
+        int MODE_IROTH = 00004;
+        int MODE_IWOTH = 00002;
+        int MODE_IXOTH = 00001;
+
+        int MODE_755 = MODE_IRUSR | MODE_IWUSR | MODE_IXUSR
+                | MODE_IRGRP | MODE_IXGRP
+                | MODE_IROTH | MODE_IXOTH;
+    }
+
+    /**
+     * @param path
+     * @param mode {@link FileMode}
+     * @throws Exception
+     */
+    public static void chmod(String path, int mode) throws Exception {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            try {
+                Os.chmod(path, mode);
+                return;
+            } catch (Exception e) {
+                VLog.w("chmod", path + " " + String.format("%o", mode), e);
+            }
+        }
+
+        File file = new File(path);
+        String cmd = "chmod ";
+        if (file.isDirectory()) {
+            cmd += " -R ";
+        }
+        String cmode = String.format("%o", mode);
+        Runtime.getRuntime().exec(cmd + cmode + " " + path).waitFor();
+    }
+
+    public static void createSymlink(String oldPath, String newPath) throws Exception {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            Os.symlink(oldPath, newPath);
+        } else {
+            Runtime.getRuntime().exec("ln -s " + oldPath + " " + newPath).waitFor();
+        }
+    }
+
+    public static boolean isSymlink(File file) throws IOException {
+        if (file == null)
+            throw new NullPointerException("File must not be null");
+        File canon;
+        if (file.getParent() == null) {
+            canon = file;
+        } else {
+            File canonDir = file.getParentFile().getCanonicalFile();
+            canon = new File(canonDir, file.getName());
+        }
+        return !canon.getCanonicalFile().equals(canon.getAbsoluteFile());
+    }
+
     public static byte[] toByteArray(InputStream inStream) throws IOException {
         ByteArrayOutputStream swapStream = new ByteArrayOutputStream();
         byte[] buff = new byte[100];
@@ -177,6 +240,7 @@ public class FileUtils {
         }
         return res.toString();
     }
+
     /**
      * Lock the specified fle
      */

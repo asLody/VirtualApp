@@ -10,14 +10,15 @@ import android.os.Bundle;
 import android.text.TextUtils;
 import android.widget.RemoteViews;
 
-import com.lody.virtual.client.core.VirtualCore;
-import com.lody.virtual.helper.proto.AppSetting;
 import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.VLog;
-import com.lody.virtual.os.VEnvironment;
-import com.lody.virtual.server.pm.VAppManagerService;
 
-class NotificationCompatCompatV21 extends NotificationCompatCompatV14 {
+import static com.lody.virtual.os.VEnvironment.getPackageResourcePath;
+
+/**
+ * @author 247321543
+ */
+/* package */ class NotificationCompatCompatV21 extends NotificationCompatCompatV14 {
     static final String TAG = NotificationCompatCompatV21.class.getSimpleName();
 
     NotificationCompatCompatV21() {
@@ -29,14 +30,14 @@ class NotificationCompatCompatV21 extends NotificationCompatCompatV14 {
 //        VLog.d(TAG, "dealNotification:" + packageName + ",notification=" + notification);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             Context pluginContext = getAppContext(packageName);
-            return  resolveRemoteViews(pluginContext, packageName, notification)
+            return resolveRemoteViews(pluginContext, packageName, notification)
                     || resolveRemoteViews(pluginContext, packageName, notification.publicVersion);
         }
         return super.dealNotification(id, notification, packageName);
     }
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    private boolean resolveRemoteViews(Context pluginContext,String packageName, Notification notification) {
+    private boolean resolveRemoteViews(Context pluginContext, String packageName, Notification notification) {
         if (notification == null) {
             return false;
         }
@@ -47,23 +48,22 @@ class NotificationCompatCompatV21 extends NotificationCompatCompatV14 {
             publicApk = packageInfo.applicationInfo.publicSourceDir;
         }
         if (TextUtils.isEmpty(publicApk)) {
-            AppSetting setting = VirtualCore.get().findApp(packageName);
-            publicApk = setting.apkPath;
+            publicApk = getPackageResourcePath(packageName).getAbsolutePath();
         }
 
         //remoteviews
         getNotificationFixer().fixNotificationRemoteViews(pluginContext, notification);
         //图标修复
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            getNotificationFixer().fixIcon(notification.getSmallIcon(), pluginContext, packageInfo!=null);
-            getNotificationFixer().fixIcon(notification.getLargeIcon(), pluginContext, packageInfo!=null);
-        }else{
+            getNotificationFixer().fixIcon(notification.getSmallIcon(), pluginContext, packageInfo != null);
+            getNotificationFixer().fixIcon(notification.getLargeIcon(), pluginContext, packageInfo != null);
+        } else {
             getNotificationFixer().fixIconImage(pluginContext.getResources(), notification.contentView, false, notification);
         }
         notification.icon = host.icon;
 
         ApplicationInfo proxyApplicationInfo = new ApplicationInfo(host);
-        //要确保publicSourceDir这个路径可以被SystemUI应用读取
+
         proxyApplicationInfo.packageName = packageName;
         proxyApplicationInfo.publicSourceDir = publicApk;
         VLog.d(TAG, "proxyApplicationInfo=" + proxyApplicationInfo + ",apk=" + publicApk);

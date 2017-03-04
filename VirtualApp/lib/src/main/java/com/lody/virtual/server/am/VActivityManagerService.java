@@ -35,11 +35,11 @@ import com.lody.virtual.client.stub.StubManifest;
 import com.lody.virtual.helper.compat.ActivityManagerCompat;
 import com.lody.virtual.helper.compat.BundleCompat;
 import com.lody.virtual.helper.compat.IApplicationThreadCompat;
-import com.lody.virtual.helper.proto.AppSetting;
-import com.lody.virtual.helper.proto.AppTaskInfo;
-import com.lody.virtual.helper.proto.PendingIntentData;
-import com.lody.virtual.helper.proto.PendingResultData;
-import com.lody.virtual.helper.proto.VParceledListSlice;
+import com.lody.virtual.remote.AppSetting;
+import com.lody.virtual.remote.AppTaskInfo;
+import com.lody.virtual.remote.PendingIntentData;
+import com.lody.virtual.remote.PendingResultData;
+import com.lody.virtual.remote.VParceledListSlice;
 import com.lody.virtual.helper.utils.ComponentUtils;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.helper.utils.collection.ArrayMap;
@@ -68,7 +68,7 @@ import static com.lody.virtual.os.VUserHandle.getUserId;
  */
 public class VActivityManagerService extends IActivityManager.Stub {
 
-    private static final boolean BROADCAST_NOT_STARTED_PKG = false;
+    private static final boolean BROADCAST_NOT_STARTED_PKG = true;
 
     private static final AtomicReference<VActivityManagerService> sService = new AtomicReference<>();
     private static final String TAG = VActivityManagerService.class.getSimpleName();
@@ -998,7 +998,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
         ComponentName componentName = ComponentUtils.toComponentName(info);
         BroadcastSystem.get().broadcastSent(vuid, info, result);
         try {
-            client.scheduleReceiver(componentName, intent, result);
+            client.scheduleReceiver(info.processName, componentName, intent, result);
         } catch (Throwable e) {
             if (result != null) {
                 result.finish();
