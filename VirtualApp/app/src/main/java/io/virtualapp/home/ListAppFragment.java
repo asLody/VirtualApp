@@ -1,31 +1,42 @@
 package io.virtualapp.home;
 
+import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.OrientationHelper;
+import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ProgressBar;
+import android.widget.Toast;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import io.virtualapp.R;
+import io.virtualapp.VCommends;
 import io.virtualapp.abs.ui.VFragment;
-import io.virtualapp.home.adapters.AppListAdapter;
-import io.virtualapp.home.models.AppData;
-import io.virtualapp.home.models.PackageAppData;
+import io.virtualapp.abs.ui.VUiKit;
+import io.virtualapp.home.adapters.CloneAppListAdapter;
+import io.virtualapp.home.adapters.decorations.ItemOffsetDecoration;
+import io.virtualapp.home.models.AppInfo;
+import io.virtualapp.home.models.AppInfoLite;
+import io.virtualapp.widgets.DragSelectRecyclerView;
 
 /**
- * Created by tangzhibin on 16/7/16.
+ * @author Lody
  */
 public class ListAppFragment extends VFragment<ListAppContract.ListAppPresenter> implements ListAppContract.ListAppView {
     private static final String KEY_SELECT_FROM = "key_select_from";
-    private RecyclerView mRecyclerView;
+    private DragSelectRecyclerView mRecyclerView;
     private ProgressBar mProgressBar;
-    private AppListAdapter mAdapter;
+    private Button mInstallButton;
+    private CloneAppListAdapter mAdapter;
 
     public static ListAppFragment newInstance(File selectFrom) {
         Bundle args = new Bundle();
@@ -54,19 +65,55 @@ public class ListAppFragment extends VFragment<ListAppContract.ListAppPresenter>
     }
 
     @Override
-    public void onViewCreated(View view, Bundle savedInstanceState) {
-        mRecyclerView = (RecyclerView) view.findViewById(R.id.app_list);
-        mProgressBar = (ProgressBar) view.findViewById(R.id.app_progress_bar);
-        mAdapter = new AppListAdapter(getActivity());
-        mRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        mRecyclerView.setAdapter(mAdapter);
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        mAdapter.saveInstanceState(outState);
+    }
 
-        new ListAppPresenterImpl(getActivity(), this, getSelectFrom());
-        mPresenter.start();
-        mAdapter.setListener((pos) -> {
-            PackageAppData model = (PackageAppData) mAdapter.getList().get(pos);
-            mPresenter.selectApp(model);
+    @Override
+    public void onViewCreated(View view, Bundle savedInstanceState) {
+        mRecyclerView = (DragSelectRecyclerView) view.findViewById(R.id.select_app_recycler_view);
+        mProgressBar = (ProgressBar) view.findViewById(R.id.select_app_progress_bar);
+        mInstallButton = (Button) view.findViewById(R.id.select_app_install_btn);
+        mRecyclerView.setLayoutManager(new StaggeredGridLayoutManager(3, OrientationHelper.VERTICAL));
+        mRecyclerView.addItemDecoration(new ItemOffsetDecoration(VUiKit.dpToPx(getContext(), 2)));
+        mAdapter = new CloneAppListAdapter(getActivity());
+        mRecyclerView.setAdapter(mAdapter);
+        mAdapter.setOnItemClickListener(new CloneAppListAdapter.ItemEventListener() {
+            @Override
+            public void onItemClick(AppInfo info, int position) {
+                int count = mAdapter.getSelectedCount();
+                if (!mAdapter.isIndexSelected(position)) {
+                    if (count >= 9) {
+                        Toast.makeText(getContext(), "No more then 9 apps can be chosen at a time!", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                }
+                mAdapter.toggleSelected(position);
+            }
+
+            @Override
+            public boolean isSelectable(int position) {
+                return mAdapter.isIndexSelected(position) || mAdapter.getSelectedCount() < 9;
+            }
         });
+        mAdapter.setSelectionListener(count -> {
+            mInstallButton.setEnabled(count > 0);
+            mInstallButton.setText(String.format(Locale.ENGLISH, "Install to SandBox (%d)", count));
+        });
+        mInstallButton.setOnClickListener(v -> {
+            Integer[] selectedIndices = mAdapter.getSelectedIndices();
+            ArrayList<AppInfoLite> dataList = new ArrayList<AppInfoLite>(selectedIndices.length);
+            for (int index : selectedIndices) {
+                AppInfo info = mAdapter.getItem(index);
+                dataList.add(new AppInfoLite(info.packageName, info.path, info.fastOpen));
+            }
+            Intent data = new Intent();
+            data.putParcelableArrayListExtra(VCommends.EXTRA_APP_INFO_LIST, dataList);
+            getActivity().setResult(Activity.RESULT_OK, data);
+            getActivity().finish();
+        });
+        new ListAppPresenterImpl(getActivity(), this, getSelectFrom()).start();
     }
 
     @Override
@@ -76,8 +123,10 @@ public class ListAppFragment extends VFragment<ListAppContract.ListAppPresenter>
     }
 
     @Override
-    public void loadFinish(List<AppData> models) {
-        mAdapter.setList(models);
+    public void loadFinish(List<AppInfo> infoList) {
+        mAdapter.setList(infoList);
+        mRecyclerView.setDragSelectActive(true, 0);
+        mAdapter.setSelected(0, false);
         mProgressBar.setVisibility(View.GONE);
         mRecyclerView.setVisibility(View.VISIBLE);
     }

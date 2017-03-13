@@ -1,21 +1,12 @@
 package io.virtualapp.home.models;
 
 import android.graphics.drawable.Drawable;
-import android.os.Parcelable;
 
 /**
  * @author Lody
  */
 
-public interface AppData extends Parcelable {
-
-    int SHIMMER_NOT_SHOW = 2;
-
-    void mark(int tag);
-
-    void unMark(int tag);
-
-    boolean isMarked(int tag);
+public interface AppData {
 
     boolean isLoading();
 

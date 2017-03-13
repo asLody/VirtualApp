@@ -10,12 +10,13 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.Nullable;
-import android.support.v4.view.ViewCompat;
 import android.support.v7.app.AlertDialog;
-import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.OrientationHelper;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.support.v7.widget.helper.ItemTouchHelper;
 import android.view.View;
+import android.view.ViewGroup;
 
 import com.melnykov.fab.FloatingActionButton;
 
@@ -23,12 +24,16 @@ import java.util.List;
 
 import io.virtualapp.R;
 import io.virtualapp.VCommends;
+import io.virtualapp.abs.nestedadapter.SmartRecyclerAdapter;
 import io.virtualapp.abs.ui.VActivity;
+import io.virtualapp.abs.ui.VUiKit;
 import io.virtualapp.home.adapters.LaunchpadAdapter;
 import io.virtualapp.home.adapters.decorations.ItemOffsetDecoration;
 import io.virtualapp.home.models.AppData;
+import io.virtualapp.home.models.AppInfoLite;
 import io.virtualapp.home.models.EmptyAppData;
 import io.virtualapp.home.models.PackageAppData;
+import io.virtualapp.widgets.CircularAnim;
 import io.virtualapp.widgets.TwoGearsView;
 
 import static android.support.v7.widget.helper.ItemTouchHelper.ACTION_STATE_DRAG;
@@ -66,6 +71,7 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
+        overridePendingTransition(0, 0);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
         mUiHandler = new Handler(Looper.getMainLooper());
@@ -86,41 +92,43 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
 
     private void initLaunchpad() {
         mLauncherView.setHasFixedSize(true);
-        GridLayoutManager layoutManager = new GridLayoutManager(this, 3);
+        StaggeredGridLayoutManager layoutManager = new StaggeredGridLayoutManager(3, OrientationHelper.VERTICAL);
         mLauncherView.setLayoutManager(layoutManager);
         mLaunchpadAdapter = new LaunchpadAdapter(this);
-        mLauncherView.setAdapter(mLaunchpadAdapter);
+        SmartRecyclerAdapter wrap = new SmartRecyclerAdapter(mLaunchpadAdapter);
+        View footer = new View(this);
+        footer.setLayoutParams(new StaggeredGridLayoutManager.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, VUiKit.dpToPx(this, 60)));
+        wrap.setFooterView(footer);
+        mLauncherView.setAdapter(wrap);
         mLauncherView.addItemDecoration(new ItemOffsetDecoration(this, R.dimen.desktop_divider));
         ItemTouchHelper touchHelper = new ItemTouchHelper(new LauncherTouchCallback());
         touchHelper.attachToRecyclerView(mLauncherView);
-        mLaunchpadAdapter.setAppClickListener((pos, model) -> {
-            if (model instanceof PackageAppData) {
-                PackageAppData data = (PackageAppData) model;
-                if (!data.isLoading()) {
-                    data.firstOpen = false;
-                    mLaunchpadAdapter.notifyItemChanged(pos);
-                    mPresenter.launchApp(data, 0);
-                }
+        mLaunchpadAdapter.setAppClickListener((pos, data) -> {
+            if (!data.isLoading()) {
+                mLaunchpadAdapter.notifyItemChanged(pos);
+                mPresenter.launchApp(data);
             }
         });
     }
 
     private void initFab() {
-        mFloatingButton.setOnClickListener(v -> mPresenter.addNewApp());
+        mFloatingButton.setOnClickListener(v -> {
+            CircularAnim.fullActivity(this, mFloatingButton)
+                    .colorOrImageRes(R.color.colorPrimaryRavel)
+                    .go(() -> ListAppActivity.gotoListApp(this));
+        });
     }
 
     private void deleteApp(int position) {
-        AppData model = mLaunchpadAdapter.getList().get(position);
-        if (model instanceof PackageAppData) {
-            new AlertDialog.Builder(this)
-                    .setTitle("Delete app")
-                    .setMessage("Do you want to delete " + model.getName() + "?")
-                    .setPositiveButton(android.R.string.yes, (dialog, which) -> {
-                        mPresenter.deleteApp((PackageAppData) model);
-                    })
-                    .setNegativeButton(android.R.string.no, null)
-                    .show();
-        }
+        AppData data = mLaunchpadAdapter.getList().get(position);
+        new AlertDialog.Builder(this)
+                .setTitle("Delete app")
+                .setMessage("Do you want to delete " + data.getName() + "?")
+                .setPositiveButton(android.R.string.yes, (dialog, which) -> {
+                    mPresenter.deleteApp(data);
+                })
+                .setNegativeButton(android.R.string.no, null)
+                .show();
     }
 
     private void createShortcut(int position) {
@@ -199,6 +207,7 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
 
     @Override
     public void loadError(Throwable err) {
+        err.printStackTrace();
         hideLoading();
     }
 
@@ -208,7 +217,7 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
     }
 
     @Override
-    public void addAppToLauncher(PackageAppData model) {
+    public void addAppToLauncher(AppData model) {
         List<AppData> dataList = mLaunchpadAdapter.getList();
         boolean replaced = false;
         for (int i = 0; i < dataList.size(); i++) {
@@ -225,13 +234,14 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
         }
     }
 
+
     @Override
-    public void removeAppToLauncher(PackageAppData model) {
+    public void removeAppToLauncher(AppData model) {
         mLaunchpadAdapter.remove(model);
     }
 
     @Override
-    public void refreshLauncherItem(PackageAppData model) {
+    public void refreshLauncherItem(AppData model) {
         mLaunchpadAdapter.refresh(model);
     }
 
@@ -249,9 +259,11 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (resultCode == RESULT_OK && data != null) {
-            PackageAppData model = data.getParcelableExtra(VCommends.EXTRA_APP_MODEL);
-            if (model != null) {
-                mPresenter.addApp(model);
+            List<AppInfoLite> appList = data.getParcelableArrayListExtra(VCommends.EXTRA_APP_INFO_LIST);
+            if (appList != null) {
+                for (AppInfoLite info : appList) {
+                    mPresenter.addApp(info);
+                }
             }
         }
     }
@@ -270,6 +282,19 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
         @Override
         public int interpolateOutOfBoundsScroll(RecyclerView recyclerView, int viewSize, int viewSizeOutOfBounds, int totalSize, long msSinceStartScroll) {
             return 0;
+        }
+
+        @Override
+        public int getMovementFlags(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder) {
+            try {
+                AppData data = mLaunchpadAdapter.getList().get(viewHolder.getAdapterPosition());
+                if (!data.canReorder()) {
+                    return makeMovementFlags(0, 0);
+                }
+            } catch (IndexOutOfBoundsException e) {
+                e.printStackTrace();
+            }
+            return super.getMovementFlags(recyclerView, viewHolder);
         }
 
         @Override
@@ -298,10 +323,6 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
                         dragHolder = viewHolder;
                         viewHolder.itemView.setScaleX(1.2f);
                         viewHolder.itemView.setScaleY(1.2f);
-                        LaunchpadAdapter.ViewHolder holder = (LaunchpadAdapter.ViewHolder) viewHolder;
-                        View itemView = viewHolder.itemView;
-                        ViewCompat.setBackground(itemView, holder.shadow);
-                        ViewCompat.setLayerType(itemView, ViewCompat.LAYER_TYPE_SOFTWARE, null);
                         if (bottomArea.getVisibility() == View.GONE) {
                             showBottomAction();
                         }
@@ -316,8 +337,13 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
             if (upAtCreateShortcutArea || upAtDeleteAppArea) {
                 return false;
             }
-            AppData data = mLaunchpadAdapter.getList().get(target.getAdapterPosition());
-            return data.canReorder();
+            try {
+                AppData data = mLaunchpadAdapter.getList().get(target.getAdapterPosition());
+                return data.canReorder();
+            } catch (IndexOutOfBoundsException e) {
+                e.printStackTrace();
+            }
+            return false;
         }
 
         @Override
@@ -331,7 +357,7 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
             super.clearView(recyclerView, viewHolder);
             if (dragHolder == viewHolder) {
                 if (bottomArea.getVisibility() == View.VISIBLE) {
-                    mUiHandler.postDelayed(HomeActivity.this::hideBottomAction, 500L);
+                    mUiHandler.postDelayed(HomeActivity.this::hideBottomAction, 200L);
                     if (upAtCreateShortcutArea) {
                         createShortcut(viewHolder.getAdapterPosition());
                     } else if (upAtDeleteAppArea) {
@@ -341,6 +367,7 @@ public class HomeActivity extends VActivity implements HomeContract.HomeView {
                 dragHolder = null;
             }
         }
+
 
         @Override
         public void onSwiped(RecyclerView.ViewHolder viewHolder, int direction) {

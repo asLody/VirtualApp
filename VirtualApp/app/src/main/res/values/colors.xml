@@ -2,12 +2,14 @@
 <resources>
     <color name="colorPrimary">#607191</color>
     <color name="colorPrimaryDark">#2A364C</color>
+    <color name="colorPrimaryRavel">#607191</color>
     <color name="colorAccent">#607191</color>
     <color name="mainTextColor">#F0DEB7</color>
 
     <color name="desktopColorA">#2C3B4E</color>
     <color name="desktopColorB">#314155</color>
     <color name="desktopColorC">#324257</color>
+    <color name="desktopColorD">#2a3646</color>
 
     <color name="holo_blue_dark">#33cccc</color>
     <color name="holo_yellow_dark">#ff9640</color>
@@ -25,4 +27,6 @@
 
     <color name="transparent">#00000000</color>
     <color name="black_20_transparent">#55000000</color>
+
+    <color name="md_transparent">#00FFFFFF</color>
 </resources>
