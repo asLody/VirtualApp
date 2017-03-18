@@ -13,31 +13,35 @@ import java.util.List;
 
 /**
  * @author Lody
- *
  */
 @SuppressWarnings("unchecked")
 /* package */ class QueryIntentActivities extends Hook {
 
-	@Override
-	public String getName() {
-		return "queryIntentActivities";
-	}
+    @Override
+    public String getName() {
+        return "queryIntentActivities";
+    }
 
-	@Override
-	public Object call(Object who, Method method, Object... args) throws Throwable {
+    @Override
+    public Object call(Object who, Method method, Object... args) throws Throwable {
 
-		int userId = VUserHandle.myUserId();
-		List<ResolveInfo> appResult = VPackageManager.get().queryIntentActivities((Intent) args[0],
-				(String) args[1], (Integer) args[2], userId);
+        int userId = VUserHandle.myUserId();
+        List<ResolveInfo> appResult = VPackageManager.get().queryIntentActivities((Intent) args[0],
+                (String) args[1], (Integer) args[2], userId);
 
-		if (ParceledListSliceCompat.isReturnParceledListSlice(method)) {
-			return ParceledListSliceCompat.create(appResult);
-		}
-		return appResult;
-	}
+        if (ParceledListSliceCompat.isReturnParceledListSlice(method)) {
+            return ParceledListSliceCompat.create(appResult);
+        }
 
-	@Override
-	public boolean isEnable() {
-		return isAppProcess();
-	}
+        if (appResult != null && appResult.isEmpty()) {
+            // leave null alone , it's an exception and dont hide it
+            return method.invoke(who,args);
+        }
+        return appResult;
+    }
+
+    @Override
+    public boolean isEnable() {
+        return isAppProcess();
+    }
 }

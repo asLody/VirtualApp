@@ -16,6 +16,7 @@ import com.lody.virtual.remote.InstalledAppInfo;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -98,7 +99,7 @@ public class NativeEngine {
         }
 
         for (Method mth : AudioRecord.class.getDeclaredMethods()) {
-            if (mth.getName().equals("native_check_permission") && mth.getParameterTypes().length == 1 && mth.getParameterTypes()[0] == String.class) {
+            if (mth.getName().equals("native_check_permission") && Arrays.equals(mth.getParameterTypes(), new Class<?>[]{String.class})) {
                 gAudioRecordNativeCheckPermission = mth;
                 mth.setAccessible(true);
                 break;
