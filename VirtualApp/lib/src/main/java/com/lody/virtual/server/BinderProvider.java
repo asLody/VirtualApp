@@ -46,14 +46,14 @@ public final class BinderProvider extends ContentProvider {
         VAppManagerService.systemReady();
         addService(ServiceManagerNative.APP, VAppManagerService.get());
         BroadcastSystem.attach(VActivityManagerService.get(), VAppManagerService.get());
-        VAccountManagerService.systemReady();
-        addService(ServiceManagerNative.ACCOUNT, VAccountManagerService.get());
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             addService(ServiceManagerNative.JOB, VJobSchedulerService.get());
         }
         VNotificationManagerService.systemReady(context);
         addService(ServiceManagerNative.NOTIFICATION, VNotificationManagerService.get());
         VAppManagerService.get().scanApps();
+        VAccountManagerService.systemReady();
+        addService(ServiceManagerNative.ACCOUNT, VAccountManagerService.get());
         return true;
     }
 
@@ -64,9 +64,12 @@ public final class BinderProvider extends ContentProvider {
 
     @Override
     public Bundle call(String method, String arg, Bundle extras) {
-        Bundle bundle = new Bundle();
-        BundleCompat.putBinder(bundle, "_VA_|_binder_", mServiceFetcher);
-        return bundle;
+        if ("@".equals(method)) {
+            Bundle bundle = new Bundle();
+            BundleCompat.putBinder(bundle, "_VA_|_binder_", mServiceFetcher);
+            return bundle;
+        }
+        return null;
     }
 
     @Override
