@@ -404,14 +404,13 @@ public class VPackageManagerService extends IPackageManager.Stub {
                 if (ri != null) {
                     return ri;
                 }
-                return mResolveInfo;
+                return query.get(0);
             }
         }
         return null;
     }
 
     private ResolveInfo findPreferredActivity(Intent intent, String resolvedType, int flags, List<ResolveInfo> query, int priority) {
-        // TODO
         return null;
     }
 
@@ -449,7 +448,7 @@ public class VPackageManagerService extends IPackageManager.Stub {
             if (pkg != null) {
                 return mActivities.queryIntentForPackage(intent, resolvedType, flags, pkg.activities, userId);
             }
-            return new ArrayList<ResolveInfo>();
+            return Collections.emptyList();
         }
     }
 
@@ -487,7 +486,7 @@ public class VPackageManagerService extends IPackageManager.Stub {
             if (pkg != null) {
                 return mReceivers.queryIntentForPackage(intent, resolvedType, flags, pkg.receivers, userId);
             }
-            return null;
+            return Collections.emptyList();
         }
     }
 
@@ -540,7 +539,7 @@ public class VPackageManagerService extends IPackageManager.Stub {
             if (pkg != null) {
                 return mServices.queryIntentForPackage(intent, resolvedType, flags, pkg.services, userId);
             }
-            return null;
+            return Collections.emptyList();
         }
     }
 
@@ -578,7 +577,7 @@ public class VPackageManagerService extends IPackageManager.Stub {
             if (pkg != null) {
                 return mProviders.queryIntentForPackage(intent, resolvedType, flags, pkg.providers, userId);
             }
-            return null;
+            return Collections.emptyList();
         }
     }
 
@@ -685,10 +684,12 @@ public class VPackageManagerService extends IPackageManager.Stub {
             if (provider != null) {
                 PackageSetting ps = (PackageSetting) provider.owner.mExtras;
                 ProviderInfo providerInfo = PackageParserEx.generateProviderInfo(provider, flags, ps.readUserState(userId), userId);
-                VPackage p = mPackages.get(providerInfo.packageName);
-                PackageSetting settings = (PackageSetting) p.mExtras;
-                ComponentFixer.fixComponentInfo(settings, providerInfo, userId);
-                return providerInfo;
+                if (providerInfo != null) {
+                    VPackage p = mPackages.get(providerInfo.packageName);
+                    PackageSetting settings = (PackageSetting) p.mExtras;
+                    ComponentFixer.fixComponentInfo(settings, providerInfo, userId);
+                    return providerInfo;
+                }
             }
         }
         return null;

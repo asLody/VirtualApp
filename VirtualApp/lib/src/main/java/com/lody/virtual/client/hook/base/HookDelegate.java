@@ -30,6 +30,7 @@ public class HookDelegate<T> {
     private Map<String, Hook> internalHookTable = new HashMap<String, Hook>();
     private T mBaseInterface;
     private T mProxyInterface;
+    private String mIdentityName;
 
 
     public Map<String, Hook> getAllHooks() {
@@ -45,8 +46,19 @@ public class HookDelegate<T> {
             }
             mProxyInterface = (T) Proxy.newProxyInstance(baseInterface.getClass().getClassLoader(), proxyInterfaces, new HookHandler());
         } else {
-            VLog.d(TAG, "Unable to build HookDelegate: %s.", getClass().getName());
+            VLog.d(TAG, "Unable to build HookDelegate: %s.", getIdentityName());
         }
+    }
+
+    public void setIdentityName(String identityName) {
+        this.mIdentityName = identityName;
+    }
+
+    public String getIdentityName() {
+        if (mIdentityName != null) {
+            return mIdentityName;
+        }
+        return getClass().getSimpleName();
     }
 
     public HookDelegate(T baseInterface) {

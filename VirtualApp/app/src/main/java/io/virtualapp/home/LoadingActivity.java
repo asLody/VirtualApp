@@ -3,7 +3,7 @@ package io.virtualapp.home;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
+import android.os.RemoteException;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -13,6 +13,7 @@ import com.lody.virtual.client.ipc.VActivityManager;
 import java.util.Locale;
 
 import io.virtualapp.R;
+import io.virtualapp.abs.ui.VActivity;
 import io.virtualapp.abs.ui.VUiKit;
 import io.virtualapp.home.models.PackageAppData;
 import io.virtualapp.home.repo.PackageAppDataStorage;
@@ -22,7 +23,7 @@ import io.virtualapp.widgets.EatBeansView;
  * @author Lody
  */
 
-public class LoadingActivity extends AppCompatActivity {
+public class LoadingActivity extends VActivity {
 
     private static final String PKG_NAME_ARGUMENT = "MODEL_ARGUMENT";
     private static final String KEY_INTENT = "KEY_INTENT";
@@ -54,31 +55,40 @@ public class LoadingActivity extends AppCompatActivity {
         iconView.setImageDrawable(appModel.icon);
         TextView nameView = (TextView) findViewById(R.id.app_name);
         nameView.setText(String.format(Locale.ENGLISH, "Opening %s...", appModel.name));
-
         Intent intent = getIntent().getParcelableExtra(KEY_INTENT);
-        VirtualCore.get().setLoadingPage(intent, this);
-        if (intent != null) {
-            VUiKit.defer().when(() -> {
-                long startTime = System.currentTimeMillis();
-                if (!appModel.fastOpen) {
-                    try {
-                        VirtualCore.get().preOpt(appModel.packageName);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-                long spend = System.currentTimeMillis() - startTime;
-                if (spend < 500) {
-                    try {
-                        Thread.sleep(500 - spend);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }).done((res) ->
-                    VActivityManager.get().startActivity(intent, userId));
+        if (intent == null) {
+            return;
         }
+        VirtualCore.get().setUiCallback(intent, mUiCallback);
+        VUiKit.defer().when(() -> {
+            long startTime = System.currentTimeMillis();
+            if (!appModel.fastOpen) {
+                try {
+                    VirtualCore.get().preOpt(appModel.packageName);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            long spend = System.currentTimeMillis() - startTime;
+            if (spend < 500) {
+                try {
+                    Thread.sleep(500 - spend);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).done((res) ->
+                VActivityManager.get().startActivity(intent, userId));
+
     }
+
+    private final VirtualCore.UiCallback mUiCallback = new VirtualCore.UiCallback() {
+
+        @Override
+        public void onAppOpened(String packageName, int userId) throws RemoteException {
+            finish();
+        }
+    };
 
     @Override
     protected void onResume() {

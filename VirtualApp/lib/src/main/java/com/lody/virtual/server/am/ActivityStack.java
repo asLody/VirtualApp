@@ -75,11 +75,16 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
     }
 
     private void deliverNewIntentLocked(ActivityRecord sourceRecord, ActivityRecord targetRecord, Intent intent) {
+        if (targetRecord == null) {
+            return;
+        }
         String creator = sourceRecord != null ? sourceRecord.component.getPackageName() : "android";
         try {
             targetRecord.process.client.scheduleNewIntent(creator, targetRecord.token, intent);
         } catch (RemoteException e) {
             e.printStackTrace();
+        } catch (NullPointerException npe) {
+            npe.printStackTrace();
         }
     }
 
@@ -200,7 +205,6 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
 
     int startActivityLocked(int userId, Intent intent, ActivityInfo info, IBinder resultTo, Bundle options,
                             String resultWho, int requestCode) {
-
         optimizeTasksLocked();
 
         Intent destIntent;
@@ -243,9 +247,7 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
 
         switch (info.launchMode) {
             case LAUNCH_SINGLE_TOP: {
-                if (!clearTop) {
-                    singleTop = true;
-                }
+                singleTop = true;
                 if (containFlags(intent, Intent.FLAG_ACTIVITY_NEW_TASK)) {
                     reuseTarget = containFlags(intent, Intent.FLAG_ACTIVITY_MULTIPLE_TASK)
                             ? ReuseTarget.MULTIPLE
@@ -310,7 +312,7 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
             if (clearTarget.deliverIntent || singleTop) {
                 taskMarked = markTaskByClearTarget(reuseTask, clearTarget, intent.getComponent());
                 ActivityRecord topRecord = topActivityInTask(reuseTask);
-                if (clearTop && topRecord != null && taskMarked) {
+                if (clearTop && !singleTop && topRecord != null && taskMarked) {
                     topRecord.marked = true;
                 }
                 // Target activity is on top
@@ -323,10 +325,6 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
                 synchronized (mHistory) {
                     scheduleFinishMarkedActivityLocked();
                 }
-            }
-            if (reuseTask.isFinishing()) {
-                startActivityInNewTaskLocked(userId, intent, info, options);
-                delivered = true;
             }
             if (!startTaskToFront) {
                 if (!delivered) {
@@ -597,6 +595,14 @@ import static android.content.pm.ActivityInfo.LAUNCH_SINGLE_TOP;
         }
     }
 
+    private boolean hasActivity(ActivityRecord topRecord, ComponentName component) {
+        for (ActivityRecord ar : topRecord.task.activities) {
+            if (component.equals(ar.component)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     private enum ClearTarget {
         NOTHING,
