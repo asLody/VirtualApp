@@ -40,8 +40,10 @@ import com.lody.virtual.client.stub.StubManifest;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VEnvironment;
 import com.lody.virtual.os.VUserHandle;
+import com.lody.virtual.remote.InstalledAppInfo;
 import com.lody.virtual.remote.PendingResultData;
 import com.lody.virtual.server.secondary.FakeIdentityBinder;
+import com.taobao.android.dex.interpret.ARTUtils;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -212,6 +214,16 @@ public final class VClientImpl extends IVClient.Stub {
                 null
         );
         AppBindData data = new AppBindData();
+        InstalledAppInfo info = VirtualCore.get().getInstalledAppInfo(packageName, 0);
+        if (info == null) {
+            new Exception("App not exist!").printStackTrace();
+            Process.killProcess(0);
+            System.exit(0);
+        }
+        if (!info.dependSystem && info.artFlyMode) {
+            ARTUtils.init(VirtualCore.get().getContext());
+            ARTUtils.setIsDex2oatEnabled(false);
+        }
         data.appInfo = VPackageManager.get().getApplicationInfo(packageName, 0, getUserId(vuid));
         data.processName = processName;
         data.providers = VPackageManager.get().queryContentProviders(processName, getVUid(), PackageManager.GET_META_DATA);
@@ -316,7 +328,8 @@ public final class VClientImpl extends IVClient.Stub {
         }
         ThreadGroup newRoot = new RootThreadGroup(root);
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
-            List<ThreadGroup> groups = mirror.java.lang.ThreadGroup.groups.get(root);
+            final List<ThreadGroup> groups = mirror.java.lang.ThreadGroup.groups.get(root);
+            //noinspection SynchronizationOnLocalVariableOrMethodParameter
             synchronized (groups) {
                 List<ThreadGroup> newGroups = new ArrayList<>(groups);
                 newGroups.remove(newRoot);
@@ -329,7 +342,8 @@ public final class VClientImpl extends IVClient.Stub {
                 }
             }
         } else {
-            ThreadGroup[] groups = ThreadGroupN.groups.get(root);
+            final ThreadGroup[] groups = ThreadGroupN.groups.get(root);
+            //noinspection SynchronizationOnLocalVariableOrMethodParameter
             synchronized (groups) {
                 ThreadGroup[] newGroups = groups.clone();
                 ThreadGroupN.groups.set(newRoot, newGroups);
@@ -337,6 +351,7 @@ public final class VClientImpl extends IVClient.Stub {
                 for (Object group : newGroups) {
                     ThreadGroupN.parent.set(group, newRoot);
                 }
+                ThreadGroupN.ngroups.set(root, 1);
             }
         }
     }

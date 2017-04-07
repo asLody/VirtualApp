@@ -1,11 +1,14 @@
 package com.lody.virtual.server.pm;
 
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Build;
 import android.os.RemoteCallbackList;
 import android.os.RemoteException;
 
 import com.lody.virtual.client.core.InstallStrategy;
 import com.lody.virtual.client.core.VirtualCore;
+import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.client.hook.secondary.GmsSupport;
 import com.lody.virtual.client.stub.StubManifest;
 import com.lody.virtual.helper.collection.IntArray;
@@ -46,8 +49,8 @@ public class VAppManagerService extends IAppManager.Stub {
     private final PackagePersistenceLayer mPersistenceLayer = new PackagePersistenceLayer(this);
     private final Set<String> mVisibleOutsidePackages = new HashSet<>();
     private boolean mBooting;
-    private RemoteCallbackList<IPackageObserver> mRemoteCallbackList = new RemoteCallbackList<IPackageObserver>();
-    private IAppRequestListener listener;
+    private RemoteCallbackList<IPackageObserver> mRemoteCallbackList = new RemoteCallbackList<>();
+    private IAppRequestListener mAppRequestListener;
 
     public static VAppManagerService get() {
         return sService.get();
@@ -145,6 +148,7 @@ public class VAppManagerService extends IAppManager.Stub {
         if (path == null) {
             return InstallResult.makeFailure("path = NULL");
         }
+        boolean artFlyMode = VirtualRuntime.isArt() && (flags & InstallStrategy.ART_FLY_MODE) != 0;
         File packageFile = new File(path);
         if (!packageFile.exists() || !packageFile.isFile()) {
             return InstallResult.makeFailure("Package File is not exist.");
@@ -217,6 +221,7 @@ public class VAppManagerService extends IAppManager.Stub {
         } else {
             ps = new PackageSetting();
         }
+        ps.artFlyMode = artFlyMode;
         ps.dependSystem = dependSystem;
         ps.apkPath = packageFile.getPath();
         ps.libPath = libDir.getPath();
@@ -365,7 +370,7 @@ public class VAppManagerService extends IAppManager.Stub {
         List<InstalledAppInfo> infoList = new ArrayList<>(getInstalledAppCount());
         for (VPackage p : PackageCacheManager.PACKAGE_CACHE.values()) {
             PackageSetting setting = (PackageSetting) p.mExtras;
-            infoList.add(setting.getAppInfo(flags));
+            infoList.add(setting.getAppInfo());
         }
         return infoList;
     }
@@ -380,7 +385,7 @@ public class VAppManagerService extends IAppManager.Stub {
                 visible = false;
             }
             if (visible) {
-                infoList.add(setting.getAppInfo(flags));
+                infoList.add(setting.getAppInfo());
             }
         }
         return infoList;
@@ -409,14 +414,17 @@ public class VAppManagerService extends IAppManager.Stub {
     }
 
     private void notifyAppInstalled(PackageSetting setting, int userId) {
+        final String pkg = setting.packageName;
         int N = mRemoteCallbackList.beginBroadcast();
         while (N-- > 0) {
             try {
                 if (userId == -1) {
-                    mRemoteCallbackList.getBroadcastItem(N).onPackageInstalled(setting.packageName);
-                    mRemoteCallbackList.getBroadcastItem(N).onPackageInstalledAsUser(0, setting.packageName);
+                    sendInstalledBroadcast(pkg);
+                    mRemoteCallbackList.getBroadcastItem(N).onPackageInstalled(pkg);
+                    mRemoteCallbackList.getBroadcastItem(N).onPackageInstalledAsUser(0, pkg);
+
                 } else {
-                    mRemoteCallbackList.getBroadcastItem(N).onPackageInstalledAsUser(userId, setting.packageName);
+                    mRemoteCallbackList.getBroadcastItem(N).onPackageInstalledAsUser(userId, pkg);
                 }
             } catch (RemoteException e) {
                 e.printStackTrace();
@@ -427,14 +435,16 @@ public class VAppManagerService extends IAppManager.Stub {
     }
 
     private void notifyAppUninstalled(PackageSetting setting, int userId) {
+        final String pkg = setting.packageName;
         int N = mRemoteCallbackList.beginBroadcast();
         while (N-- > 0) {
             try {
                 if (userId == -1) {
-                    mRemoteCallbackList.getBroadcastItem(N).onPackageUninstalled(setting.packageName);
-                    mRemoteCallbackList.getBroadcastItem(N).onPackageUninstalledAsUser(0, setting.packageName);
+                    sendUninstalledBroadcast(pkg);
+                    mRemoteCallbackList.getBroadcastItem(N).onPackageUninstalled(pkg);
+                    mRemoteCallbackList.getBroadcastItem(N).onPackageUninstalledAsUser(0, pkg);
                 } else {
-                    mRemoteCallbackList.getBroadcastItem(N).onPackageUninstalledAsUser(userId, setting.packageName);
+                    mRemoteCallbackList.getBroadcastItem(N).onPackageUninstalledAsUser(userId, pkg);
                 }
             } catch (RemoteException e) {
                 e.printStackTrace();
@@ -444,12 +454,25 @@ public class VAppManagerService extends IAppManager.Stub {
         VAccountManagerService.get().refreshAuthenticatorCache(null);
     }
 
+
+    private void sendInstalledBroadcast(String packageName) {
+        Intent intent = new Intent(Intent.ACTION_PACKAGE_ADDED);
+        intent.setData(Uri.parse("package:" + packageName));
+        VActivityManagerService.get().sendBroadcastAsUser(intent, VUserHandle.ALL);
+    }
+
+    private void sendUninstalledBroadcast(String packageName) {
+        Intent intent = new Intent(Intent.ACTION_PACKAGE_REMOVED);
+        intent.setData(Uri.parse("package:" + packageName));
+        VActivityManagerService.get().sendBroadcastAsUser(intent, VUserHandle.ALL);
+    }
+
     @Override
     public void registerObserver(IPackageObserver observer) {
         try {
             mRemoteCallbackList.register(observer);
         } catch (Throwable e) {
-            // Ignore
+            e.printStackTrace();
         }
     }
 
@@ -458,25 +481,25 @@ public class VAppManagerService extends IAppManager.Stub {
         try {
             mRemoteCallbackList.unregister(observer);
         } catch (Throwable e) {
-            // Ignore
+            e.printStackTrace();
         }
     }
 
     @Override
     public IAppRequestListener getAppRequestListener() {
-        return listener;
+        return mAppRequestListener;
     }
 
     @Override
     public void setAppRequestListener(final IAppRequestListener listener) {
-        this.listener = listener;
+        this.mAppRequestListener = listener;
         if (listener != null) {
             try {
                 listener.asBinder().linkToDeath(new DeathRecipient() {
                     @Override
                     public void binderDied() {
                         listener.asBinder().unlinkToDeath(this, 0);
-                        VAppManagerService.this.listener = null;
+                        VAppManagerService.this.mAppRequestListener = null;
                     }
                 }, 0);
             } catch (RemoteException e) {
@@ -487,7 +510,7 @@ public class VAppManagerService extends IAppManager.Stub {
 
     @Override
     public void clearAppRequestListener() {
-        this.listener = null;
+        this.mAppRequestListener = null;
     }
 
     @Override
@@ -496,7 +519,7 @@ public class VAppManagerService extends IAppManager.Stub {
             if (packageName != null) {
                 PackageSetting setting = PackageCacheManager.getSetting(packageName);
                 if (setting != null) {
-                    return setting.getAppInfo(flags);
+                    return setting.getAppInfo();
                 }
             }
             return null;
