@@ -25,18 +25,19 @@ import android.os.RemoteException;
 import android.os.StrictMode;
 
 import com.lody.virtual.client.core.CrashHandler;
-import com.lody.virtual.client.core.PatchManager;
+import com.lody.virtual.client.core.InvocationStubManager;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.SpecialComponentList;
 import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.client.fixer.ContextFixer;
 import com.lody.virtual.client.hook.delegate.AppInstrumentation;
-import com.lody.virtual.client.hook.patchs.am.HCallbackHook;
 import com.lody.virtual.client.hook.providers.ProviderHook;
+import com.lody.virtual.client.hook.proxies.am.HCallbackStub;
 import com.lody.virtual.client.hook.secondary.ProxyServiceFactory;
 import com.lody.virtual.client.ipc.VActivityManager;
 import com.lody.virtual.client.ipc.VPackageManager;
 import com.lody.virtual.client.stub.StubManifest;
+import com.lody.virtual.helper.compat.BuildCompat;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VEnvironment;
 import com.lody.virtual.os.VUserHandle;
@@ -56,6 +57,7 @@ import mirror.android.app.ActivityThreadNMR1;
 import mirror.android.app.ContextImpl;
 import mirror.android.app.IActivityManager;
 import mirror.android.app.LoadedApk;
+import mirror.android.content.ContentProviderHolderOreo;
 import mirror.android.providers.Settings;
 import mirror.android.renderscript.RenderScriptCacheDir;
 import mirror.android.view.HardwareRenderer;
@@ -164,7 +166,7 @@ public final class VClientImpl extends IVClient.Stub {
         } else {
             intent = data.intent;
         }
-        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.N) {
+        if (ActivityThread.performNewIntents != null) {
             ActivityThread.performNewIntents.call(
                     VirtualCore.mainThread(),
                     data.token,
@@ -175,8 +177,7 @@ public final class VClientImpl extends IVClient.Stub {
                     VirtualCore.mainThread(),
                     data.token,
                     Collections.singletonList(intent),
-                    true
-            );
+                    true);
         }
     }
 
@@ -203,7 +204,6 @@ public final class VClientImpl extends IVClient.Stub {
         } catch (Throwable e) {
             e.printStackTrace();
         }
-
         try {
             fixInstalledProviders();
         } catch (Throwable e) {
@@ -288,14 +288,13 @@ public final class VClientImpl extends IVClient.Stub {
 
         boolean conflict = SpecialComponentList.isConflictingInstrumentation(packageName);
         if (!conflict) {
-            PatchManager.getInstance().checkEnv(AppInstrumentation.class);
+            InvocationStubManager.getInstance().checkEnv(AppInstrumentation.class);
         }
         mInitialApplication = LoadedApk.makeApplication.call(data.info, false, null);
         mirror.android.app.ActivityThread.mInitialApplication.set(mainThread, mInitialApplication);
         ContextFixer.fixContext(mInitialApplication);
-        List<ProviderInfo> providers = VPackageManager.get().queryContentProviders(data.processName, vuid, PackageManager.GET_META_DATA);
-        if (providers != null) {
-            installContentProviders(mInitialApplication, providers);
+        if (data.providers != null) {
+            installContentProviders(mInitialApplication, data.providers);
         }
         if (lock != null) {
             lock.open();
@@ -303,9 +302,9 @@ public final class VClientImpl extends IVClient.Stub {
         }
         try {
             mInstrumentation.callApplicationOnCreate(mInitialApplication);
-            PatchManager.getInstance().checkEnv(HCallbackHook.class);
+            InvocationStubManager.getInstance().checkEnv(HCallbackStub.class);
             if (conflict) {
-                PatchManager.getInstance().checkEnv(AppInstrumentation.class);
+                InvocationStubManager.getInstance().checkEnv(AppInstrumentation.class);
             }
             Application createdApp = ActivityThread.mInitialApplication.get(mainThread);
             if (createdApp != null) {
@@ -359,17 +358,20 @@ public final class VClientImpl extends IVClient.Stub {
     @SuppressLint("SdCardPath")
     private void startIOUniformer() {
         ApplicationInfo info = mBoundApplication.appInfo;
-        NativeEngine.redirect("/data/data/" + info.packageName + "/", info.dataDir + "/");
-        NativeEngine.redirect("/data/user/0/" + info.packageName + "/", info.dataDir + "/");
+        NativeEngine.redirectDirectory("/data/data/" + info.packageName, info.dataDir);
+        NativeEngine.redirectDirectory("/data/user/0/" + info.packageName, info.dataDir);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            NativeEngine.redirect("/data/user_de/0/" + info.packageName + "/", info.dataDir + "/");
+            NativeEngine.redirectDirectory("/data/user_de/0/" + info.packageName, info.dataDir);
         }
         /*
          *  /data/user/0/{Host-Pkg}/virtual/data/user/{user-id}/lib -> /data/user/0/{Host-Pkg}/virtual/data/app/{App-Pkg}/lib/
          */
-        NativeEngine.redirect(
-                new File(VEnvironment.getUserSystemDirectory(VUserHandle.myUserId()).getAbsolutePath(), "lib").getAbsolutePath() + "/",
-                info.nativeLibraryDir + "/");
+        NativeEngine.redirectDirectory(
+                new File(VEnvironment.getUserSystemDirectory(VUserHandle.myUserId()).getAbsolutePath(), "lib").getAbsolutePath(),
+                info.nativeLibraryDir);
+
+        NativeEngine.readOnly(VEnvironment.getDataAppDirectory().getPath());
+
         NativeEngine.hook();
     }
 
@@ -384,12 +386,15 @@ public final class VClientImpl extends IVClient.Stub {
     }
 
     private Object fixBoundApp(AppBindData data) {
-        // TODO: Using Native VM Hook to fix the `Camera` and `AudioRecord`.
         Object thread = VirtualCore.mainThread();
         Object boundApp = mirror.android.app.ActivityThread.mBoundApplication.get(thread);
         mirror.android.app.ActivityThread.AppBindData.appInfo.set(boundApp, data.appInfo);
         mirror.android.app.ActivityThread.AppBindData.processName.set(boundApp, data.processName);
-        mirror.android.app.ActivityThread.AppBindData.instrumentationName.set(boundApp, new ComponentName(data.appInfo.packageName, Instrumentation.class.getName()));
+        mirror.android.app.ActivityThread.AppBindData.instrumentationName.set(
+                boundApp,
+                new ComponentName(data.appInfo.packageName, Instrumentation.class.getName())
+        );
+        ActivityThread.AppBindData.providers.set(boundApp, data.providers);
         return boundApp;
     }
 
@@ -439,13 +444,27 @@ public final class VClientImpl extends IVClient.Stub {
     private void fixInstalledProviders() {
         clearSettingProvider();
         Map clientMap = ActivityThread.mProviderMap.get(VirtualCore.mainThread());
-        boolean highApi = Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN;
         for (Object clientRecord : clientMap.values()) {
-            if (highApi) {
+            if (BuildCompat.isOreo()) {
                 IInterface provider = ActivityThread.ProviderClientRecordJB.mProvider.get(clientRecord);
                 Object holder = ActivityThread.ProviderClientRecordJB.mHolder.get(clientRecord);
+                if (holder == null) {
+                    continue;
+                }
+                ProviderInfo info = ContentProviderHolderOreo.info.get(holder);
+                if (!info.authority.startsWith(StubManifest.STUB_CP_AUTHORITY)) {
+                    provider = ProviderHook.createProxy(true, info.authority, provider);
+                    ActivityThread.ProviderClientRecordJB.mProvider.set(clientRecord, provider);
+                    ContentProviderHolderOreo.provider.set(holder, provider);
+                }
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+                IInterface provider = ActivityThread.ProviderClientRecordJB.mProvider.get(clientRecord);
+                Object holder = ActivityThread.ProviderClientRecordJB.mHolder.get(clientRecord);
+                if (holder == null) {
+                    continue;
+                }
                 ProviderInfo info = IActivityManager.ContentProviderHolder.info.get(holder);
-                if (holder != null && !info.authority.startsWith(StubManifest.STUB_CP_AUTHORITY)) {
+                if (!info.authority.startsWith(StubManifest.STUB_CP_AUTHORITY)) {
                     provider = ProviderHook.createProxy(true, info.authority, provider);
                     ActivityThread.ProviderClientRecordJB.mProvider.set(clientRecord, provider);
                     IActivityManager.ContentProviderHolder.provider.set(holder, provider);
@@ -464,23 +483,30 @@ public final class VClientImpl extends IVClient.Stub {
 
     private void clearSettingProvider() {
         Object cache;
-        if (Settings.System.TYPE != null) {
-            cache = Settings.System.sNameValueCache.get();
-            if (cache != null) {
-                Settings.NameValueCache.mContentProvider.set(cache, null);
-            }
+        cache = Settings.System.sNameValueCache.get();
+        if (cache != null) {
+            clearContentProvider(cache);
         }
-        if (Settings.Secure.TYPE != null) {
-            cache = Settings.Secure.sNameValueCache.get();
-            if (cache != null) {
-                Settings.NameValueCache.mContentProvider.set(cache, null);
-            }
+        cache = Settings.Secure.sNameValueCache.get();
+        if (cache != null) {
+            clearContentProvider(cache);
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && Settings.Global.TYPE != null) {
             cache = Settings.Global.sNameValueCache.get();
             if (cache != null) {
-                Settings.NameValueCache.mContentProvider.set(cache, null);
+                clearContentProvider(cache);
             }
+        }
+    }
+
+    private static void clearContentProvider(Object cache) {
+        if (BuildCompat.isOreo()) {
+            Object holder = Settings.NameValueCacheOreo.mProviderHolder.get(cache);
+            if (holder != null) {
+                Settings.ContentProviderHolder.mContentProvider.set(holder, null);
+            }
+        } else {
+            Settings.NameValueCache.mContentProvider.set(cache, null);
         }
     }
 
