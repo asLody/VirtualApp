@@ -285,6 +285,12 @@ public class PackageParserEx {
         pi.applicationInfo = generateApplicationInfo(p, flags, state, userId);
         pi.firstInstallTime = firstInstallTime;
         pi.lastUpdateTime = lastUpdateTime;
+        String[] requestedPermissions = p.requestedPermissions == null?null
+                :new String[p.requestedPermissions.size()];
+        if(requestedPermissions != null) {
+            p.requestedPermissions.toArray(requestedPermissions);
+        }
+        pi.requestedPermissions = requestedPermissions;
         if ((flags & PackageManager.GET_GIDS) != 0) {
             pi.gids = PackageParserCompat.GIDS;
         }
