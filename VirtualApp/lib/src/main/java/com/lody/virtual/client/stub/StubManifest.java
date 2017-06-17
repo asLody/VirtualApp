@@ -8,14 +8,19 @@ import java.util.Locale;
 
 public class StubManifest {
     public static final String STUB_DEF_AUTHORITY = "virtual_stub_";
-    public static final boolean ENABLE_GMS = false;
-    public static String STUB_ACTIVITY = StubActivity.class.getName();
-    public static String STUB_DIALOG = StubDialog.class.getName();
-    public static String STUB_CP = StubContentProvider.class.getName();
-    public static String STUB_JOB = StubJob.class.getName();
-    public static String RESOLVER_ACTIVITY = ResolverActivity.class.getName();
+    public static final String STUB_ACTIVITY = StubActivity.class.getName();
+    public static final String STUB_DIALOG = StubDialog.class.getName();
+    public static final String STUB_CP = StubContentProvider.class.getName();
+    public static final String STUB_JOB = StubJob.class.getName();
+    public static final String RESOLVER_ACTIVITY = ResolverActivity.class.getName();
     public static String STUB_CP_AUTHORITY = "virtual_stub_";
-    public static int STUB_COUNT = 50;
+    public static final int STUB_COUNT = 50;
+
+    /**
+     * If enable,
+     * GMS and related google packages available on the host are automatically installed on VirtualApp.
+     */
+    public static boolean ENABLE_GMS = false;
 
     /**
      * If enable,
