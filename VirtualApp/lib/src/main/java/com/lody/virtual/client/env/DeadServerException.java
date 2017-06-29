@@ -1,5 +1,8 @@
 package com.lody.virtual.client.env;
 
+import android.annotation.TargetApi;
+import android.os.Build;
+
 /**
  * @author Lody
  */
@@ -21,6 +24,7 @@ public class DeadServerException extends RuntimeException {
         super(cause);
     }
 
+    @TargetApi(Build.VERSION_CODES.N)
     public DeadServerException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
         super(message, cause, enableSuppression, writableStackTrace);
     }
