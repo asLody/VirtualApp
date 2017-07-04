@@ -4,6 +4,7 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.os.Build;
 
+import com.lody.virtual.GmsSupport;
 import com.lody.virtual.client.hook.base.BinderInvocationProxy;
 import com.lody.virtual.client.hook.base.ReplaceLastPkgMethodProxy;
 import com.lody.virtual.client.hook.base.StaticMethodProxy;
@@ -39,7 +40,18 @@ public class AppOpsManagerStub extends BinderInvocationProxy {
 		addMethodProxy(new BaseMethodProxy("setMode", 1, 2));
 		addMethodProxy(new BaseMethodProxy("checkAudioOperation", 2, 3));
 		addMethodProxy(new BaseMethodProxy("setAudioRestriction", 2, -1));
-		addMethodProxy(new BaseMethodProxy("noteProxyOperation", 2, 3));
+		addMethodProxy(new BaseMethodProxy("noteProxyOperation", 2, 3){
+			@Override
+			public Object call(Object who, Method method, Object... args) throws Throwable {
+				if(args[1] instanceof String) {
+					String pkg = (String) args[1];
+					if(GmsSupport.isGmsFamilyPackage(pkg)){
+						return 0;
+					}
+				}
+				return super.call(who, method, args);
+			}
+		});
 		addMethodProxy(new ReplaceLastPkgMethodProxy("resetAllModes"));
 	}
 

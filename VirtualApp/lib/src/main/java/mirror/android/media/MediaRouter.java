@@ -1,11 +1,14 @@
 package mirror.android.media;
 
+import android.annotation.TargetApi;
+import android.os.Build;
 import android.os.IInterface;
 
 import mirror.RefClass;
 import mirror.RefObject;
 import mirror.RefStaticObject;
 
+@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
 public class MediaRouter {
     public static Class<?> TYPE = RefClass.load(MediaRouter.class, android.media.MediaRouter.class);
     public static RefStaticObject sStatic;

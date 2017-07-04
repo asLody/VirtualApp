@@ -76,6 +76,7 @@ import mirror.com.android.internal.R_Hide;
         }
     }
 
+    @TargetApi(Build.VERSION_CODES.M)
     void fixIcon(Icon icon, Context appContext, boolean installed) {
         if (icon == null) {
             return;
