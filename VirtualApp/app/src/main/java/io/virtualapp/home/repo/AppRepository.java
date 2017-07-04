@@ -5,6 +5,7 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 
+import com.lody.virtual.GmsSupport;
 import com.lody.virtual.client.core.InstallStrategy;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.remote.InstallResult;
@@ -25,6 +26,8 @@ import io.virtualapp.home.models.AppInfo;
 import io.virtualapp.home.models.AppInfoLite;
 import io.virtualapp.home.models.MultiplePackageAppData;
 import io.virtualapp.home.models.PackageAppData;
+
+import static com.lody.virtual.GmsSupport.GOOGLE_PACKAGES;
 
 /**
  * @author Lody
@@ -49,12 +52,29 @@ public class AppRepository implements AppDataSource {
     }
 
     private static boolean isSystemApplication(PackageInfo packageInfo) {
-        return (packageInfo.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0;
+        return (packageInfo.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0
+                 && !GmsSupport.isGmsFamilyPackage(packageInfo.packageName);
+    }
+
+    private PackageInfo getPackageInfo(String pkg){
+        try {
+            return mContext.getPackageManager().getPackageInfo(pkg, 0);
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     @Override
     public Promise<List<AppData>, Throwable, Void> getVirtualApps() {
         return VUiKit.defer().when(() -> {
+            for(String pkg : GOOGLE_PACKAGES){
+                PackageInfo packageInfo = getPackageInfo(pkg);
+                if(packageInfo != null && !VirtualCore.get().isAppInstalled(pkg)){
+                    VirtualCore.get().installPackage(packageInfo.applicationInfo.publicSourceDir, InstallStrategy.DEPEND_SYSTEM_IF_EXIST);
+                }
+            }
+
             List<InstalledAppInfo> infos = VirtualCore.get().getInstalledApps(0);
             List<AppData> models = new ArrayList<>();
             for (InstalledAppInfo info : infos) {

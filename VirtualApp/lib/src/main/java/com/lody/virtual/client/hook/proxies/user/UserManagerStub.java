@@ -7,6 +7,8 @@ import android.os.Build;
 import com.lody.virtual.client.hook.base.BinderInvocationProxy;
 import com.lody.virtual.client.hook.base.ReplaceCallingPkgMethodProxy;
 import com.lody.virtual.client.hook.base.ResultStaticMethodProxy;
+import com.lody.virtual.helper.utils.Reflect;
+import com.lody.virtual.os.VUserInfo;
 
 import java.util.Collections;
 
@@ -31,7 +33,13 @@ public class UserManagerStub extends BinderInvocationProxy {
 		addMethodProxy(new ReplaceCallingPkgMethodProxy("getApplicationRestrictionsForUser"));
 		addMethodProxy(new ResultStaticMethodProxy("getProfileParent", null));
 		addMethodProxy(new ResultStaticMethodProxy("getUserIcon", null));
-		addMethodProxy(new ResultStaticMethodProxy("getUserInfo", null));
+		try {
+			addMethodProxy(new ResultStaticMethodProxy("getUserInfo",
+					Reflect.on("android.content.pm.UserInfo")
+							.create(0,"Admin", VUserInfo.FLAG_INITIALIZED|VUserInfo.FLAG_ADMIN).get()));
+		}catch (Exception e){
+			addMethodProxy(new ResultStaticMethodProxy("getUserInfo", null));
+		}
 		addMethodProxy(new ResultStaticMethodProxy("getDefaultGuestRestrictions", null));
 		addMethodProxy(new ResultStaticMethodProxy("setDefaultGuestRestrictions", null));
 		addMethodProxy(new ResultStaticMethodProxy("removeRestrictions", null));
