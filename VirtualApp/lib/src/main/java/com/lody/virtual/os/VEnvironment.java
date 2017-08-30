@@ -83,6 +83,14 @@ public class VEnvironment {
         return new File(getSystemSecureDirectory(), "account-list.ini");
     }
 
+    public static File getVirtualLocationFile() {
+        return new File(getSystemSecureDirectory(), "virtual-loc.ini");
+    }
+
+    public static File getDeviceInfoFile() {
+        return new File(getSystemSecureDirectory(), "device-info.ini");
+    }
+
     public static File getPackageListFile() {
         return new File(getSystemSecureDirectory(), "packages.ini");
     }
@@ -130,6 +138,10 @@ public class VEnvironment {
 
     public static File getUserSystemDirectory(int userId) {
         return new File(USER_DIRECTORY, String.valueOf(userId));
+    }
+
+    public static File getWifiMacFile(int userId) {
+        return new File(getUserSystemDirectory(userId), "wifiMacAddress");
     }
 
     public static File getDataDirectory() {

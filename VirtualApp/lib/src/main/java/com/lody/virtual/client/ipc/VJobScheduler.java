@@ -4,6 +4,7 @@ import android.app.job.JobInfo;
 import android.os.IBinder;
 import android.os.RemoteException;
 
+import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.server.IJobScheduler;
 
@@ -24,12 +25,11 @@ public class VJobScheduler {
     }
 
     public IJobScheduler getRemote() {
-        if (mRemote == null) {
+        if (mRemote == null ||
+                (!mRemote.asBinder().isBinderAlive() && !VirtualCore.get().isVAppProcess())) {
             synchronized (this) {
-                if (mRemote == null) {
-                    Object remote = getRemoteInterface();
-                    mRemote = LocalProxyUtils.genProxy(IJobScheduler.class, remote);
-                }
+                Object remote = getRemoteInterface();
+                mRemote = LocalProxyUtils.genProxy(IJobScheduler.class, remote);
             }
         }
         return mRemote;

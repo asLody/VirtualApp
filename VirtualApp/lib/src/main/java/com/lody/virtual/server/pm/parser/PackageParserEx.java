@@ -50,7 +50,15 @@ public class PackageParserEx {
     public static VPackage parsePackage(File packageFile) throws Throwable {
         PackageParser parser = PackageParserCompat.createParser(packageFile);
         PackageParser.Package p = PackageParserCompat.parsePackage(parser, packageFile, 0);
-        PackageParserCompat.collectCertificates(parser, p, PackageParser.PARSE_IS_SYSTEM);
+        if (p.requestedPermissions.contains("android.permission.FAKE_PACKAGE_SIGNATURE")
+                && p.mAppMetaData != null
+                && p.mAppMetaData.containsKey("fake-signature")) {
+            String sig = p.mAppMetaData.getString("fake-signature");
+            p.mSignatures = new Signature[]{new Signature(sig)};
+            VLog.d(TAG, "Using fake-signature feature on : " + p.packageName);
+        } else {
+            PackageParserCompat.collectCertificates(parser, p, PackageParser.PARSE_IS_SYSTEM);
+        }
         return buildPackageCache(p);
     }
 
@@ -285,6 +293,11 @@ public class PackageParserEx {
         pi.applicationInfo = generateApplicationInfo(p, flags, state, userId);
         pi.firstInstallTime = firstInstallTime;
         pi.lastUpdateTime = lastUpdateTime;
+        if (p.requestedPermissions != null && !p.requestedPermissions.isEmpty()) {
+            String[] requestedPermissions = new String[p.requestedPermissions.size()];
+            p.requestedPermissions.toArray(requestedPermissions);
+            pi.requestedPermissions = requestedPermissions;
+        }
         if ((flags & PackageManager.GET_GIDS) != 0) {
             pi.gids = PackageParserCompat.GIDS;
         }

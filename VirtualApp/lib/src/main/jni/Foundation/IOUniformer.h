@@ -16,7 +16,6 @@
 #include<dirent.h>
 #include <sys/syscall.h>
 
-#include <MSHook.h>
 #include "Helper.h"
 
 
@@ -27,6 +26,11 @@
 
 
 namespace IOUniformer {
+
+    void init_array();
+
+    void saveEnvironment(const char *selfSoPath, int api_level, int preview_api_level);
+
     void startUniformer(int api_level, int preview_api_level);
 
     void redirect(const char*orig_path, const char*new_path);

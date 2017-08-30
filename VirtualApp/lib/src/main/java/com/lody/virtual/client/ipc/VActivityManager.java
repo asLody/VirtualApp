@@ -18,6 +18,7 @@ import com.lody.virtual.helper.compat.ActivityManagerCompat;
 import com.lody.virtual.helper.utils.ComponentUtils;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.AppTaskInfo;
+import com.lody.virtual.remote.BadgerInfo;
 import com.lody.virtual.remote.PendingIntentData;
 import com.lody.virtual.remote.PendingResultData;
 import com.lody.virtual.remote.VParceledListSlice;
@@ -45,16 +46,16 @@ public class VActivityManager {
     }
 
     public IActivityManager getService() {
-        if (mRemote == null) {
+        if (mRemote == null ||
+                (!mRemote.asBinder().isBinderAlive() && !VirtualCore.get().isVAppProcess())) {
             synchronized (VActivityManager.class) {
-                if (mRemote == null) {
-                    final Object remote = getRemoteInterface();
-                    mRemote = LocalProxyUtils.genProxy(IActivityManager.class, remote);
-                }
+                final Object remote = getRemoteInterface();
+                mRemote = LocalProxyUtils.genProxy(IActivityManager.class, remote);
             }
         }
         return mRemote;
     }
+
 
     private Object getRemoteInterface() {
         return IActivityManager.Stub
@@ -189,9 +190,9 @@ public class VActivityManager {
         }
     }
 
-    public void setServiceForeground(ComponentName className, IBinder token, int id, Notification notification, boolean keepNotification) {
+    public void setServiceForeground(ComponentName className, IBinder token, int id, Notification notification, boolean removeNotification) {
         try {
-            getService().setServiceForeground(className, token, id, notification, keepNotification, VUserHandle.myUserId());
+            getService().setServiceForeground(className, token, id, notification,removeNotification,  VUserHandle.myUserId());
         } catch (RemoteException e) {
             e.printStackTrace();
         }
@@ -468,4 +469,11 @@ public class VActivityManager {
         }
     }
 
+    public void notifyBadgerChange(BadgerInfo info) {
+        try {
+            getService().notifyBadgerChange(info);
+        } catch (RemoteException e) {
+            VirtualRuntime.crash(e);
+        }
+    }
 }

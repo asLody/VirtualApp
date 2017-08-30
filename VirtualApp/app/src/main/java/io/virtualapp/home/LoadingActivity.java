@@ -61,7 +61,6 @@ public class LoadingActivity extends VActivity {
         }
         VirtualCore.get().setUiCallback(intent, mUiCallback);
         VUiKit.defer().when(() -> {
-            long startTime = System.currentTimeMillis();
             if (!appModel.fastOpen) {
                 try {
                     VirtualCore.get().preOpt(appModel.packageName);
@@ -69,16 +68,8 @@ public class LoadingActivity extends VActivity {
                     e.printStackTrace();
                 }
             }
-            long spend = System.currentTimeMillis() - startTime;
-            if (spend < 500) {
-                try {
-                    Thread.sleep(500 - spend);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        }).done((res) ->
-                VActivityManager.get().startActivity(intent, userId));
+            VActivityManager.get().startActivity(intent, userId);
+        });
 
     }
 

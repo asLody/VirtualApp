@@ -4,6 +4,7 @@ import android.app.ActivityManager;
 import android.app.IServiceConnection;
 import android.app.IStopUserCallback;
 import android.app.Notification;
+import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -31,7 +32,8 @@ import com.lody.virtual.client.IVClient;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.SpecialComponentList;
 import com.lody.virtual.client.ipc.ProviderCall;
-import com.lody.virtual.client.stub.StubManifest;
+import com.lody.virtual.client.ipc.VNotificationManager;
+import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.collection.ArrayMap;
 import com.lody.virtual.helper.collection.SparseArray;
 import com.lody.virtual.helper.compat.ActivityManagerCompat;
@@ -43,6 +45,7 @@ import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VBinder;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.AppTaskInfo;
+import com.lody.virtual.remote.BadgerInfo;
 import com.lody.virtual.remote.PendingIntentData;
 import com.lody.virtual.remote.PendingResultData;
 import com.lody.virtual.remote.VParceledListSlice;
@@ -55,8 +58,11 @@ import com.lody.virtual.server.pm.VPackageManagerService;
 import com.lody.virtual.server.secondary.BinderDelegateService;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
-import java.util.ListIterator;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static android.os.Process.killProcess;
@@ -67,17 +73,19 @@ import static com.lody.virtual.os.VUserHandle.getUserId;
  */
 public class VActivityManagerService extends IActivityManager.Stub {
 
-    private static final boolean BROADCAST_NOT_STARTED_PKG = true;
+    private static final boolean BROADCAST_NOT_STARTED_PKG = false;
 
     private static final AtomicReference<VActivityManagerService> sService = new AtomicReference<>();
     private static final String TAG = VActivityManagerService.class.getSimpleName();
     private final SparseArray<ProcessRecord> mPidsSelfLocked = new SparseArray<ProcessRecord>();
     private final ActivityStack mMainStack = new ActivityStack(this);
-    private final List<ServiceRecord> mHistory = new ArrayList<ServiceRecord>();
+    private final Set<ServiceRecord> mHistory = new HashSet<ServiceRecord>();
     private final ProcessMap<ProcessRecord> mProcessNames = new ProcessMap<ProcessRecord>();
     private final PendingIntents mPendingIntents = new PendingIntents();
     private ActivityManager am = (ActivityManager) VirtualCore.get().getContext()
             .getSystemService(Context.ACTIVITY_SERVICE);
+    private NotificationManager nm = (NotificationManager) VirtualCore.get().getContext()
+            .getSystemService(Context.NOTIFICATION_SERVICE);
 
     public static VActivityManagerService get() {
         return sService.get();
@@ -205,12 +213,12 @@ public class VActivityManagerService extends IActivityManager.Stub {
     }
 
 
-    public void processDead(ProcessRecord record) {
+    private void processDead(ProcessRecord record) {
         synchronized (mHistory) {
-            ListIterator<ServiceRecord> iterator = mHistory.listIterator();
+            Iterator<ServiceRecord> iterator = mHistory.iterator();
             while (iterator.hasNext()) {
                 ServiceRecord r = iterator.next();
-                if (r.process.pid == record.pid) {
+                if (r.process != null && r.process.pid == record.pid) {
                     iterator.remove();
                 }
             }
@@ -271,7 +279,10 @@ public class VActivityManagerService extends IActivityManager.Stub {
     private ServiceRecord findRecordLocked(int userId, ServiceInfo serviceInfo) {
         synchronized (mHistory) {
             for (ServiceRecord r : mHistory) {
-                if (r.process.userId == userId && ComponentUtils.isSameComponent(serviceInfo, r.serviceInfo)) {
+                // If service is not created, and bindService with the flag that is
+                // not BIND_AUTO_CREATE, r.process is null
+                if ((r.process == null || r.process.userId == userId)
+                        && ComponentUtils.isSameComponent(serviceInfo, r.serviceInfo)) {
                     return r;
                 }
             }
@@ -289,6 +300,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
             return null;
         }
     }
+
 
     @Override
     public ComponentName startService(IBinder caller, Intent service, String resolvedType, int userId) {
@@ -351,16 +363,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
             if (r == null) {
                 return 0;
             }
-            if (r.getClientCount() <= 0) {
-                try {
-                    IApplicationThreadCompat.scheduleStopService(r.process.appThread, r);
-                } catch (RemoteException e) {
-                    e.printStackTrace();
-                }
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-                    mHistory.remove(r);
-                }
-            }
+            stopServiceCommon(r, ComponentUtils.toComponentName(serviceInfo));
             return 1;
         }
     }
@@ -369,24 +372,38 @@ public class VActivityManagerService extends IActivityManager.Stub {
     public boolean stopServiceToken(ComponentName className, IBinder token, int startId, int userId) {
         synchronized (this) {
             ServiceRecord r = (ServiceRecord) token;
-            if (r != null && r.startId == startId) {
-                try {
-                    IApplicationThreadCompat.scheduleStopService(r.process.appThread, r);
-                } catch (RemoteException e) {
-                    e.printStackTrace();
-                }
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-                    mHistory.remove(r);
-                }
+            if (r != null && (r.startId == startId || startId == -1)) {
+                stopServiceCommon(r, className);
                 return true;
             }
+
             return false;
         }
     }
 
-    @Override
-    public void setServiceForeground(ComponentName className, IBinder token, int id, Notification notification,
-                                     boolean keepNotification, int userId) {
+    private void stopServiceCommon(ServiceRecord r, ComponentName className) {
+        for (ServiceRecord.IntentBindRecord bindRecord : r.bindings) {
+            for (IServiceConnection connection : bindRecord.connections) {
+                // Report to all of the connections that the service is no longer
+                // available.
+                try {
+                    connection.connected(className, null);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+            }
+            try {
+                IApplicationThreadCompat.scheduleUnbindService(r.process.appThread, r, bindRecord.intent);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+        try {
+            IApplicationThreadCompat.scheduleStopService(r.process.appThread, r);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+        mHistory.remove(r);
 
     }
 
@@ -574,6 +591,51 @@ public class VActivityManagerService extends IActivityManager.Stub {
     }
 
     @Override
+    public void setServiceForeground(ComponentName className, IBinder token, int id, Notification notification,
+                                     boolean removeNotification, int userId) {
+        ServiceRecord r = (ServiceRecord) token;
+        if (r != null) {
+            if (id != 0) {
+                if (notification == null) {
+                    throw new IllegalArgumentException("null notification");
+                }
+                if (r.foregroundId != id) {
+                    if (r.foregroundId != 0) {
+                        cancelNotification(userId, r.foregroundId, r.serviceInfo.packageName);
+                    }
+                    r.foregroundId = id;
+                }
+                r.foregroundNoti = notification;
+                postNotification(userId, id, r.serviceInfo.packageName, notification);
+            } else {
+                if (removeNotification) {
+                    cancelNotification(userId, r.foregroundId, r.serviceInfo.packageName);
+                    r.foregroundId = 0;
+                    r.foregroundNoti = null;
+                }
+            }
+        }
+    }
+
+    private void cancelNotification(int userId, int id, String pkg) {
+        id = VNotificationManager.get().dealNotificationId(id, pkg, null, userId);
+        String tag = VNotificationManager.get().dealNotificationTag(id, pkg, null, userId);
+        nm.cancel(tag, id);
+    }
+
+    private void postNotification(int userId, int id, String pkg, Notification notification) {
+        id = VNotificationManager.get().dealNotificationId(id, pkg, null, userId);
+        String tag = VNotificationManager.get().dealNotificationTag(id, pkg, null, userId);
+        VNotificationManager.get().dealNotification(id, notification, pkg);
+        VNotificationManager.get().addNotification(id, tag, pkg, userId);
+        try {
+            nm.notify(tag, id, notification);
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
     public void processRestarted(String packageName, String processName, int userId) {
         int callingPid = getCallingPid();
         int appId = VAppManagerService.get().getAppId(packageName);
@@ -598,7 +660,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
             try {
                 return Integer.parseInt(stubProcessName.substring(prefix.length()));
             } catch (NumberFormatException e) {
-                e.printStackTrace();
+                // ignore
             }
         }
         return -1;
@@ -674,7 +736,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
 
     @Override
     public int getFreeStubCount() {
-        return StubManifest.STUB_COUNT - mPidsSelfLocked.size();
+        return VASettings.STUB_COUNT - mPidsSelfLocked.size();
     }
 
     @Override
@@ -743,7 +805,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
         extras.putInt("_VA_|_vuid_", vuid);
         extras.putString("_VA_|_process_", processName);
         extras.putString("_VA_|_pkg_", info.packageName);
-        Bundle res = ProviderCall.call(StubManifest.getStubAuthority(vpid), "_VA_|_init_process_", null, extras);
+        Bundle res = ProviderCall.call(VASettings.getStubAuthority(vpid), "_VA_|_init_process_", null, extras);
         if (res == null) {
             return null;
         }
@@ -754,7 +816,7 @@ public class VActivityManagerService extends IActivityManager.Stub {
     }
 
     private int queryFreeStubProcessLocked() {
-        for (int vpid = 0; vpid < StubManifest.STUB_COUNT; vpid++) {
+        for (int vpid = 0; vpid < VASettings.STUB_COUNT; vpid++) {
             int N = mPidsSelfLocked.size();
             boolean using = false;
             while (N-- > 0) {
@@ -800,10 +862,10 @@ public class VActivityManagerService extends IActivityManager.Stub {
         synchronized (mPidsSelfLocked) {
             ProcessRecord r = mPidsSelfLocked.get(pid);
             if (r != null) {
-                return new ArrayList<String>(r.pkgList);
+                return new ArrayList<>(r.pkgList);
             }
         }
-        return null;
+        return Collections.emptyList();
     }
 
     @Override
@@ -1043,5 +1105,14 @@ public class VActivityManagerService extends IActivityManager.Stub {
     @Override
     public void broadcastFinish(PendingResultData res) {
         BroadcastSystem.get().broadcastFinish(res);
+    }
+
+    @Override
+    public void notifyBadgerChange(BadgerInfo info) throws RemoteException {
+        Intent intent = new Intent(VASettings.ACTION_BADGER_CHANGE);
+        intent.putExtra("userId", info.userId);
+        intent.putExtra("packageName", info.packageName);
+        intent.putExtra("badgerCount", info.badgerCount);
+        VirtualCore.get().getContext().sendBroadcast(intent);
     }
 }

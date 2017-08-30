@@ -1,6 +1,7 @@
 package com.lody.virtual.server.am;
 
 import android.app.IServiceConnection;
+import android.app.Notification;
 import android.content.Intent;
 import android.content.pm.ServiceInfo;
 import android.os.Binder;
@@ -19,6 +20,8 @@ public class ServiceRecord extends Binder {
 	public ServiceInfo serviceInfo;
 	public int startId;
 	public ProcessRecord process;
+	public int foregroundId;
+	public Notification foregroundNoti;
 
 	public boolean containConnection(IServiceConnection connection) {
 		for (IntentBindRecord record : bindings) {
