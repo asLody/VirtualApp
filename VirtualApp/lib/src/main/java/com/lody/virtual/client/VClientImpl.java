@@ -205,6 +205,9 @@ public final class VClientImpl extends IVClient.Stub {
     }
 
     private void bindApplicationNoCheck(String packageName, String processName, ConditionVariable lock) {
+        if (processName == null) {
+            processName = packageName;
+        }
         mTempLock = lock;
         try {
             setupUncaughtHandler();
@@ -309,6 +312,7 @@ public final class VClientImpl extends IVClient.Stub {
             lock.open();
             mTempLock = null;
         }
+        VirtualCore.get().getComponentDelegate().beforeApplicationCreate(mInitialApplication);
         try {
             mInstrumentation.callApplicationOnCreate(mInitialApplication);
             InvocationStubManager.getInstance().checkEnv(HCallbackStub.class);
@@ -327,6 +331,7 @@ public final class VClientImpl extends IVClient.Stub {
             }
         }
         VActivityManager.get().appDoneExecuting();
+        VirtualCore.get().getComponentDelegate().afterApplicationCreate(mInitialApplication);
     }
 
     private void setupUncaughtHandler() {

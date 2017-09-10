@@ -45,6 +45,7 @@ import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VBinder;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.AppTaskInfo;
+import com.lody.virtual.remote.BadgerInfo;
 import com.lody.virtual.remote.PendingIntentData;
 import com.lody.virtual.remote.PendingResultData;
 import com.lody.virtual.remote.VParceledListSlice;
@@ -79,8 +80,6 @@ public class VActivityManagerService extends IActivityManager.Stub {
     private final SparseArray<ProcessRecord> mPidsSelfLocked = new SparseArray<ProcessRecord>();
     private final ActivityStack mMainStack = new ActivityStack(this);
     private final Set<ServiceRecord> mHistory = new HashSet<ServiceRecord>();
-    private final ArrayMap<IBinder, ArrayList<ConnectionRecord>> mServiceConnections
-            = new ArrayMap<IBinder, ArrayList<ConnectionRecord>>();
     private final ProcessMap<ProcessRecord> mProcessNames = new ProcessMap<ProcessRecord>();
     private final PendingIntents mPendingIntents = new PendingIntents();
     private ActivityManager am = (ActivityManager) VirtualCore.get().getContext()
@@ -627,35 +626,13 @@ public class VActivityManagerService extends IActivityManager.Stub {
     private void postNotification(int userId, int id, String pkg, Notification notification) {
         id = VNotificationManager.get().dealNotificationId(id, pkg, null, userId);
         String tag = VNotificationManager.get().dealNotificationTag(id, pkg, null, userId);
-        VNotificationManager.get().dealNotification(id, notification, pkg);
+//        VNotificationManager.get().dealNotification(id, notification, pkg);
         VNotificationManager.get().addNotification(id, tag, pkg, userId);
         try {
             nm.notify(tag, id, notification);
         } catch (Throwable e) {
             e.printStackTrace();
         }
-    }
-
-    private ProcessRecord getRecordForAppLocked(IBinder caller, int userId) {
-        synchronized (mProcessNames) {
-            ArrayMap<String, SparseArray<ProcessRecord>> map = mProcessNames.getMap();
-            int N = map.size();
-            while (N-- > 0) {
-                SparseArray<ProcessRecord> uids = map.valueAt(N);
-                for (int i = 0; i < uids.size(); i++) {
-                    ProcessRecord r = uids.valueAt(i);
-                    if (userId != VUserHandle.USER_ALL) {
-                        if (r.userId != userId) {
-                            continue;
-                        }
-                    }
-                    if (caller == r.appThread.asBinder()) {
-                        return r;
-                    }
-                }
-            }
-        }
-        return null;
     }
 
     @Override
@@ -1128,5 +1105,14 @@ public class VActivityManagerService extends IActivityManager.Stub {
     @Override
     public void broadcastFinish(PendingResultData res) {
         BroadcastSystem.get().broadcastFinish(res);
+    }
+
+    @Override
+    public void notifyBadgerChange(BadgerInfo info) throws RemoteException {
+        Intent intent = new Intent(VASettings.ACTION_BADGER_CHANGE);
+        intent.putExtra("userId", info.userId);
+        intent.putExtra("packageName", info.packageName);
+        intent.putExtra("badgerCount", info.badgerCount);
+        VirtualCore.get().getContext().sendBroadcast(intent);
     }
 }

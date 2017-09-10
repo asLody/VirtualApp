@@ -5,7 +5,6 @@ import android.app.ActivityManager;
 import android.app.Application;
 import android.app.IServiceConnection;
 import android.app.Notification;
-import android.app.PendingIntent;
 import android.app.Service;
 import android.content.ComponentName;
 import android.content.IIntentReceiver;
@@ -31,6 +30,7 @@ import android.text.TextUtils;
 import android.util.TypedValue;
 
 import com.lody.virtual.client.VClientImpl;
+import com.lody.virtual.client.badger.BadgerManager;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.Constants;
 import com.lody.virtual.client.env.SpecialComponentList;
@@ -41,6 +41,7 @@ import com.lody.virtual.client.hook.secondary.ServiceConnectionDelegate;
 import com.lody.virtual.client.hook.utils.MethodParameterUtils;
 import com.lody.virtual.client.ipc.ActivityClientRecord;
 import com.lody.virtual.client.ipc.VActivityManager;
+import com.lody.virtual.client.ipc.VNotificationManager;
 import com.lody.virtual.client.ipc.VPackageManager;
 import com.lody.virtual.client.stub.ChooserActivity;
 import com.lody.virtual.client.stub.StubPendingActivity;
@@ -289,14 +290,14 @@ class MethodProxies {
             int flags = (int) args[7];
             if (args[5] instanceof Intent[]) {
                 Intent[] intents = (Intent[]) args[5];
-                if (intents.length > 0) {
-                    Intent intent = intents[intents.length - 1];
-                    if (resolvedTypes != null && resolvedTypes.length > 0) {
-                        intent.setDataAndType(intent.getData(), resolvedTypes[resolvedTypes.length - 1]);
+                for (int i = 0; i < intents.length; i++) {
+                    Intent intent = intents[i];
+                    if (resolvedTypes != null && i < resolvedTypes.length) {
+                        intent.setDataAndType(intent.getData(), resolvedTypes[i]);
                     }
                     Intent targetIntent = redirectIntentSender(type, creator, intent);
                     if (targetIntent != null) {
-                        args[5] = new Intent[]{targetIntent};
+                        intents[i] = targetIntent;
                     }
                 }
             }
@@ -414,6 +415,11 @@ class MethodProxies {
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
                 args[intentIndex - 1] = getHostPkg();
+            }
+            if(intent.getScheme().equals(SCHEME_PACKAGE) && intent.getData()!=null){
+                if(intent.getAction().startsWith("android.settings.")){
+                    intent.setData(Uri.parse("package:"+getHostPkg()));
+                }
             }
 
             ActivityInfo activityInfo = VirtualCore.get().resolveActivityInfo(intent, userId);
@@ -685,6 +691,7 @@ class MethodProxies {
             } else {
                 VLog.e(getClass().getSimpleName(), "Unknown flag : " + args[4]);
             }
+            VNotificationManager.get().dealNotification(id, notification, getAppPkg());
             VActivityManager.get().setServiceForeground(component, token, id, notification, removeNotification);
             return 0;
         }
@@ -1486,6 +1493,8 @@ class MethodProxies {
 
                 handleUninstallShortcutIntent(intent);
 
+            } else if (BadgerManager.handleBadger(intent)) {
+                return null;
             } else {
                 return ComponentUtils.redirectBroadcastIntent(intent, VUserHandle.myUserId());
             }

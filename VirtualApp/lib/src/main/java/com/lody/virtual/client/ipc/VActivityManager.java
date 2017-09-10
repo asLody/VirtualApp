@@ -4,20 +4,26 @@ import android.app.Activity;
 import android.app.IServiceConnection;
 import android.app.Notification;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ProviderInfo;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
 import android.os.IInterface;
 import android.os.RemoteException;
+import android.util.Log;
 
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.VirtualRuntime;
+import com.lody.virtual.client.hook.secondary.ServiceConnectionDelegate;
 import com.lody.virtual.helper.compat.ActivityManagerCompat;
 import com.lody.virtual.helper.utils.ComponentUtils;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.AppTaskInfo;
+import com.lody.virtual.remote.BadgerInfo;
 import com.lody.virtual.remote.PendingIntentData;
 import com.lody.virtual.remote.PendingResultData;
 import com.lody.virtual.remote.VParceledListSlice;
@@ -29,6 +35,8 @@ import java.util.List;
 import java.util.Map;
 
 import mirror.android.app.ActivityThread;
+import mirror.android.app.ContextImpl;
+import mirror.android.app.LoadedApk;
 import mirror.android.content.ContentProviderNative;
 
 /**
@@ -194,6 +202,24 @@ public class VActivityManager {
             getService().setServiceForeground(className, token, id, notification,removeNotification,  VUserHandle.myUserId());
         } catch (RemoteException e) {
             e.printStackTrace();
+        }
+    }
+
+    public int bindService(Context context, Intent service, ServiceConnection connection, int flags) {
+        try {
+            IServiceConnection conn = ServiceConnectionDelegate.getDelegate(context, connection, flags);
+            return getService().bindService(null, null, service, null, conn, flags, 0);
+        } catch (RemoteException e) {
+            return VirtualRuntime.crash(e);
+        }
+    }
+
+    public boolean unbindService(ServiceConnection connection) {
+        try {
+            IServiceConnection conn = ServiceConnectionDelegate.removeDelegate(connection);
+            return getService().unbindService(conn, VUserHandle.myUserId());
+        } catch (RemoteException e) {
+            return VirtualRuntime.crash(e);
         }
     }
 
@@ -468,4 +494,11 @@ public class VActivityManager {
         }
     }
 
+    public void notifyBadgerChange(BadgerInfo info) {
+        try {
+            getService().notifyBadgerChange(info);
+        } catch (RemoteException e) {
+            VirtualRuntime.crash(e);
+        }
+    }
 }
