@@ -15,6 +15,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.lody.virtual.helper.utils.VLog;
+import com.lody.virtual.remote.vloc.VLocation;
 import com.tencent.lbssearch.TencentSearch;
 import com.tencent.lbssearch.httpresponse.BaseObject;
 import com.tencent.lbssearch.httpresponse.HttpResponseListener;
@@ -36,21 +37,15 @@ import com.tencent.tencentmap.mapsdk.map.TencentMap;
 import io.virtualapp.abs.ui.VActivity;
 import io.virtualapp.R;
 
-/**
- * AMapV2地图中简单介绍一些Marker的用法.
- */
 public class MarkerActivity extends VActivity implements TencentMap.OnMapClickListener, TencentLocationListener {
     private TencentMap mMap;
     private MapView mapView;
     private LatLng mLatLng = new LatLng(39.9182645956, 116.3970032689);
-    //    private OnLocationChangedListener mListener;
-//    private AMapLocationClient mlocationClient;
-//    private AMapLocationClientOption mLocationOption;
     private TextView pathText;
-    //    private Thread mThread;
     private TencentSearch geocoderSearch;
     private String mAddress;
     private boolean isNoPoint = true;
+    private VLocation mVLocation;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,21 +63,13 @@ public class MarkerActivity extends VActivity implements TencentMap.OnMapClickLi
         mMap = mapView.getMap();
         mMap.setOnMapClickListener(this);
         geocoderSearch = new TencentSearch(this);
-        setUpMap();
-        //从intent里面传过来
+        //
         Intent data = getIntent();
         if (data != null) {
-            double lat = data.getDoubleExtra(MarkerActivity.EXTRA_LATITUDE, 0);
-            double lon = data.getDoubleExtra(MarkerActivity.EXTRA_LONGITUDE, 0);
-            String address = data.getStringExtra(MarkerActivity.EXTRA_ADDTESS);
-            if (lat != 0 && lon != 0) {
-                mLatLng = new LatLng(lat, lon);
+            mVLocation = data.getParcelableExtra(EXTRA_LOCATION);
+            if (mVLocation != null && mVLocation.latitude != 0 && mVLocation.longitude != 0) {
+                mLatLng = new LatLng(mVLocation.latitude, mVLocation.longitude);
                 isNoPoint = false;
-            }
-            if (!TextUtils.isEmpty(address)) {
-                pathText.setText(address);
-            } else {
-                pathText.setText("Unknown");
             }
         }
 
@@ -105,25 +92,6 @@ public class MarkerActivity extends VActivity implements TencentMap.OnMapClickLi
         }
     }
 
-    /**
-     * 设置一些amap的属性
-     */
-    private void setUpMap() {
-        // 自定义系统定位小蓝点
-//        MyLocationStyle myLocationStyle = new MyLocationStyle();
-//        myLocationStyle.myLocationIcon(BitmapDescriptorFactory
-//                .fromResource(R.drawable.location_marker));// 设置小蓝点的图标
-//        myLocationStyle.strokeColor(Color.BLACK);// 设置圆形的边框颜色
-//        myLocationStyle.radiusFillColor(Color.argb(100, 0, 0, 180));// 设置圆形的填充颜色
-//        // myLocationStyle.anchor(int,int)//设置小蓝点的锚点
-//        myLocationStyle.strokeWidth(1.0f);// 设置圆形的边框粗细
-//        mMap.setMyLocationStyle(myLocationStyle);
-//        mMap.setLocationSource(this);// 设置定位监听
-//        mMap.getUiSettings().setMyLocationButtonEnabled(true);// 设置默认定位按钮是否显示
-//        mMap.setMyLocationEnabled(true);// 设置为true表示显示定位层并可触发定位，false表示隐藏定位层并不可触发定位，默认是false
-//        // mMap.setMyLocationType()
-    }
-
     private void startLocation() {
         Toast.makeText(this, "start location", Toast.LENGTH_SHORT).show();
         TencentLocationRequest request = TencentLocationRequest.create()
@@ -131,7 +99,7 @@ public class MarkerActivity extends VActivity implements TencentMap.OnMapClickLi
                 .setAllowGPS(true);
         int error = TencentLocationManager.getInstance(this)
                 .requestLocationUpdates(request, this);
-        if(error != 0) {
+        if (error != 0) {
             VLog.w("TMap", "startLocation:error=" + error);
         }
     }
@@ -172,7 +140,7 @@ public class MarkerActivity extends VActivity implements TencentMap.OnMapClickLi
                     if (mMap != null) {
                         mMap.clearAllOverlays();
                     }
-                    setResult(0, 0, null);
+                    setResultOk(null);
                     finish();
                     d.dismiss();
                 });
@@ -183,7 +151,20 @@ public class MarkerActivity extends VActivity implements TencentMap.OnMapClickLi
                 break;
             case R.id.action_ok:
                 if (mLatLng != null) {
-                    setResult(mLatLng.getLatitude(), mLatLng.getLongitude(), mAddress);
+                    /**
+                     * TODO edit info
+                     * @see com.lody.virtual.remote.vloc.VLocation#altitude
+                     * @see com.lody.virtual.remote.vloc.VLocation#accuracy
+                     * @see com.lody.virtual.remote.vloc.VLocation#speed
+                     * @see com.lody.virtual.remote.vloc.VLocation#bearing
+                     */
+                    if (mVLocation == null) {
+                        mVLocation = new VLocation();
+                        mVLocation.accuracy = 50;
+                    }
+                    mVLocation.latitude = mLatLng.getLatitude();
+                    mVLocation.longitude = mLatLng.getLongitude();
+                    setResultOk(mVLocation);
                     finish();
                 }
                 break;
@@ -200,16 +181,15 @@ public class MarkerActivity extends VActivity implements TencentMap.OnMapClickLi
                 .draggable(true);
         mMap.clearAllOverlays();
         mMap.addMarker(markerOption);
-        int level = Math.min(mMap.getZoomLevel(), mMap.getMaxZoomLevel()/3*2);
+        int level = Math.min(mMap.getZoomLevel(), mMap.getMaxZoomLevel() / 3 * 2);
         mMap.moveCamera(CameraUpdateFactory.newCameraPosition(new CameraPosition(latLng, level)));
+
         //查询地理位置
-//        pathText.setText(R.string.find_location_address);
         ProgressDialog dialog = ProgressDialog.show(this, null, "get address of location");
         Geo2AddressParam param = new Geo2AddressParam()
                 .location(new Location()
                         .lat((float) latLng.getLatitude())
                         .lng((float) latLng.getLongitude()));
-//            param.get_poi(true);
         geocoderSearch.geo2address(param, new HttpResponseListener() {
             @Override
             public void onSuccess(int i, BaseObject object) {
@@ -266,15 +246,11 @@ public class MarkerActivity extends VActivity implements TencentMap.OnMapClickLi
     }
 
 
-    private void setResult(double lat, double lon, String address) {
+    private void setResultOk(VLocation location) {
         Intent intent = new Intent();
-        intent.putExtra(EXTRA_LATITUDE, lat);
-        intent.putExtra(EXTRA_LONGITUDE, lon);
-        intent.putExtra(EXTRA_ADDTESS, address);
+        intent.putExtra(EXTRA_LOCATION, location);
         setResult(Activity.RESULT_OK, intent);
     }
 
-    public static final String EXTRA_LATITUDE = "amap.latitude";
-    public static final String EXTRA_LONGITUDE = "amap.longitude";
-    public static final String EXTRA_ADDTESS = "amap.address";
+    public static final String EXTRA_LOCATION = "virtual_location";
 }
