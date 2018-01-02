@@ -1,5 +1,6 @@
 package com.lody.virtual.server.notification;
 
+import android.annotation.TargetApi;
 import android.app.Notification;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
@@ -16,6 +17,7 @@ import static com.lody.virtual.os.VEnvironment.getPackageResourcePath;
 /**
  * @author 247321543
  */
+@TargetApi(Build.VERSION_CODES.LOLLIPOP)
 /* package */ class NotificationCompatCompatV21 extends NotificationCompatCompatV14 {
 
     private static final String TAG = NotificationCompatCompatV21.class.getSimpleName();
@@ -26,12 +28,9 @@ import static com.lody.virtual.os.VEnvironment.getPackageResourcePath;
 
     @Override
     public boolean dealNotification(int id, Notification notification, String packageName) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            Context appContext = getAppContext(packageName);
-            return resolveRemoteViews(appContext, packageName, notification)
-                    || resolveRemoteViews(appContext, packageName, notification.publicVersion);
-        }
-        return super.dealNotification(id, notification, packageName);
+        Context appContext = getAppContext(packageName);
+        return resolveRemoteViews(appContext, packageName, notification)
+                || resolveRemoteViews(appContext, packageName, notification.publicVersion);
     }
 
     private boolean resolveRemoteViews(Context appContext, String packageName, Notification notification) {
@@ -50,7 +49,6 @@ import static com.lody.virtual.os.VEnvironment.getPackageResourcePath;
 
         //Fix RemoteViews
         getNotificationFixer().fixNotificationRemoteViews(appContext, notification);
-        //Fix Icon
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             getNotificationFixer().fixIcon(notification.getSmallIcon(), appContext, packageInfo != null);
             getNotificationFixer().fixIcon(notification.getLargeIcon(), appContext, packageInfo != null);

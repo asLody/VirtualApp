@@ -70,11 +70,7 @@ Documentation
 
 VirtualApp currently has **no documentation**, If you are interested in VirtualApp, please send email to me.
 
-License
--------
-GPL 3.0
-
-About Author
+Contact us
 ------------
 
-    Lody (imlody@foxmail.com)
+    zlu@QQ.com

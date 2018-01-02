@@ -9,7 +9,6 @@ import java.util.Locale;
 public class VASettings {
     public static final String STUB_DEF_AUTHORITY = "virtual_stub_";
     public static final String ACTION_BADGER_CHANGE = "com.lody.virtual.BADGER_CHANGE";
-    public static long LOCATION_UPDATE_PERIOD = 3000L;
     public static String STUB_ACTIVITY = StubActivity.class.getName();
     public static String STUB_DIALOG = StubDialog.class.getName();
     public static String STUB_CP = StubContentProvider.class.getName();
@@ -49,6 +48,17 @@ public class VASettings {
 
     public static String getStubAuthority(int index) {
         return String.format(Locale.ENGLISH, "%s%d", STUB_CP_AUTHORITY, index);
+    }
+
+    public static class Wifi {
+        public static boolean FAKE_WIFI_STATE = false;
+        public static String DEFAULT_BSSID = "66:55:44:33:22:11";
+        public static String DEFAULT_MAC = "11:22:33:44:55:66";
+        public static String DEFAULT_SSID = "VirtualApp";
+
+        public static String BSSID = DEFAULT_BSSID;
+        public static String MAC = DEFAULT_MAC;
+        public static String SSID = DEFAULT_SSID;
     }
 
 }

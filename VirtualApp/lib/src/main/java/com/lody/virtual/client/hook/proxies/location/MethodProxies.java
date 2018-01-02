@@ -1,27 +1,19 @@
 package com.lody.virtual.client.hook.proxies.location;
 
-import android.location.ILocationListener;
-import android.location.Location;
 import android.location.LocationManager;
 import android.location.LocationRequest;
-import android.os.Bundle;
-import android.os.IBinder;
-import android.os.RemoteException;
-import android.os.SystemClock;
+import android.os.Build;
 
-import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.client.hook.base.MethodProxy;
 import com.lody.virtual.client.hook.base.ReplaceLastPkgMethodProxy;
 import com.lody.virtual.client.ipc.VirtualLocationManager;
-import com.lody.virtual.client.stub.VASettings;
+import com.lody.virtual.helper.utils.ArrayUtils;
 import com.lody.virtual.helper.utils.Reflect;
-import com.lody.virtual.helper.utils.SchedulerTask;
 import com.lody.virtual.remote.vloc.VLocation;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 
 import mirror.android.location.LocationRequestL;
 
@@ -30,8 +22,6 @@ import mirror.android.location.LocationRequestL;
  */
 @SuppressWarnings("ALL")
 public class MethodProxies {
-
-    private static Map<IBinder, UpdateLocationTask> tasks = new HashMap<>();
 
     private static void fixLocationRequest(LocationRequest request) {
         if (request != null) {
@@ -44,47 +34,36 @@ public class MethodProxies {
         }
     }
 
-    private static class AddGpsStatusListener extends ReplaceLastPkgMethodProxy {
+    static class AddGpsStatusListener extends ReplaceLastPkgMethodProxy {
 
         public AddGpsStatusListener() {
             super("addGpsStatusListener");
         }
 
+        public AddGpsStatusListener(String name) {
+            super(name);
+        }
+
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
             if (isFakeLocationEnable()) {
-                return false;
+                Object transport = ArrayUtils.getFirst(args, mirror.android.location.LocationManager.GpsStatusListenerTransport.TYPE);
+                Object locationManager = mirror.android.location.LocationManager.GpsStatusListenerTransport.this$0.get(transport);
+                mirror.android.location.LocationManager.GpsStatusListenerTransport.onGpsStarted.call(transport);
+                mirror.android.location.LocationManager.GpsStatusListenerTransport.onFirstFix.call(transport, 0);
+                if (mirror.android.location.LocationManager.GpsStatusListenerTransport.mListener.get(transport) != null) {
+                    MockLocationHelper.invokeSvStatusChanged(transport);
+                } else {
+                    MockLocationHelper.invokeNmeaReceived(transport);
+                }
+                GPSListenerThread.get().addListenerTransport(locationManager);
+                return true;
             }
             return super.call(who, method, args);
         }
     }
 
-    private static class UpdateLocationTask extends SchedulerTask {
-
-        private ILocationListener listener;
-
-        public UpdateLocationTask(ILocationListener listener) {
-            super(VirtualRuntime.getUIHandler(), VASettings.LOCATION_UPDATE_PERIOD);
-            this.listener = listener;
-        }
-
-        @Override
-        public void run() {
-            final VLocation vLocation = VirtualLocationManager.get().getLocation(MethodProxy.getAppUserId(), MethodProxy.getAppPkg());
-            if (vLocation != null) {
-                Location location = createLocation(vLocation);
-                if (listener.asBinder().isBinderAlive()) {
-                    try {
-                        listener.onLocationChanged(location);
-                    } catch (RemoteException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }
-    }
-
-    private static class RequestLocationUpdates extends ReplaceLastPkgMethodProxy {
+    static class RequestLocationUpdates extends ReplaceLastPkgMethodProxy {
 
         public RequestLocationUpdates() {
             super("requestLocationUpdates");
@@ -92,20 +71,24 @@ public class MethodProxies {
 
         @Override
         public Object call(final Object who, Method method, Object... args) throws Throwable {
-            LocationRequest request = (LocationRequest) args[0];
-            fixLocationRequest(request);
+            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.JELLY_BEAN) {
+                LocationRequest request = (LocationRequest) args[0];
+                fixLocationRequest(request);
+            }
             if (isFakeLocationEnable()) {
-                final ILocationListener listener = (ILocationListener) args[1];
-                UpdateLocationTask task = new UpdateLocationTask(listener);
-                tasks.put(listener.asBinder(), task);
-                task.schedule();
+                Object transport = ArrayUtils.getFirst(args, mirror.android.location.LocationManager.ListenerTransport.TYPE);
+                if (transport != null) {
+                    Object locationManager = mirror.android.location.LocationManager.ListenerTransport.this$0.get(transport);
+                    MockLocationHelper.setGpsStatus(locationManager);
+                    GPSListenerThread.get().addListenerTransport(locationManager);
+                }
                 return 0;
             }
             return super.call(who, method, args);
         }
     }
 
-    private static class RemoveUpdates extends ReplaceLastPkgMethodProxy {
+    static class RemoveUpdates extends ReplaceLastPkgMethodProxy {
 
         public RemoveUpdates() {
             super("removeUpdates");
@@ -114,18 +97,14 @@ public class MethodProxies {
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
             if (isFakeLocationEnable()) {
-                IBinder binder = (IBinder) args[0];
-                UpdateLocationTask task = tasks.get(binder);
-                if (task != null) {
-                    task.cancel();
-                }
+                // TODO
                 return 0;
             }
             return super.call(who, method, args);
         }
     }
 
-    private static class GetLastLocation extends ReplaceLastPkgMethodProxy {
+    static class GetLastLocation extends ReplaceLastPkgMethodProxy {
 
         public GetLastLocation() {
             super("getLastLocation");
@@ -133,12 +112,14 @@ public class MethodProxies {
 
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
-            if (isFakeLocationEnable()) {
+            if (!(args[0] instanceof String)) {
                 LocationRequest request = (LocationRequest) args[0];
                 fixLocationRequest(request);
-                VLocation loc = VirtualLocationManager.get().getLocation(getAppUserId(), getAppPkg());
+            }
+            if (isFakeLocationEnable()) {
+                VLocation loc = VirtualLocationManager.get().getLocation();
                 if (loc != null) {
-                    return createLocation(loc);
+                    return loc.toSysLocation();
                 } else {
                     return null;
                 }
@@ -147,14 +128,33 @@ public class MethodProxies {
         }
     }
 
-    private static class GetLastKnownLocation extends GetLastLocation {
+    static class GetLastKnownLocation extends GetLastLocation {
         @Override
         public String getMethodName() {
             return "getLastKnownLocation";
         }
     }
 
-    private static class IsProviderEnabled extends MethodProxy {
+    static class getProviders extends MethodProxy {
+
+        static List PROVIDERS = Arrays.asList(
+                LocationManager.GPS_PROVIDER,
+                LocationManager.PASSIVE_PROVIDER,
+                LocationManager.NETWORK_PROVIDER
+        );
+
+        @Override
+        public String getMethodName() {
+            return "getProviders";
+        }
+
+        @Override
+        public Object call(Object who, Method method, Object... args) throws Throwable {
+            return PROVIDERS;
+        }
+    }
+
+    static class IsProviderEnabled extends MethodProxy {
         @Override
         public String getMethodName() {
             return "isProviderEnabled";
@@ -164,31 +164,31 @@ public class MethodProxies {
         public Object call(Object who, Method method, Object... args) throws Throwable {
             if (isFakeLocationEnable()) {
                 String provider = (String) args[0];
+                if (LocationManager.PASSIVE_PROVIDER.equals(provider)) {
+                    return true;
+                }
                 if (LocationManager.GPS_PROVIDER.equals(provider)) {
                     return true;
                 }
+                if (LocationManager.NETWORK_PROVIDER.equals(provider)) {
+                    return true;
+                }
+                return false;
+
             }
             return super.call(who, method, args);
         }
     }
 
-    private static class getAllProviders extends MethodProxy {
+    static class getAllProviders extends getProviders {
 
         @Override
         public String getMethodName() {
             return "getAllProviders";
         }
-
-        @Override
-        public Object call(Object who, Method method, Object... args) throws Throwable {
-            if (isFakeLocationEnable()) {
-                return Arrays.asList(LocationManager.NETWORK_PROVIDER, LocationManager.GPS_PROVIDER);
-            }
-            return super.call(who, method, args);
-        }
     }
 
-    private static class GetBestProvider extends MethodProxy {
+    static class GetBestProvider extends MethodProxy {
         @Override
         public String getMethodName() {
             return "getBestProvider";
@@ -197,30 +197,118 @@ public class MethodProxies {
         @Override
         public Object call(Object who, Method method, Object... args) throws Throwable {
             if (isFakeLocationEnable()) {
-                return LocationManager.NETWORK_PROVIDER;
+                return LocationManager.GPS_PROVIDER;
             }
             return super.call(who, method, args);
         }
     }
 
 
-    public static Location createLocation(VLocation loc) {
-        Location sysLoc = new Location(LocationManager.GPS_PROVIDER);
-        if (loc.accuracy == 0f) {
-            sysLoc.setAccuracy(8f);
-        } else {
-            sysLoc.setAccuracy(loc.accuracy);
+    static class RemoveGpsStatusListener extends ReplaceLastPkgMethodProxy {
+        public RemoveGpsStatusListener() {
+            super("removeGpsStatusListener");
         }
-        Bundle extraBundle = new Bundle();
-        extraBundle.putInt("satellites", 23);
-        sysLoc.setBearing(loc.bearing);
-        Reflect.on(sysLoc).call("setIsFromMockProvider", false);
-        sysLoc.setLatitude(loc.latitude);
-        sysLoc.setLongitude(loc.longitude);
-        sysLoc.setSpeed(loc.speed);
-        sysLoc.setTime(System.currentTimeMillis());
-        sysLoc.setExtras(extraBundle);
-        Reflect.on(sysLoc).call("setElapsedRealtimeNanos", SystemClock.elapsedRealtime());
-        return sysLoc;
+
+        public RemoveGpsStatusListener(String name) {
+            super(name);
+        }
+
+        @Override
+        public Object call(Object who, Method method, Object... args) throws Throwable {
+            if (isFakeLocationEnable()) {
+                return 0;
+            }
+            return super.call(who, method, args);
+        }
     }
+
+    static class sendExtraCommand extends MethodProxy {
+
+        @Override
+        public String getMethodName() {
+            return "sendExtraCommand";
+        }
+
+        @Override
+        public Object call(Object who, Method method, Object... args) throws Throwable {
+            if (isFakeLocationEnable()) {
+                return true;
+            }
+            return super.call(who, method, args);
+        }
+    }
+
+
+    static class UnregisterGnssStatusCallback extends RemoveGpsStatusListener {
+        public UnregisterGnssStatusCallback() {
+            super("unregisterGnssStatusCallback");
+        }
+    }
+
+    static class RegisterGnssStatusCallback extends MethodProxy {
+
+        @Override
+        public String getMethodName() {
+            return "registerGnssStatusCallback";
+        }
+
+        @Override
+        public Object call(Object who, Method method, Object... args) throws Throwable {
+            if (!isFakeLocationEnable()) {
+                return super.call(who, method, args);
+            }
+            Object transport = ArrayUtils.getFirst(args, mirror.android.location.LocationManager.GnssStatusListenerTransport.TYPE);
+            if (transport != null) {
+                mirror.android.location.LocationManager.GnssStatusListenerTransport.onGnssStarted.call(transport, new Object[0]);
+                if (mirror.android.location.LocationManager.GnssStatusListenerTransport.mGpsListener.get(transport) != null) {
+                    MockLocationHelper.invokeSvStatusChanged(transport);
+                } else {
+                    MockLocationHelper.invokeNmeaReceived(transport);
+                }
+                mirror.android.location.LocationManager.GnssStatusListenerTransport.onFirstFix.call(transport, Integer.valueOf(0));
+                Object locationManager = mirror.android.location.LocationManager.GnssStatusListenerTransport.this$0.get(transport);
+                GPSListenerThread.get().addListenerTransport(locationManager);
+            }
+            return true;
+        }
+    }
+
+    static class getProviderProperties extends MethodProxy {
+
+        @Override
+        public String getMethodName() {
+            return "getProviderProperties";
+        }
+
+        @Override
+        public Object afterCall(Object who, Method method, Object[] args, Object result) throws Throwable {
+            if (!isFakeLocationEnable()) {
+                return super.afterCall(who, method, args, result);
+            }
+            try {
+                Reflect.on(result).set("mRequiresNetwork", false);
+                Reflect.on(result).set("mRequiresCell", false);
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
+            return result;
+        }
+    }
+
+    static class locationCallbackFinished extends MethodProxy {
+
+        @Override
+        public Object call(Object who, Method method, Object... args) throws Throwable {
+            if (isFakeLocationEnable()) {
+                return true;
+            }
+            return super.call(who, method, args);
+        }
+
+        @Override
+        public String getMethodName() {
+            return "locationCallbackFinished";
+        }
+    }
+
 }

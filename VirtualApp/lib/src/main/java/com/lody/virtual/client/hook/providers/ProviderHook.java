@@ -28,6 +28,13 @@ import mirror.android.content.IContentProvider;
 
 public class ProviderHook implements InvocationHandler {
 
+    public static final String QUERY_ARG_SQL_SELECTION = "android:query-arg-sql-selection";
+
+    public static final String QUERY_ARG_SQL_SELECTION_ARGS =
+            "android:query-arg-sql-selection-args";
+    public static final String QUERY_ARG_SQL_SORT_ORDER = "android:query-arg-sql-sort-order";
+
+
     private static final Map<String, HookFetcher> PROVIDER_MAP = new HashMap<>();
 
     static {
@@ -101,7 +108,7 @@ public class ProviderHook implements InvocationHandler {
     }
 
     public Cursor query(MethodBox methodBox, Uri url, String[] projection, String selection,
-                        String[] selectionArgs, String sortOrder) throws InvocationTargetException {
+                        String[] selectionArgs, String sortOrder, Bundle originQueryArgs) throws InvocationTargetException {
         return (Cursor) methodBox.call();
     }
 
@@ -153,7 +160,7 @@ public class ProviderHook implements InvocationHandler {
             } else if ("getType".equals(name)) {
                 return getType(methodBox, (Uri) args[0]);
             } else if ("delete".equals(name)) {
-                Uri url = (Uri) args[0];
+                Uri url = (Uri) args[start];
                 String selection = (String) args[start + 1];
                 String[] selectionArgs = (String[]) args[start + 2];
                 return delete(methodBox, url, selection, selectionArgs);
@@ -178,10 +185,23 @@ public class ProviderHook implements InvocationHandler {
             } else if ("query".equals(name)) {
                 Uri url = (Uri) args[start];
                 String[] projection = (String[]) args[start + 1];
-                String selection = (String) args[start + 2];
-                String[] selectionArgs = (String[]) args[start + 3];
-                String sortOrder = (String) args[start + 4];
-                return query(methodBox, url, projection, selection, selectionArgs, sortOrder);
+                String selection = null;
+                String[] selectionArgs = null;
+                String sortOrder = null;
+                Bundle queryArgs = null;
+                if (Build.VERSION.SDK_INT >= 26) {
+                    queryArgs = (Bundle) args[start + 2];
+                    if (queryArgs != null) {
+                        selection = queryArgs.getString(QUERY_ARG_SQL_SELECTION);
+                        selectionArgs = queryArgs.getStringArray(QUERY_ARG_SQL_SELECTION_ARGS);
+                        sortOrder = queryArgs.getString(QUERY_ARG_SQL_SORT_ORDER);
+                    }
+                } else {
+                    selection = (String) args[start + 2];
+                    selectionArgs = (String[]) args[start + 3];
+                    sortOrder = (String) args[start + 4];
+                }
+                return query(methodBox, url, projection, selection, selectionArgs, sortOrder, queryArgs);
             }
             return methodBox.call();
         } catch (Throwable e) {

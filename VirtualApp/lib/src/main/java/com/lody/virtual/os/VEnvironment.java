@@ -4,6 +4,7 @@ import android.content.Context;
 import android.os.Build;
 
 import com.lody.virtual.client.core.VirtualCore;
+import com.lody.virtual.client.env.VirtualRuntime;
 import com.lody.virtual.helper.utils.FileUtils;
 import com.lody.virtual.helper.utils.VLog;
 
@@ -34,7 +35,7 @@ public class VEnvironment {
         DALVIK_CACHE_DIRECTORY = ensureCreated(new File(ROOT, "opt"));
     }
 
-    public static void systemReady(){
+    public static void systemReady() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             try {
                 FileUtils.chmod(ROOT.getAbsolutePath(), FileUtils.FileMode.MODE_755);
@@ -96,7 +97,6 @@ public class VEnvironment {
     }
 
     /**
-     *
      * @return Virtual storage config file
      */
     public static File getVSConfigFile() {
@@ -122,6 +122,10 @@ public class VEnvironment {
 
     public static File getDataAppPackageDirectory(String packageName) {
         return ensureCreated(new File(getDataAppDirectory(), packageName));
+    }
+
+    public static File getAppLibDirectory(String packageName) {
+        return ensureCreated(new File(getDataAppPackageDirectory(packageName), "lib"));
     }
 
     public static File getPackageCacheFile(String packageName) {

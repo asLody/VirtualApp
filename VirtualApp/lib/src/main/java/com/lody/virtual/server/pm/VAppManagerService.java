@@ -3,11 +3,14 @@ package com.lody.virtual.server.pm;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
+import android.os.IBinder;
 import android.os.RemoteCallbackList;
 import android.os.RemoteException;
 
 import com.lody.virtual.client.core.InstallStrategy;
 import com.lody.virtual.client.core.VirtualCore;
+import com.lody.virtual.client.env.VirtualRuntime;
+import com.lody.virtual.helper.ArtDexOptimizer;
 import com.lody.virtual.helper.collection.IntArray;
 import com.lody.virtual.helper.compat.NativeLibraryHelperCompat;
 import com.lody.virtual.helper.utils.ArrayUtils;
@@ -17,11 +20,11 @@ import com.lody.virtual.os.VEnvironment;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.InstallResult;
 import com.lody.virtual.remote.InstalledAppInfo;
-import com.lody.virtual.server.IAppManager;
 import com.lody.virtual.server.accounts.VAccountManagerService;
 import com.lody.virtual.server.am.BroadcastSystem;
 import com.lody.virtual.server.am.UidSystem;
 import com.lody.virtual.server.am.VActivityManagerService;
+import com.lody.virtual.server.interfaces.IAppManager;
 import com.lody.virtual.server.interfaces.IAppRequestListener;
 import com.lody.virtual.server.interfaces.IPackageObserver;
 import com.lody.virtual.server.pm.parser.PackageParserEx;
@@ -35,10 +38,12 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
+import dalvik.system.DexFile;
+
 /**
  * @author Lody
  */
-public class VAppManagerService extends IAppManager.Stub {
+public class VAppManagerService implements IAppManager {
 
     private static final String TAG = VAppManagerService.class.getSimpleName();
     private static final AtomicReference<VAppManagerService> sService = new AtomicReference<>();
@@ -143,7 +148,6 @@ public class VAppManagerService extends IAppManager.Stub {
         if (path == null) {
             return InstallResult.makeFailure("path = NULL");
         }
-        boolean skipDexOpt = (flags & InstallStrategy.SKIP_DEX_OPT) != 0;
         File packageFile = new File(path);
         if (!packageFile.exists() || !packageFile.isFile()) {
             return InstallResult.makeFailure("Package File is not exist.");
@@ -216,7 +220,6 @@ public class VAppManagerService extends IAppManager.Stub {
         } else {
             ps = new PackageSetting();
         }
-        ps.skipDexOpt = skipDexOpt;
         ps.dependSystem = dependSystem;
         ps.apkPath = packageFile.getPath();
         ps.libPath = libDir.getPath();
@@ -235,6 +238,26 @@ public class VAppManagerService extends IAppManager.Stub {
         PackageParserEx.savePackageCache(pkg);
         PackageCacheManager.put(pkg, ps);
         mPersistenceLayer.save();
+        if (!dependSystem) {
+            boolean runDexOpt = false;
+            if (VirtualRuntime.isArt()) {
+                try {
+                    ArtDexOptimizer.interpretDex2Oat(ps.apkPath, VEnvironment.getOdexFile(ps.packageName).getPath());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    runDexOpt = true;
+                }
+            } else {
+                runDexOpt = true;
+            }
+            if (runDexOpt) {
+                try {
+                    DexFile.loadDex(ps.apkPath, VEnvironment.getOdexFile(ps.packageName).getPath(), 0).close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
         BroadcastSystem.get().startApp(pkg);
         if (notify) {
             notifyAppInstalled(ps, -1);
@@ -491,7 +514,7 @@ public class VAppManagerService extends IAppManager.Stub {
         this.mAppRequestListener = listener;
         if (listener != null) {
             try {
-                listener.asBinder().linkToDeath(new DeathRecipient() {
+                listener.asBinder().linkToDeath(new IBinder.DeathRecipient() {
                     @Override
                     public void binderDied() {
                         listener.asBinder().unlinkToDeath(this, 0);

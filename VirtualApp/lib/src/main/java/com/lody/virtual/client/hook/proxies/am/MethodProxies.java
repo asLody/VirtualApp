@@ -20,6 +20,7 @@ import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.Icon;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -41,6 +42,7 @@ import com.lody.virtual.client.hook.secondary.ServiceConnectionDelegate;
 import com.lody.virtual.client.hook.utils.MethodParameterUtils;
 import com.lody.virtual.client.ipc.ActivityClientRecord;
 import com.lody.virtual.client.ipc.VActivityManager;
+import com.lody.virtual.client.ipc.VNotificationManager;
 import com.lody.virtual.client.ipc.VPackageManager;
 import com.lody.virtual.client.stub.ChooserActivity;
 import com.lody.virtual.client.stub.StubPendingActivity;
@@ -53,6 +55,8 @@ import com.lody.virtual.helper.utils.ArrayUtils;
 import com.lody.virtual.helper.utils.BitmapUtils;
 import com.lody.virtual.helper.utils.ComponentUtils;
 import com.lody.virtual.helper.utils.DrawableUtils;
+import com.lody.virtual.helper.utils.FileUtils;
+import com.lody.virtual.helper.utils.Reflect;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.os.VUserInfo;
@@ -60,6 +64,10 @@ import com.lody.virtual.remote.AppTaskInfo;
 import com.lody.virtual.server.interfaces.IAppRequestListener;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.util.List;
@@ -289,14 +297,14 @@ class MethodProxies {
             int flags = (int) args[7];
             if (args[5] instanceof Intent[]) {
                 Intent[] intents = (Intent[]) args[5];
-                if (intents.length > 0) {
-                    Intent intent = intents[intents.length - 1];
-                    if (resolvedTypes != null && resolvedTypes.length > 0) {
-                        intent.setDataAndType(intent.getData(), resolvedTypes[resolvedTypes.length - 1]);
+                for (int i = 0; i < intents.length; i++) {
+                    Intent intent = intents[i];
+                    if (resolvedTypes != null && i < resolvedTypes.length) {
+                        intent.setDataAndType(intent.getData(), resolvedTypes[i]);
                     }
                     Intent targetIntent = redirectIntentSender(type, creator, intent);
                     if (targetIntent != null) {
-                        args[5] = new Intent[]{targetIntent};
+                        intents[i] = targetIntent;
                     }
                 }
             }
@@ -357,6 +365,7 @@ class MethodProxies {
 
         private static final String SCHEME_FILE = "file";
         private static final String SCHEME_PACKAGE = "package";
+        private static final String SCHEME_CONTENT = "content";
 
         @Override
         public String getMethodName() {
@@ -415,6 +424,11 @@ class MethodProxies {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
                 args[intentIndex - 1] = getHostPkg();
             }
+            if (intent.getScheme() != null && intent.getScheme().equals(SCHEME_PACKAGE) && intent.getData() != null) {
+                if (intent.getAction() != null && intent.getAction().startsWith("android.settings.")) {
+                    intent.setData(Uri.parse("package:" + getHostPkg()));
+                }
+            }
 
             ActivityInfo activityInfo = VirtualCore.get().resolveActivityInfo(intent, userId);
             if (activityInfo == null) {
@@ -463,6 +477,32 @@ class MethodProxies {
                     File sourceFile = new File(packageUri.getPath());
                     try {
                         listener.onRequestInstall(sourceFile.getPath());
+                        return true;
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
+                } else if (SCHEME_CONTENT.equals(packageUri.getScheme())){
+                    InputStream inputStream = null;
+                    OutputStream outputStream = null;
+                    File sharedFileCopy = new File(getHostContext().getCacheDir(), packageUri.getLastPathSegment());
+                    try {
+                        inputStream = getHostContext().getContentResolver().openInputStream(packageUri);
+                        outputStream = new FileOutputStream(sharedFileCopy);
+                        byte[] buffer = new byte[1024];
+                        int count;
+                        while ((count = inputStream.read(buffer)) > 0) {
+                            outputStream.write(buffer, 0, count);
+                        }
+                        outputStream.flush();
+
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    } finally {
+                        FileUtils.closeQuietly(inputStream);
+                        FileUtils.closeQuietly(outputStream);
+                    }
+                    try {
+                        listener.onRequestInstall(sharedFileCopy.getPath());
                         return true;
                     } catch (RemoteException e) {
                         e.printStackTrace();
@@ -685,6 +725,23 @@ class MethodProxies {
             } else {
                 VLog.e(getClass().getSimpleName(), "Unknown flag : " + args[4]);
             }
+            VNotificationManager.get().dealNotification(id, notification, getAppPkg());
+
+            /**
+             * `BaseStatusBar#updateNotification` aosp will use use
+             * `new StatusBarIcon(...notification.getSmallIcon()...)`
+             *  while in samsung SystemUI.apk ,the corresponding code comes as
+             * `new StatusBarIcon(...pkgName,notification.icon...)`
+             * the icon comes from `getSmallIcon.getResource`
+             * which will throw an exception on :x process thus crash the application
+             */
+            if (notification != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
+                    (Build.BRAND.equalsIgnoreCase("samsung") || Build.MANUFACTURER.equalsIgnoreCase("samsung"))) {
+                notification.icon = getHostContext().getApplicationInfo().icon;
+                Icon icon = Icon.createWithResource(getHostPkg(), notification.icon);
+                Reflect.on(notification).call("setSmallIcon", icon);
+            }
+
             VActivityManager.get().setServiceForeground(component, token, id, notification, removeNotification);
             return 0;
         }
