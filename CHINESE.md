@@ -21,6 +21,17 @@ VirtualApp在2017年8月份正式公司化运作，当您需要将VirtualApp用�
  
 商业版更新日志：
 
+**2018年01月15日**
+1. jni的log开关 Android.mk:LOCAL_CFLAGS += -DLOG_ENABLE
+2. 混淆配置
+3. Android O的通知栏适配
+
+**2018年01月14日**
+1. 修复部分app网络卡的问题
+
+**2018年01月12日**
+1、适配 android 8.0的dl_open（jni加载）
+
 **2018年01月09日**
 1. 修复华为emui8.0的一个bug
 
