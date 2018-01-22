@@ -30,7 +30,7 @@ VirtualApp在2017年8月份正式公司化运作，当您需要将VirtualApp用�
 1. 修复部分app网络卡的问题
 
 **2018年01月12日**
-1、适配 android 8.0的dl_open（jni加载）
+1. 适配 android 8.0的dl_open（jni加载）
 
 **2018年01月09日**
 1. 修复华为emui8.0的一个bug
