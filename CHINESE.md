@@ -21,6 +21,12 @@ VirtualApp在2017年8月份正式公司化运作，当您需要将VirtualApp用�
  
 商业版更新日志：
 
+**2018年01月29日**
+1. Android O的通知栏适配2
+
+**2018年01月22日**
+1. ipc框架优化, 提高判断binder的存活准确性
+
 **2018年01月15日**
 1. jni的log开关 Android.mk:LOCAL_CFLAGS += -DLOG_ENABLE
 2. 混淆配置
