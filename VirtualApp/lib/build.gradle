@@ -2,7 +2,7 @@ apply plugin: 'com.android.library'
 
 android {
     compileSdkVersion 24
-    buildToolsVersion "25.0.2"
+    buildToolsVersion '26.0.2'
 
     defaultConfig {
         minSdkVersion 14
@@ -11,7 +11,7 @@ android {
         versionName "1.0"
         externalNativeBuild {
             ndkBuild {
-                abiFilters "armeabi", "armeabi-v7a", "x86"
+                abiFilters "armeabi-v7a", "x86"
             }
         }
     }
@@ -35,7 +35,4 @@ android {
 
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
-    //    compile 'net.lingala.zip4j:zip4j:1.3.2'
-    compile files('src/main/libs/android-art-interpret-3.0.0.jar')
-    compile files('src/main/libs/dalvik_hack-3.0.0.5.jar')
 }
