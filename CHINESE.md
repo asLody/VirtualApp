@@ -4,7 +4,7 @@
 ---
 **VirtualApp**是一个**App虚拟化引擎**（简称`VA`）。
 
-**VirtualApp已兼容Android 0(8.0 Preview)。**
+**VirtualApp已兼容Android 0(8.0)。**
 
 VirtualApp在你的App内创建一个`虚拟空间`，你可以在虚拟空间内任意的`安装`、`启动`和`卸载`APK，这一切都与外部隔离，如同一个`沙盒`。
 
@@ -36,26 +36,9 @@ VirtualApp代码的更新频率非常快（`以小时为单位`），每一次�
 * (已支持的加固均可通过VA来脱壳，本技术不公开)
 
 
-在VA使用Google服务
+Google Play Framework
 -----------
-VA支持运行官方的Google服务套件，同时我们也提供了对`MicroG`的支持。
-
-您可以通过在VA中安装`MicroG`来支持`Google服务`，
-
-这样，即使外部没有Google服务，用户也可以在VA中享受Google服务。
-
-MicroG套件可在此下载：[Download MicroG](https://microg.org/download.html)
-
-MicroG的必要模块：
-* Services Core
-* Services Framework Proxy
-* Store
-
-如果您需要在VA中使用官方的Google服务套件（外部已安装的前提下），
-
-则可以通过 `GmsSupport.installGms(userId)` 来安装。
-
-##### 注意，您不能同时安装MicroGms和官方的Gms。
+在google service新版本，存在兼容适配问题，暂时屏蔽
 
 
 使用说明
