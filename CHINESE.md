@@ -27,6 +27,11 @@ Q Q：10890<br/>
  
 商业版更新日志：
 
+**2018年03月07日**
+1. 适配android O 快捷方式
+2. 适配耳机模式
+3. 某些rom对intent的大小限制，demo添加缩放快捷方式图标代码
+
 **2018年03月02日**
 1. 修复某些情况下MediaController的bug
 2. 修复4.1.2的StubFileProvider报错
