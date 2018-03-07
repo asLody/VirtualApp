@@ -31,6 +31,7 @@ Q Q：10890<br/>
 1. 适配android O 快捷方式
 2. 适配耳机模式
 3. 某些rom对intent的大小限制，demo添加缩放快捷方式图标代码
+4. 修复多开情况下一个bug
 
 **2018年03月02日**
 1. 修复某些情况下MediaController的bug
