@@ -27,51 +27,51 @@ Q Q：10890<br/>
 
 4月4日最新商业版更新：
 
-1. 修复后台应用易被杀死，土豆视频黑屏，新浪微博无法打开，优酷两次返回无法退出。
-2. 增加应用的保活机制，双开APP更不易被杀死。
-3. 优化虚拟引擎启动性能。
-4. 兼容了大部分的加固，第三方APP兼容性对比上一版提升40%+。
+1、修复后台应用易被杀死，土豆视频黑屏，新浪微博无法打开，优酷两次返回无法退出。
+2、增加应用的保活机制，双开APP更不易被杀死。
+3、优化虚拟引擎启动性能。
+4、兼容了大部分的加固，第三方APP兼容性对比上一版提升40%+。
 
 商业版代码历史更新：
 
-38. 修复某些rom下，快捷方式图标不正确
-37. 兼容以前组件StubFileProvider
-36. 适配部分新ROM的虚拟IMEI
-35. 改善进程初始化代码，增加稳定性
-34. 添加内部发送Intent.ACTION_BOOT_COMPLETED的广播，可以设置开关
-33. 适配关联google play游戏，支持游戏使用google登录
-32. 适配android O的google service框架
-31. 适配android O 快捷方式
-30. 适配耳机模式
-29. 某些rom对intent的大小限制，demo添加缩放快捷方式图标代码
-28. 修复多开情况下一个bug
-27. 修复某些情况下MediaController的bug
-26. 修复4.1.2的StubFileProvider报错
-25. 分享的uri处理
-24. 修复跨app调用Activity的回调
-23. 前台服务的通知栏拦截开关
-22. 附带doc
-21. 完善VA内部的intent的CHOOSE回调
-20. Android O的通知栏适配2
-19. ipc框架优化, 提高判断binder的存活准确性
-18. jni的log开关 Android.mk:LOCAL_CFLAGS += -DLOG_ENABLE
-17. 混淆配置
-16. Android O的通知栏适配
-15. 修复部分app网络卡的问题
-14. 适配 android 8.0的dl_open（jni加载）
-13. 修复华为emui8.0的一个bug
-12. 完善定位
-11. 设置手机信息，imei伪装算法
-10. 适配8.0某个功能（主要app：whatsapp）
-9. 修复内部微信等应用，无法更新图片，视频
-8. demo增加安装监听，自动升级克隆模式的应用
-7. 7.0的file provider适配
-6. 增加了定位代码
-5. 代码进行了架构优化
-4. 与开源版不同的特征
-3. 解决了微信被封的一些问题
-2. 修复了部分机型兼容性
-1. 修复了12个小BUG
+38、修复某些rom下，快捷方式图标不正确
+37、兼容以前组件StubFileProvider
+36、适配部分新ROM的虚拟IMEI
+35、改善进程初始化代码，增加稳定性
+34、添加内部发送Intent.ACTION_BOOT_COMPLETED的广播，可以设置开关
+33、适配关联google play游戏，支持游戏使用google登录
+32、适配android O的google service框架
+31、适配android O 快捷方式
+30、适配耳机模式
+29、某些rom对intent的大小限制，demo添加缩放快捷方式图标代码
+28、修复多开情况下一个bug
+27、修复某些情况下MediaController的bug
+26、修复4.1.2的StubFileProvider报错
+25、分享的uri处理
+24、修复跨app调用Activity的回调
+23、前台服务的通知栏拦截开关
+22、附带doc
+21、完善VA内部的intent的CHOOSE回调
+20、Android O的通知栏适配2
+19、ipc框架优化, 提高判断binder的存活准确性
+18、jni的log开关 Android.mk:LOCAL_CFLAGS += -DLOG_ENABLE
+17、混淆配置
+16、Android O的通知栏适配
+15、修复部分app网络卡的问题
+14、适配 android 8.0的dl_open（jni加载）
+13、修复华为emui8.0的一个bug
+12、完善定位
+11、设置手机信息，imei伪装算法
+10、适配8.0某个功能（主要app：whatsapp）
+9、修复内部微信等应用，无法更新图片，视频
+8、demo增加安装监听，自动升级克隆模式的应用
+7、7.0的file provider适配
+6、增加了定位代码
+5、代码进行了架构优化
+4、与开源版不同的特征
+3、解决了微信被封的一些问题
+2、修复了部分机型兼容性
+1、修复了12个小BUG
 
 
 已支持的加固(不断更新)
