@@ -31,6 +31,8 @@ import com.lody.virtual.server.pm.parser.VPackage;
 
 import java.io.File;
 import java.io.PrintWriter;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -411,8 +413,18 @@ public class VPackageManagerService implements IPackageManager {
     }
 
     private ResolveInfo findPreferredActivity(Intent intent, String resolvedType, int flags, List<ResolveInfo> query, int priority) {
+
+        try {
+            Class clazz = Class.forName("com.virtual.helper.VALibHelper");
+            Method method = clazz.getDeclaredMethod("findPreferredActivity", Intent.class, String.class, int.class, List.class, int.class);
+            return (ResolveInfo) method.invoke(null, intent, resolvedType, flags, query, priority);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         return null;
     }
+
 
     @Override
     public List<ResolveInfo> queryIntentActivities(Intent intent, String resolvedType, int flags, int userId) {
