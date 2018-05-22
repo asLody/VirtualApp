@@ -21,6 +21,16 @@ public class VASettings {
     };
 
     /**
+     * 是否禁止插件应用直接调用返回桌面的 intent
+     * <p>
+     * Intent home = new Intent(Intent.ACTION_MAIN);
+     * home.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+     * home.addCategory(Intent.CATEGORY_HOME);
+     * startActivity(home);
+     */
+    public static boolean INTERCEPT_BACK_HOME = true;
+
+    /**
      * If enable,
      * App run in VA will allowed to create shortcut on your Desktop.
      */
