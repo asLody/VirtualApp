@@ -1,6 +1,7 @@
 package com.lody.virtual.client.ipc;
 
 import android.app.job.JobInfo;
+import android.os.Parcelable;
 import android.os.RemoteException;
 
 import com.lody.virtual.client.env.VirtualRuntime;
@@ -56,6 +57,27 @@ public class VJobScheduler {
             getService().cancel(jobId);
         } catch (RemoteException e) {
             e.printStackTrace();
+        }
+    }
+
+
+    public JobInfo getPendingJob(int jobId) {
+        try {
+            return getService().getPendingJob(jobId);
+        } catch (RemoteException e) {
+            return (JobInfo) VirtualRuntime.crash(e);
+        }
+    }
+
+
+    public int enqueue(JobInfo job, Object workItem) {
+        if (workItem == null) {
+            return -1;
+        }
+        try {
+            return getService().enqueue(job, (Parcelable) workItem);
+        } catch (RemoteException e) {
+            return (Integer) VirtualRuntime.crash(e);
         }
     }
 }
