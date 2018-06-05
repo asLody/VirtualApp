@@ -1,55 +1,76 @@
-[![Build Status](https://travis-ci.org/android-hacker/VirtualXposed.svg?branch=exposed)](https://travis-ci.org/android-hacker/VirtualXposed)
+[![VA banner](https://raw.githubusercontent.com/asLody/VirtualApp/master/Logo.png)](https://github.com/asLody/VirtualApp)
 
-简介
+[中国人猛戳这里](CHINESE.md "中文")
+
+About
 -----
-本项目是在[VirtualApp](https://github.com/asLody/VirtualApp) 的基础上再次开发的，适配了一些在使用过程中出现的bug。
+**VirtualApp** is an open platform for Android that allows you to create a `Virtual Space`,
+you can install and run apk inside. Beyond that, VirtualApp is also a `Plugin Framework`,
+the plugins running on VirtualApp does not require any constraints.
+VirtualApp does **not** require root, it is running on the `local process`.
 
-警告
+NOTICE
 -------
-本项目使用的 VirtualApp 不允许用于商业用途，如果有这个需求，请联系 Lody (zl@aluohe.com)。
+**This project has been authorized by the business.**
 
-使用
+**You are not allowed to modify the app module and put to the software market, if you do that, The consequences you know :)**
+
+**VirtualApp is not free, If you need to use the lib code, please send email to me :)**
+
+Background
 ----------
 
-[猛戳这里](CHINESE.md "中文")
+VirtualApp was born in early 2015, Originally, it is just a simple plugin framework, 
+But as time goes on,
+the compatibility of it is getting better and better.
+in the end, it evolved into a `Virtual Container`.
 
-使用说明
-----------
 
-**前往你的Application并添加如下代码:**
+Get started
+-----------
+If you use latest android studio (version 2.0 or above), please disable `Instant Run`.
+Open `Setting | Build,Exception,Deployment`, and disable `Enable Instant Run to hot swap...`
 
+**Goto your Application and insert the following code:**
 ```java
     @Override
     protected void attachBaseContext(Context base) {
         super.attachBaseContext(base);
         try {
-            VirtualCore.getCore().startup(base);
+            VirtualCore.get().startup(base);
         } catch (Throwable e) {
             e.printStackTrace();
         }
     }
 ```
 
-**安装App:**
-
+**Install a virtual App:**
 ```java
-    VirtualCore.getCore().installApp({APK PATH}, flags);
+    VirtualCore.get().installPackage({APK PATH}, flags);
+    
 ```
 
-**启动App:**
-
+**Launch a virtual App:**
 ```java
-    VirtualCore.getCore().launchApp({PackageName});
+    //VirtualApp support multi-user-mode which can run multiple instances of a same app.
+    //if you don't need this feature, just set `{userId}` to 0.
+    Intent intent = VirtualCore.get().getLaunchIntent({PackageName}, {userId});
+    VActivityManager.get().startActivity(intent, {userId});
 ```
 
-**移除App:**
-
+**Uninstall a virtual App:**
 ```java
-    VirtualCore.getCore().uninstallApp({PackageName});
+    VirtualCore.get().uninstallPackage({PackageName});
 ```
 
-**该App的基本信息:**
+More details, please read the source code of demo app, :-)
 
-```java
-    VirtualCore.getCore().findApp({PackageName});
-```
+Documentation
+-------------
+
+VirtualApp currently has **no documentation**, If you are interested in VirtualApp, please send email to me.
+
+Contact us
+------------
+
+    zl@aluohe.com
