@@ -27,6 +27,27 @@ Q Q：10890<br/>
 商业版代码保持每月1-2次以上频率持续更新，并对Android 8.0进行大量适配，保证了兼容性。<br/>
 
 
+6月14日最新商业版更新：<br/>
+1、64位支持还在开发阶段<br/>
+2、更新混淆配置app/proguard-rules.pro，必须加规则-dontshrink<br/>
+3、优化模拟机型，例如：模拟后，某些app不出现设备验证<br/>
+4、提高dex2oat兼容性<br/>
+5、优化模拟定位<br/>
+6、移除dlopen<br/>
+7、targetVersion可以改为26：支持targetVersion<23的app动态权限申请，支持targetVersion<24的文件Uri<br/>
+
+
+6月8日最新商业版更新：<br/>
+1、为了支持64位模式，换回aidl<br/>
+2、去掉SettingHandler现在可以动态设置特殊规则，规则会存储，不需要重复设置<br/>
+3、增加2个native_setup<br/>
+4、提高jobService兼容性<br/>
+5、ShortcutService相关：关联VASettings.ENABLE_INNER_SHORTCUT<br/>
+6、为了稳定性和运行效率，去掉上个版本的蓝牙，wifi，不声明权限的适配。<br/>
+7、增加app启动异常的广播Constants.ACTION_PROCESS_ERROR<br/>
+8、修复少数游戏横屏判断问题<br/>
+9、demo增加机型模拟<br/>
+
 5月24日最新商业版更新：<br/>
 1、适配vivo一个自定义权限（后台弹窗）VA是把一个历史acitivty返回前台，vivo需要这个权限。<br/>
 2、如果没有蓝牙权限，返回默认值（海外用）<br/>
