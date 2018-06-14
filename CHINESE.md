@@ -35,6 +35,7 @@ Q Q：10890<br/>
 5、优化模拟定位<br/>
 6、移除dlopen<br/>
 7、targetVersion可以改为26：支持targetVersion<23的app动态权限申请，支持targetVersion<24的文件Uri<br/>
+8、installPackage改为默认异步形式<br/>
 
 
 6月8日最新商业版更新：<br/>
