@@ -2,9 +2,9 @@
 
 简介
 ---
-**VirtualApp**是一个**App虚拟化引擎**（简称`VA`）。
+**VirtualApp**是一个已经商业化的**App虚拟化引擎**（简称`VA`）。
 
-**VirtualApp已兼容Android 0(8.0)。**
+**VirtualApp商业版已兼容Android P(9.0)和支持运行纯64位的App。**
 
 VirtualApp在你的App内创建一个`虚拟空间`，你可以在虚拟空间内任意的`安装`、`启动`和`卸载`APK，这一切都与外部隔离，如同一个`沙盒`。
 
@@ -25,6 +25,13 @@ VA目前被广泛应用于插件化开发、无感知热更新、APP多开、APP
 Q Q：10890<br/>
 <br/>
 商业版代码保持每月1-2次以上频率持续更新，并对Android 9.0进行大量适配，保证了兼容性。<br/>
+
+8月26日最新商业版更新：<br/>
+1、修复移动MM SDK无法启动的问题<br/>
+2、修复微信摇一摇的BUG<br/>
+3、修复中兴设备不稳定的BUG<br/>
+4、支持ARM64下的IO Redirect<br/>
+5、修复USE_OUTSIDE模式下外部app更新时，内部app没有更新的BUG<br/>
 
 8月17日最新商业版更新：<br/>
 1、兼容最新Android 9.0(代号: pie) 及正式版之前发布的四个Preview版本<br/>
