@@ -5,6 +5,7 @@
 **VirtualApp**是一个已经商业化的**App虚拟化引擎**（简称`VA`）。
 
 **VirtualApp商业版已兼容Android P(9.0)和支持运行纯64位的App。**
+**VirtualApp商业版现可完美运行Google服务(开源版不兼容)。**
 
 VirtualApp在你的App内创建一个`虚拟空间`，你可以在虚拟空间内任意的`安装`、`启动`和`卸载`APK，这一切都与外部隔离，如同一个`沙盒`。
 
