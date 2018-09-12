@@ -28,6 +28,22 @@ Q Q：10890<br/>
 <br/>
 商业版代码保持每月1-2次以上频率持续更新，并对Android 9.0进行大量适配，保证了兼容性。<br/>
 
+
+9月12日最新商业版更新：<br/>
+1、大量适配Gms, 修复Gms运行过程中进程无限重启的问题<br/>
+2、重新实现Service的运行机制<br/>
+3、完善64bit，提供了部分ROM配置64bit Engine权限的API<br/>
+4、修复了4.4设备上的Activity启动问题<br/>
+5、支持excludeFromRecent属性<br/>
+6、修复Instagram无法Facebook登录的问题<br/>
+7、修复Facebook第一次登录闪退的问题<br/>
+8、支持以64位模式运行Gms、Google play、Play game<br/>
+9、支持在双开/免安装运行的Google play中下载和安装app<br/>
+10、修复DownloadManager的BUG<br/>
+11、修复Google play返回上层时重启界面的BUG<br/>
+12、修复免安装模式下so决策问题<br/>
+13、优化构建脚本，便于引入项目<br/>
+
 8月26日最新商业版更新：<br/>
 1、修复移动MM SDK无法启动的问题<br/>
 2、修复微信摇一摇的BUG<br/>
