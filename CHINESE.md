@@ -8,6 +8,9 @@
 
 **VirtualApp商业版已兼容Android P(9.0)和支持运行纯64位的App。**
 
+**VirtualApp商业版提供了同时支持Dalvik和Art的Java Hook(API同Xposed)。**
+
+tong
 VirtualApp在你的App内创建一个`虚拟空间`，你可以在虚拟空间内任意的`安装`、`启动`和`卸载`APK，这一切都与外部隔离，如同一个`沙盒`。
 
 运行在`VA`中的APK无需在外部安装，即VA支持**免安装运行APK**。
@@ -27,6 +30,14 @@ VA目前被广泛应用于插件化开发、无感知热更新、APP多开、APP
 Q Q：10890<br/>
 <br/>
 商业版代码保持每月1-2次以上频率持续更新，并对Android 9.0进行大量适配，保证了兼容性。<br/>
+
+9月15日最新商业版更新：<br/>
+1、修复vivo设备部分Activity无法启动的问题<br/>
+2、修复app无法调用外部app选择文件的问题<br/>
+3、完善Android P的兼容<br/>
+4、兼容Android P的Google服务<br/>
+5、解决Messenger部分功能异常<br/>
+6、完善IO Redirect<br/>
 
 
 9月12日最新商业版更新：<br/>
