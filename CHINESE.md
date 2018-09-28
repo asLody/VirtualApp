@@ -31,6 +31,17 @@ Q Q：10890<br/>
 <br/>
 商业版代码保持每月1-2次以上频率持续更新，并对Android 9.0进行大量适配，保证了兼容性。<br/>
 
+
+9月26日最新商业版更新：<br/>
+1、解决穿越火线、刺激战场等游戏闪退/封号的问题（额外功能）<br/>
+2、修复8.0以下设备Messenger无网络连接的问题<br/>
+3、修复双开时外部app卸载时内部app仍然保留的BUG<br/>
+4、修复部分腾讯加固无法运行的问题<br/>
+5、修复Instagram无法登录Facebook的BUG<br/>
+6、修复进程小概率可能重复启动的BUG<br/>
+7、修复GET_PERMISSIONS没有获取权限的BUG<br/>
+8、修复startActivityIntentSender的BUG<br/>
+
 9月15日最新商业版更新：<br/>
 1、修复vivo设备部分Activity无法启动的问题<br/>
 2、修复app无法调用外部app选择文件的问题<br/>
