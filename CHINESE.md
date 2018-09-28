@@ -33,14 +33,13 @@ Q Q：10890<br/>
 
 
 9月26日最新商业版更新：<br/>
-1、NOP <br/>
-2、修复8.0以下设备Messenger无网络连接的问题<br/>
-3、修复双开时外部app卸载时内部app仍然保留的BUG<br/>
-4、修复部分腾讯加固无法运行的问题<br/>
-5、修复Instagram无法登录Facebook的BUG<br/>
-6、修复进程小概率可能重复启动的BUG<br/>
-7、修复GET_PERMISSIONS没有获取权限的BUG<br/>
-8、修复startActivityIntentSender的BUG<br/>
+1、修复8.0以下设备Messenger无网络连接的问题<br/>
+2、修复双开时外部app卸载时内部app仍然保留的BUG<br/>
+3、修复部分腾讯加固无法运行的问题<br/>
+4、修复Instagram无法登录Facebook的BUG<br/>
+5、修复进程小概率可能重复启动的BUG<br/>
+6、修复GET_PERMISSIONS没有获取权限的BUG<br/>
+7、修复startActivityIntentSender的BUG<br/>
 
 9月15日最新商业版更新：<br/>
 1、修复vivo设备部分Activity无法启动的问题<br/>
