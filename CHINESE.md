@@ -10,7 +10,7 @@
 
 **VirtualApp商业版提供了同时支持Dalvik和Art的Java Hook(API同Xposed)。**
 
-tong
+
 VirtualApp在你的App内创建一个`虚拟空间`，你可以在虚拟空间内任意的`安装`、`启动`和`卸载`APK，这一切都与外部隔离，如同一个`沙盒`。
 
 运行在`VA`中的APK无需在外部安装，即VA支持**免安装运行APK**。
@@ -31,6 +31,14 @@ Q Q：10890<br/>
 <br/>
 商业版代码保持每月1-2次以上频率持续更新，并对Android 9.0进行大量适配，保证了兼容性。<br/>
 
+11月8号最新商业版更新：<br/>
+1、修复新实现的StaticBroadcast导致的兼容性问题<br/>
+2、修复Android P上无法使用apache.http.legacy的问题<br/>
+3、实现Native trace<br/>
+4、优化IO Redirect性能<br/>
+5、修复wechat部分时候出现网络无法连接的问题<br/>
+6、修复小概率process attach不正确的BUG<br/>
+7、开始下一阶段的ROADMAP<br/>
 
 10月24日最新商业版更新：<br/>
 1、解决Android P无法注册超过1000个广播导致的问题<br/>
