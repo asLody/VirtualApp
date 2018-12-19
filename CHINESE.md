@@ -2,28 +2,29 @@
 
 项目简介
 ---
-**VirtualApp**是一个已经商业化的**App虚拟化引擎**（简称`VA`）。
-
-**VirtualApp商业版现可完美运行Google服务(开源版本不兼容)。**
-
-**VirtualApp商业版已兼容最新Android P(9.0)和支持运行纯64位的App。**
-
-**VirtualApp商业版提供了同时支持Dalvik和Art的Java Hook(API同Xposed)。**
-
-
 VirtualApp是由`罗盒科技`开发并运营的商业项目，VirtualApp在你的App内创建一个`虚拟空间`，你可以在虚拟空间内任意的`安装`、`启动`和`卸载`APK，这一切都与外部隔离，如同一个`沙盒`。
 
 运行在`VA`中的APK无需在外部安装，即VA支持**免安装运行APK**。
 
 VA目前被广泛应用于`插件化开发、无感知热更新、云控自动化、多开、手游租号、手游手柄免激活、区块链、移动办公安全、军队政府保密、手机模拟信息、脚本自动化、自动化测试`等技术领域，但它决不仅限于此，Android本身就是一个极其开放的平台，免安装运行APK这一Feature打开了无限可能-----这都取决于您的想象力。
 
-**Github上代码**已在2017年12月份**停止更新***，商业版代码在持续更新中，并有以下提升：`1、全新的代码特征，2、框架优化，性能大幅提升，3、手机系统及APP兼容性大幅提升，4、完美运行Google服务，5、兼容最新Android P(9.0)，6、支持运行纯64位App，7、支持Dalvik和Art的Java Hook(API同Xposed)，8、增加定位模拟代码，9、增加改机代码，10、其他180多项问题的修复和改进`，详情请见下表。
+**Github上代码**已在2017年12月份**停止更新**，商业版代码在持续更新中，并有以下提升：
 
+1. 全新的代码特征
+2. 框架优化，性能大幅提升
+3. 手机系统及APP兼容性大幅提升
+4. 完美运行Google服务
+5. 兼容最新Android P(9.0)
+6. 支持运行纯64位App
+7. 支持Dalvik和Art的Java Hook(API同Xposed)
+8. 增加定位模拟代码
+9. 增加改机代码
+10. 其他180多项问题的修复和改进，详情请见下表
 
 
 **授权说明**
 
-罗盒科技在深圳及山东设有公司，于2015年至2018年申请多项VirtualApp知识产权，`受中华人民共和国知识产权法保护`。当您需要使用Github上的VirtualApp代码时，**请购买商业授权**，获取商业授权后将可以收到我们提供的VirtualApp商业版全部源代码。数十家授权客户在付费使用VirtualApp商业版代码，集成VirtualApp代码的APP日启动次数超过2亿次，数千位安卓工程师向我们提供不同场景下的用户反馈，通过我们技术团队的不断努力优化，VirtualApp商业版代码已经日益完善。`您获取授权后，将成为其中一员，享受这些不断迭代完善后的成果。`
+罗盒科技在深圳及山东设有公司，于2015年至2018年申请多项VirtualApp知识产权，`受中华人民共和国知识产权法保护`。当您需要使用Github上的VirtualApp代码时，**请购买商业授权**，获取商业授权后将可以收到我们提供的VirtualApp商业版全部源代码。数十家授权客户在付费使用VirtualApp商业版代码，集成VirtualApp代码的APP日启动次数超过2亿次，数千位安卓工程师向我们提供不同场景下的用户反馈，通过我们技术团队的不断努力优化，VirtualApp商业版代码已经日益完善。`您获取授权后，将成为其中一员，享受这些不断迭代完善后的成果。并可以和我们的授权客户进行运营、技术及商业上的互动合作。`
 
 
 <br/>
@@ -35,110 +36,88 @@ VA目前被广泛应用于`插件化开发、无感知热更新、云控自动�
 **严重声明**
 您如果未经授权将VirtualApp用于**内部使用、商业牟利或上传应用市场**，我们发现后将直接取证后报警（侵犯著作权罪）或起诉，这将对您所属公司造成刑事责任及法律诉讼，影响到您公司的商誉和投资。`购买商业授权为您节省大量开发、测试和完善时间，让您有更多时间用于创新及盈利`。<br/>
 
-商业版代码保持每月1-2次以上频率持续更新，并对Android 9.0进行大量适配，保证了兼容性。<br/>
-
-11月26号最新商业版更新：<br/>
-1、修复WebView在少数机型加载失败的情况<br/>
-2、修复Lib决策的问题<br/>
-3、修复部分华为机型无法读取内存卡的问题<br/>
-4、修复Service可能存在的问题<br/>
-5、允许根据intent判断Activity是否在外部启动<br/>
-6、修复部分机型上Gms和Google Play启动到了不正确的环境<br/>
-
-11月8号最新商业版更新：<br/>
-1、修复新实现的StaticBroadcast导致的兼容性问题<br/>
-2、修复Android P上无法使用apache.http.legacy的问题<br/>
-3、实现Native trace<br/>
-4、优化IO Redirect性能<br/>
-5、修复wechat部分时候出现网络无法连接的问题<br/>
-6、修复小概率process attach不正确的BUG<br/>
-7、开始下一阶段的ROADMAP<br/>
-
-10月24日最新商业版更新：<br/>
-1、解决Android P无法注册超过1000个广播导致的问题<br/>
-2、修复可能导致ANR的DeadLock<br/>
-3、修复部分app动态加载so失败的问题<br/>
-4、修复免安装运行环境下部分机型第一次打开出现黑屏的问题<br/>
-5、兼容适配多款主流的Android模拟器<br/>
-6、优化启动性能<br/>
-7、解决多个内存泄露问题<br/>
-8、修复IO Redirect优先级的问题<br/>
-
-
-9月26日最新商业版更新：<br/>
-1、修复8.0以下设备Messenger无网络连接的问题<br/>
-2、修复双开时外部app卸载时内部app仍然保留的BUG<br/>
-3、修复部分腾讯加固无法运行的问题<br/>
-4、修复Instagram无法登录Facebook的BUG<br/>
-5、修复进程小概率可能重复启动的BUG<br/>
-6、修复GET_PERMISSIONS没有获取权限的BUG<br/>
-7、修复startActivityIntentSender的BUG<br/>
-
-9月15日最新商业版更新：<br/>
-1、修复vivo设备部分Activity无法启动的问题<br/>
-2、修复app无法调用外部app选择文件的问题<br/>
-3、完善Android P的兼容<br/>
-4、兼容Android P的Google服务<br/>
-5、解决Messenger部分功能异常<br/>
-6、完善IO Redirect<br/>
-
-
-9月12日最新商业版更新：<br/>
-1、大量适配Gms, 修复Gms运行过程中进程无限重启的问题<br/>
-2、重新实现Service的运行机制<br/>
-3、完善64bit，提供了部分ROM配置64bit Engine权限的API<br/>
-4、修复了4.4设备上的Activity启动问题<br/>
-5、支持excludeFromRecent属性<br/>
-6、修复Instagram无法Facebook登录的问题<br/>
-7、修复Facebook第一次登录闪退的问题<br/>
-8、支持以64位模式运行Gms、Google play、Play game<br/>
-9、支持在双开/免安装运行的Google play中下载和安装app<br/>
-10、修复DownloadManager的BUG<br/>
-11、修复Google play返回上层时重启界面的BUG<br/>
-12、修复免安装模式下so决策问题<br/>
-13、优化构建脚本，便于引入项目<br/>
-
-8月26日最新商业版更新：<br/>
-1、修复移动MM SDK无法启动的问题<br/>
-2、修复微信摇一摇的BUG<br/>
-3、修复中兴设备不稳定的BUG<br/>
-4、支持ARM64下的IO Redirect<br/>
-5、修复USE_OUTSIDE模式下外部app更新时，内部app没有更新的BUG<br/>
-
-8月17日最新商业版更新：<br/>
-1、兼容最新Android 9.0(代号: pie) 及正式版之前发布的四个Preview版本<br/>
-2、兼容内置houdini的x86设备<br/>
-3、WindowPreview技术，使app启动与真实app达到一样的速度<br/>
-4、新的ActivityStack以提高app运行质量<br/>
-5、解决接入Atlas Framework的app运行异常的问题<br/>
-6、现在可以定义虚拟app返回桌面的具体行为<br/>
-7、现在双开模式下app随系统动态更新，不需要手动检查<br/>
-8、支持targetSdkVersion >= 26时仍可正常运行低版本的app<br/>
-9、兼容腾讯游戏管家的QDroid虚拟引擎 (beta)<br/>
-10、大量重构底层代码，大幅提升运行速度<br/>
-11、修复网易新闻分享到微博后无法取消的问题<br/>
-12、修复App自定义权限无法识别的问题<br/>
-13、修复墨迹天气app无法启动的问题<br/>
-13、修复部分政府app无法启动的问题<br/>
-14、API的变动详见代码<br/>
-
-8月6日最新商业版更新：<br/>
-1、修复三星系列应用的相互调用问题<br/>
-2、修复小米应用在非小米系统的账号问题<br/>
-3、修复分享/发送等第三方调用，返回页面不正常<br/>
-4、修复应用宝提示不能安装<br/>
-5、调用第三方app，对uri进行加密<br/>
-6、适配前刘海<br/>
-7、适配小米rom的hook<br/>
-8、适配努比亚录音问题<br/>
-9、内部悬浮窗权限控制<br/>
-9、优化自定义通知栏的处理<br/>
-10、修复Context的INCLUDE_CODE权限问题<br/>
-11、适配华为，oppo的角标<br/>
-12、修复百度视频的进程重启问题<br/>
-13、修复某些snapchat的无法启动问题<br/>
-<br/>
-2018年1月1日至7月31日历史更新：<br/>
+2018年1月1日至2018年12月13号商业版代码更新内容：<br/>
+182、修复WebView在少数机型加载失败的情况<br/>
+181、修复Lib决策的问题<br/>
+180、修复部分华为机型无法读取内存卡的问题<br/>
+179、修复Service可能存在的问题<br/>
+178、允许根据intent判断Activity是否在外部启动<br/>
+177、修复部分机型上Gms和Google Play启动到了不正确的环境<br/>
+176、修复新实现的StaticBroadcast导致的兼容性问题<br/>
+175、修复Android P上无法使用apache.http.legacy的问题<br/>
+174、实现Native trace<br/>
+173、优化IO Redirect性能<br/>
+172、修复wechat部分时候出现网络无法连接的问题<br/>
+171、修复小概率process attach不正确的BUG<br/>
+170、开始下一阶段的ROADMAP<br/>
+169、解决Android P无法注册超过1000个广播导致的问题<br/>
+168、修复可能导致ANR的DeadLock<br/>
+167、修复部分app动态加载so失败的问题<br/>
+166、修复免安装运行环境下部分机型第一次打开出现黑屏的问题<br/>
+165、兼容适配多款主流的Android模拟器<br/>
+164、优化启动性能<br/>
+163、解决多个内存泄露问题<br/>
+162、修复IO Redirect优先级的问题<br/>
+161、修复8.0以下设备Messenger无网络连接的问题<br/>
+160、修复双开时外部app卸载时内部app仍然保留的BUG<br/>
+159、修复部分腾讯加固无法运行的问题<br/>
+158、修复Instagram无法登录Facebook的BUG<br/>
+157、修复进程小概率可能重复启动的BUG<br/>
+156、修复GET_PERMISSIONS没有获取权限的BUG<br/>
+155、修复startActivityIntentSender的BUG<br/>
+154、修复vivo设备部分Activity无法启动的问题<br/>
+153、修复app无法调用外部app选择文件的问题<br/>
+152、完善Android P的兼容<br/>
+151、兼容Android P的Google服务<br/>
+150、解决Messenger部分功能异常<br/>
+149、完善IO Redirect<br/>
+148、大量适配Gms, 修复Gms运行过程中进程无限重启的问题<br/>
+147、重新实现Service的运行机制<br/>
+146、完善64bit，提供了部分ROM配置64bit Engine权限的API<br/>
+145、修复了4.4设备上的Activity启动问题<br/>
+144、支持excludeFromRecent属性<br/>
+143、修复Instagram无法Facebook登录的问题<br/>
+142、修复Facebook第一次登录闪退的问题<br/>
+141、支持以64位模式运行Gms、Google play、Play game<br/>
+140、支持在双开/免安装运行的Google play中下载和安装app<br/>
+139、修复DownloadManager的BUG<br/>
+138、修复Google play返回上层时重启界面的BUG<br/>
+137、修复免安装模式下so决策问题<br/>
+136、优化构建脚本，便于引入项目<br/>
+135、修复移动MM SDK无法启动的问题<br/>
+134、修复微信摇一摇的BUG<br/>
+133、修复中兴设备不稳定的BUG<br/>
+132、支持ARM64下的IO Redirect<br/>
+131、修复USE_OUTSIDE模式下外部app更新时，内部app没有更新的BUG<br/>
+130、兼容最新Android 9.0(代号: pie) 及正式版之前发布的四个Preview版本<br/>
+129、兼容内置houdini的x86设备<br/>
+128、WindowPreview技术，使app启动与真实app达到一样的速度<br/>
+127、新的ActivityStack以提高app运行质量<br/>
+126、解决接入Atlas Framework的app运行异常的问题<br/>
+125、现在可以定义虚拟app返回桌面的具体行为<br/>
+124、现在双开模式下app随系统动态更新，不需要手动检查<br/>
+123、支持targetSdkVersion >= 26时仍可正常运行低版本的app<br/>
+122、兼容腾讯游戏管家的QDroid虚拟引擎 (beta)<br/>
+121、大量重构底层代码，大幅提升运行速度<br/>
+120、修复网易新闻分享到微博后无法取消的问题<br/>
+119、修复App自定义权限无法识别的问题<br/>
+118、修复墨迹天气app无法启动的问题<br/>
+117、修复部分政府app无法启动的问题<br/>
+116、API的变动详见代码<br/>
+115、修复三星系列应用的相互调用问题<br/>
+114、修复小米应用在非小米系统的账号问题<br/>
+113、修复分享/发送等第三方调用，返回页面不正常<br/>
+112、修复应用宝提示不能安装<br/>
+111、调用第三方app，对uri进行加密<br/>
+110、适配前刘海<br/>
+109、适配小米rom的hook<br/>
+108、适配努比亚录音问题<br/>
+107、内部悬浮窗权限控制<br/>
+106、优化自定义通知栏的处理<br/>
+105、修复Context的INCLUDE_CODE权限问题<br/>
+104、适配华为，oppo的角标<br/>
+103、修复百度视频的进程重启问题<br/>
+102、修复某些snapchat的无法启动问题<br/>
 101、适配autofill服务，例如piexl系列<br/>
 100、完善64位的io hook<br/>
 99、优化hook库的兼容性，加回dlopen<br/>
@@ -239,61 +218,5 @@ VA目前被广泛应用于`插件化开发、无感知热更新、云控自动�
 4、与开源版不同的特征<br/>
 3、解决了微信被封的一些问题<br/>
 2、修复了部分机型兼容性<br/>
-1、修复了12个小BUG
+1、修复了12个小BUG<br/>
 
-
-已支持的加固(不断更新)
-----------
-* 360加固
-* 腾讯加固
-* 梆梆加固
-* 梆梆企业版(12306客户端 Pass)
-* 爱加密
-* 百度加固
-* 娜迦加固
-* 乐变加固
-* 网易易盾
-* 通付盾
-* (已支持的加固均可通过VA来脱壳，本技术不公开)
-
-
-Google Play Framework
------------
-在google service新版本，存在兼容适配问题，暂时屏蔽
-
-
-使用说明
-----------
-
-**前往你的Application并添加如下代码:**
-```java
-    @Override
-    protected void attachBaseContext(Context base) {
-        super.attachBaseContext(base);
-        try {
-            VirtualCore.getCore().startup(base);
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-    }
-```
-**安装App:**
-```java
-    VirtualCore.getCore().installApp({APK PATH}, flags);
-```
-**启动App:**
-```java
-    VirtualCore.getCore().launchApp({PackageName});
-```
-**移除App:**
-```java
-    VirtualCore.getCore().uninstallApp({PackageName});
-```
-**该App的基本信息:**
-```java
-    VirtualCore.getCore().findApp({PackageName});
-```
-
-BUG反馈
-------------
-zl@aluohe.com
