@@ -29,8 +29,9 @@ Luohe Technology has set up companies in Shenzhen and Shandong. From 2015 to 201
 
 
 Person in charge: General Zhang<br/>
-Mobile:+86 1303217777 7<br/>
+Mobile: +86 1303217777 7<br/>
 Wechat: 10890<br/>
+Company email: Lody@aluohe.com
 
 
 Strictness Disclaimer
