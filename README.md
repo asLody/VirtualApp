@@ -14,8 +14,8 @@ The code on Github has been updated since December 2017. The commercial version 
 2. Framework optimization and performance improvement
 3. Compatibility of mobile phone system and APP has been greatly improved
 4. Run Google services perfectly
-5. Compatibility with the latest Android P (9.0)
-Support running 64-bit App
+5. Compatibility with the latest Android Q (10.0)
+6. Support running 64-bit App
 7. Java Hook that supports Dalvik and Art (API and Xposed)
 8. Add positioning simulation code
 9. Add the machine changing code
@@ -25,7 +25,7 @@ Support running 64-bit App
 Authorization Note
 ------------------
 
-Luohe Technology has set up companies in Shenzhen and Shandong. From 2015 to 2018, it applied for many VirtualApp intellectual property rights, which are protected by the Intellectual Property Law of the People's Republic of China. When you need to use the VirtualApp code on Github, please purchase the commercial license. After obtaining the commercial license, you will receive the full source code of the commercial version of VirtualApp provided by us. Dozens of authorized customers pay for the use of VirtualApp commercial code, and the number of APPs that integrate VirtualApp code starts more than 200 million times a day. Thousands of Android engineers provide us with user feedback in different scenarios, and VirtualApp commercial version code has become increasingly sophisticated through the continuous efforts of our technical team to optimize. After you get the authorization, you will become one of them and enjoy the fruits of continuous iteration and improvement. And we can cooperate with our authorized customers in operation, technology and business. 
+Luohe Technology has set up companies in Shanghai, Shenzhen and Shandong. From 2015 to 2018, it applied for many VirtualApp intellectual property rights, which are protected by the Intellectual Property Law of the People's Republic of China. When you need to use the VirtualApp code on Github, please purchase the commercial license. After obtaining the commercial license, you will receive the full source code of the commercial version of VirtualApp provided by us. Dozens of authorized customers pay for the use of VirtualApp commercial code, and the number of APPs that integrate VirtualApp code starts more than 200 million times a day. Thousands of Android engineers provide us with user feedback in different scenarios, and VirtualApp commercial version code has become increasingly sophisticated through the continuous efforts of our technical team to optimize. After you get the authorization, you will become one of them and enjoy the fruits of continuous iteration and improvement. And we can cooperate with our authorized customers in operation, technology and business. 
 
 
 Person in charge: General Zhang<br/>
