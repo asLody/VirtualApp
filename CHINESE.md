@@ -46,7 +46,7 @@ QQ/微信：10890<br/>
 **2019年 3月15号 最新一期更新内容**
 189、修复多开时app间可能存在广播namespace冲突的BUG<br/>
 190、采用新的策略绕过Android P以后的Hidden Policy API<br/>
-191、适配Android Q(beta1)
+191、适配Android Q(beta1)<br/>
 
 
 **2018年 1月1日 至 2019年 1月1日 商业版代码更新内容**
