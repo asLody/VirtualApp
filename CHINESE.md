@@ -50,7 +50,7 @@ QQ/微信：10890<br/>
 199、修复 StorageStats Hook<br/>
 
 <details>
-<summary>**2018年 1月1日 至 2019年 4月25日 商业版代码更新内容**</summary>
+<summary>2018年 1月1日 至 2019年 4月25日 商业版代码更新内容(下拉打开)</summary>
 198、修复快手无法登陆<br/>
 197、修复 YY 无法启动，更好的兼容插件化框架<br/>
 196、修复 Facebook 登陆<br/>
