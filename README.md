@@ -31,13 +31,40 @@ Luohe Technology has set up companies in Shanghai, Shenzhen and Shandong. From 2
 Person in charge: General Zhang<br/>
 Mobile: +86 1303217777 7<br/>
 Wechat: 10890<br/>
-Company email: Lody@aluohe.com
+Company email: zl@aluohe.com
 
 
 Strictness Disclaimer
 ---------------------
 
 If you use VirtualApp for internal use, commercial profit or upload to the application market without authorization, we will directly collect evidence and report to the police (copyright infringement) or prosecute, which will cause criminal liability and legal proceedings to your company and affect your company's goodwill and investment. Buying a commercial license saves you a lot of development, testing, and refining time, allowing you more time to innovate and monetize. 
+
+
+
+**The updating contents of commercial version code from December 13, 2018 to May 17, 2019**
+
+204、Fix install of Huolala<br/>
+203、Fix check logic for 64bit apk<br/>
+202、Support NetworkSecurityConfig<br/>
+201、Rewrite Component State Manager<br/>
+200、Optimaize compatibility of MIUI/EMUI ContentProvider<br/>
+199、Fix StorageStats Hook<br/>
+198、Fix login of Kuishou<br/>
+197、Fix support of some plugin framework(Small, Atlas)<br/>
+196、Fix login of Facebook<br/>
+195、Fix so load error of some app download from Google Play(COC)<br/>
+194、Fix suppport for split apk<br/>
+193、Fix crash of Youtube<br/>
+192、Fix crash of Youku<br/>
+191、Fix conflict of broadcast namespace<br/>
+190、Add a new policy to bypass Hidden Policy API above Android P<br/>
+189、Pre support Android Q(beta1)<br/>
+188、Fix access to SD Card in some huawei devices<br/>
+187、Fix some launch process failure<br/>
+186、Fix get native symbol failure in some 4.4 devices<br/>
+185、Fix got package name failure by WebView in some devices<br/>
+184、Fix detail of service<br/>
+183、Optimize launch speed<br/>
 
 The updating contents of commercial version code from January 1, 2018 to December 13, 2018.
 
