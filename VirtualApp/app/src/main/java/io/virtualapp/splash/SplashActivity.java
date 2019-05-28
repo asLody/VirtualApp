@@ -15,15 +15,16 @@ import jonathanfinerty.once.Once;
 
 public class SplashActivity extends VActivity {
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         @SuppressWarnings("unused")
         boolean enterGuide = !Once.beenDone(Once.THIS_APP_INSTALL, VCommends.TAG_NEW_VERSION);
-        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
-                WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_splash);
+
         VUiKit.defer().when(() -> {
             if (!Once.beenDone("collect_flurry")) {
                 FlurryROMCollector.startCollect();
@@ -40,12 +41,13 @@ public class SplashActivity extends VActivity {
             HomeActivity.goHome(this);
             finish();
         });
-    }
 
+    }
 
     private void doActionInThread() {
         if (!VirtualCore.get().isEngineLaunched()) {
             VirtualCore.get().waitForEngine();
         }
     }
+
 }
