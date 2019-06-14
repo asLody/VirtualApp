@@ -41,8 +41,10 @@ If you use VirtualApp for internal use, commercial profit or upload to the appli
 
 
 
-**The updating contents of commercial version code from December 13, 2018 to May 17, 2019**
+**The updating contents of commercial version code from December 13, 2018 to June 13, 2019**
 
+206. Preliminary support for pure 64-bit mode to meet the requirements of the Google Market<br/>
+205. Preliminary support for Android Q beta4<br/>
 204. Fix install of Huolala<br/>
 203. Fix check logic for 64bit apk<br/>
 202. Support NetworkSecurityConfig<br/>
