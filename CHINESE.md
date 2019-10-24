@@ -121,6 +121,13 @@ QQ/微信：10890<br/>
 
 2019年3月1日起，我们将VirtualApp商业版代码更新方式升级为`GitHub私有库`方式，授权后即可加入。在授权期内可以和众多授权项目近2100多位安卓工程师一同迭代升级，反馈BUG，我们会第一时间更新解决。
 
+**2019年 10月8号 至 2019年 10月24号 商业版代码更新内容**
+
+227、修复 Android P 下 AppOspManager 的异常 <br/>
+226、添加 Android P 下 ActivityTaskManager 丢失的 Hook <br/>
+225、修复 Android P 下 Activity Top Resume 异常 <br/>
+224、支持在系统多用户模式下运行! <br/>
+
 **2019年 10月8号 商业版代码更新内容**
 
 223、修复Android P 以上内部 app 返回桌面异常的问题 <br/>
