@@ -28,9 +28,8 @@ Authorization Note
 Luohe Technology has set up companies in Shanghai, Shenzhen and Shandong. From 2015 to 2018, it applied for many VirtualApp intellectual property rights, which are protected by the Intellectual Property Law of the People's Republic of China. When you need to use the VirtualApp code on Github, please purchase the commercial license. After obtaining the commercial license, you will receive the full source code of the commercial version of VirtualApp provided by us. Dozens of authorized customers pay for the use of VirtualApp commercial code, and the number of APPs that integrate VirtualApp code starts more than 200 million times a day. Thousands of Android engineers provide us with user feedback in different scenarios, and VirtualApp commercial version code has become increasingly sophisticated through the continuous efforts of our technical team to optimize. After you get the authorization, you will become one of them and enjoy the fruits of continuous iteration and improvement. And we can cooperate with our authorized customers in operation, technology and business. 
 
 
-Person in charge: General Zhang<br/>
-Mobile: +86 1303217777 7<br/>
-Wechat: 10890<br/>
+Person in charge: General Chen<br/>
+Mobile: +86 1303217777 7(wechat id)<br/>
 Company email: zl@aluohe.com
 
 
