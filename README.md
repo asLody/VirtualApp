@@ -30,7 +30,7 @@ Luohe Technology has set up companies in Shanghai, Shenzhen and Shandong. From 2
 
 Person in charge: General Chen<br/>
 Mobile: +86 1303217777 7(wechat id)<br/>
-Company email: zl@aluohe.com
+Company email: FF@aluohe.com
 
 
 Strictness Disclaimer
