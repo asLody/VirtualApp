@@ -241,7 +241,7 @@ Notification Bar Change: Adapt 8.1 Notification Channel; Remove all notification
 13. Fix the Bug of Huawei emui8.0<br/>
 12. Improve positioning<br/>
 11. Set up mobile phone information and imei camouflage algorithm<br/>
-10. Adapt to a certain function of 8.0(main app: whats App)<br/>
+10. Adapt to a certain function of 8.0 (main app: whats App)<br/>
 9. Fix the problem that internal WeChat and other applications could not update pictures and video<br/>
 8. Demo adds installation monitoring and automatically updates the application of clone mode<br/>
 7. 7.0 File Provider Adaptation<br/>
