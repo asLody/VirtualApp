@@ -9,6 +9,9 @@ import io.virtualapp.VCommends;
 import io.virtualapp.home.repo.AppDataSource;
 import io.virtualapp.home.models.PackageAppData;
 import io.virtualapp.home.repo.AppRepository;
+import org.jdeferred.DoneCallback;
+import io.virtualapp.home.models.AppInfo;
+import java.util.List;
 
 /**
  * @author Lody
@@ -34,8 +37,21 @@ class ListAppPresenterImpl implements ListAppContract.ListAppPresenter {
 		mView.setPresenter(this);
 		mView.startLoading();
 		if (from == null)
-			mRepository.getInstalledApps(mActivity).done(mView::loadFinish);
+			mRepository.getInstalledApps(mActivity).done(new DoneCallback() {
+
+					@Override
+					public void onDone(Object p1) {
+						mView.loadFinish((List<AppInfo>)p1);
+					}
+
+				
+			});
 		else
-			mRepository.getStorageApps(mActivity, from).done(mView::loadFinish);
+			mRepository.getStorageApps(mActivity, from).done(new DoneCallback() {
+					@Override
+					public void onDone(Object p1) {
+						mView.loadFinish((List<AppInfo>)p1);
+					}
+				});
 	}
 }

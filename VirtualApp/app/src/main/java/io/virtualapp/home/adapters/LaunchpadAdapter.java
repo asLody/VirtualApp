@@ -16,6 +16,9 @@ import io.virtualapp.home.models.AppData;
 import io.virtualapp.home.models.MultiplePackageAppData;
 import io.virtualapp.widgets.LabelView;
 import io.virtualapp.widgets.LauncherIconView;
+import android.widget.SearchView.OnCloseListener;
+import android.view.View.OnClickListener;
+import org.jdeferred.DoneCallback;
 
 /**
  * @author Lody
@@ -43,7 +46,8 @@ public class LaunchpadAdapter extends RecyclerView.Adapter<LaunchpadAdapter.View
     }
 
     public void remove(AppData data) {
-        if (mList.remove(data)) {
+        if (mList.remove(data))
+		{
             notifyDataSetChanged();
         }
     }
@@ -54,75 +58,122 @@ public class LaunchpadAdapter extends RecyclerView.Adapter<LaunchpadAdapter.View
     }
 
     @Override
-    public void onBindViewHolder(ViewHolder holder, int position) {
-        AppData data = mList.get(position);
+    public void onBindViewHolder(ViewHolder holder, final int position) {
+        final AppData data = mList.get(position);
         holder.color = getColor(position);
         holder.iconView.setImageDrawable(data.getIcon());
         holder.nameView.setText(data.getName());
-        if (data.isFirstOpen() && !data.isLoading()) {
+        if (data.isFirstOpen() && !data.isLoading())
+		{
             holder.firstOpenDot.setVisibility(View.VISIBLE);
-        } else {
+        }
+		else
+		{
             holder.firstOpenDot.setVisibility(View.INVISIBLE);
         }
         holder.itemView.setBackgroundColor(holder.color);
-        holder.itemView.setOnClickListener(v -> {
-            if (mAppClickListener != null) {
-                mAppClickListener.onAppClick(position, data);
-            }
-        });
-        if (data instanceof MultiplePackageAppData) {
+        holder.itemView.setOnClickListener(new OnClickListener() {
+
+				@Override
+				public void onClick(View p1) {
+					if (mAppClickListener != null)
+					{
+						mAppClickListener.onAppClick(position, data);
+					}
+				}
+			});
+        if (data instanceof MultiplePackageAppData)
+		{
             MultiplePackageAppData multipleData = (MultiplePackageAppData) data;
             holder.spaceLabelView.setVisibility(View.VISIBLE);
             holder.spaceLabelView.setText(multipleData.userId + 1 + "");
-        } else {
+        }
+		else
+		{
             holder.spaceLabelView.setVisibility(View.INVISIBLE);
         }
-        if (data.isLoading()) {
+        if (data.isLoading())
+		{
             startLoadingAnimation(holder.iconView);
-        } else {
+        }
+		else
+		{
             holder.iconView.setProgress(100, false);
         }
     }
 
-    private void startLoadingAnimation(LauncherIconView iconView) {
+    private void startLoadingAnimation(final LauncherIconView iconView) {
         iconView.setProgress(40, true);
-        VUiKit.defer().when(() -> {
-            try {
-                Thread.sleep(900L);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }).done((res) -> iconView.setProgress(80, true));
+        VUiKit.defer().when(new Runnable() {
+				@Override
+				public void run() {
+					try
+					{
+						Thread.sleep(900L);
+					}
+					catch (InterruptedException e)
+					{
+						e.printStackTrace();
+					}
+				}
+			}).done( new DoneCallback() {
+				@Override
+				public void onDone(Object p1) {
+					iconView.setProgress(80, true);
+				}
+				
+			});
     }
 
     private int getColor(int position) {
         int color = mColorArray.get(position);
-        if (color == 0) {
+        if (color == 0)
+		{
             int type = position % 3;
             int row = position / 3;
             int rowType = row % 3;
-            if (rowType == 0) {
-                if (type == 0) {
-                    color = mInflater.getContext().getResources().getColor(R.color.desktopColorA);
-                } else if (type == 1) {
-                    color = mInflater.getContext().getResources().getColor(R.color.desktopColorB);
-                } else {
-                    color = mInflater.getContext().getResources().getColor(R.color.desktopColorC);
-                }
-            } else if (rowType == 1) {
-                if (type == 0) {
-                    color = mInflater.getContext().getResources().getColor(R.color.desktopColorB);
-                } else if (type == 1) {
-                    color = mInflater.getContext().getResources().getColor(R.color.desktopColorC);
-                } else {
+            if (rowType == 0)
+			{
+                if (type == 0)
+				{
                     color = mInflater.getContext().getResources().getColor(R.color.desktopColorA);
                 }
-            } else {
-                if (type == 0) {
+				else if (type == 1)
+				{
+                    color = mInflater.getContext().getResources().getColor(R.color.desktopColorB);
+                }
+				else
+				{
                     color = mInflater.getContext().getResources().getColor(R.color.desktopColorC);
-                } else if (type == 1) {
+                }
+            }
+			else if (rowType == 1)
+			{
+                if (type == 0)
+				{
+                    color = mInflater.getContext().getResources().getColor(R.color.desktopColorB);
+                }
+				else if (type == 1)
+				{
+                    color = mInflater.getContext().getResources().getColor(R.color.desktopColorC);
+                }
+				else
+				{
                     color = mInflater.getContext().getResources().getColor(R.color.desktopColorA);
-                } else {
+                }
+            }
+			else
+			{
+                if (type == 0)
+				{
+                    color = mInflater.getContext().getResources().getColor(R.color.desktopColorC);
+                }
+				else if (type == 1)
+				{
+                    color = mInflater.getContext().getResources().getColor(R.color.desktopColorA);
+                }
+				else
+				{
                     color = mInflater.getContext().getResources().getColor(R.color.desktopColorB);
                 }
             }
@@ -157,7 +208,8 @@ public class LaunchpadAdapter extends RecyclerView.Adapter<LaunchpadAdapter.View
 
     public void refresh(AppData model) {
         int index = mList.indexOf(model);
-        if (index >= 0) {
+        if (index >= 0)
+		{
             notifyItemChanged(index);
         }
     }

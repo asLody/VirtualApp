@@ -48,28 +48,35 @@ public class LoadingActivity extends VActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_loading);
         loadingView = (EatBeansView) findViewById(R.id.loading_anim);
-        int userId = getIntent().getIntExtra(KEY_USER, -1);
+       final int userId = getIntent().getIntExtra(KEY_USER, -1);
         String pkg = getIntent().getStringExtra(PKG_NAME_ARGUMENT);
         appModel = PackageAppDataStorage.get().acquire(pkg);
         ImageView iconView = (ImageView) findViewById(R.id.app_icon);
         iconView.setImageDrawable(appModel.icon);
         TextView nameView = (TextView) findViewById(R.id.app_name);
         nameView.setText(String.format(Locale.ENGLISH, "Opening %s...", appModel.name));
-        Intent intent = getIntent().getParcelableExtra(KEY_INTENT);
+        final Intent intent = getIntent().getParcelableExtra(KEY_INTENT);
         if (intent == null) {
             return;
         }
         VirtualCore.get().setUiCallback(intent, mUiCallback);
-        VUiKit.defer().when(() -> {
-            if (!appModel.fastOpen) {
-                try {
-                    VirtualCore.get().preOpt(appModel.packageName);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-            VActivityManager.get().startActivity(intent, userId);
-        });
+        VUiKit.defer().when(new Runnable() {
+
+				@Override
+				public void run() {
+					if (!appModel.fastOpen) {
+						try {
+							VirtualCore.get().preOpt(appModel.packageName);
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
+					}
+					VActivityManager.get().startActivity(intent, userId);
+				
+				}
+
+			
+		});
 
     }
 

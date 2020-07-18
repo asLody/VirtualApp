@@ -22,7 +22,8 @@
     <uses-permission android:name="android.permission.BIND_DIRECTORY_SEARCH" />
     <uses-permission android:name="android.permission.UPDATE_APP_OPS_STATS" />
     <uses-permission android:name="com.android.voicemail.permission.READ_WRITE_ALL_VOICEMAIL" />
-
+	<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+	
     <uses-permission
         android:name="android.permission.ACCOUNT_MANAGER"
         tools:ignore="ProtectedPermissions" />
@@ -213,6 +214,8 @@
     <uses-permission android:name="com.huawei.android.launcher.permission.CHANGE_BADGE" />
     <uses-permission android:name="android.permission.GET_INTENT_SENDER_INTENT" />
 
+	<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+	
     <uses-permission
         android:name="android.permission.WRITE_APN_SETTINGS"
         tools:ignore="ProtectedPermissions" />

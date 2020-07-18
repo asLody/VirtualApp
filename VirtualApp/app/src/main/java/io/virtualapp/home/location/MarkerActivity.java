@@ -36,6 +36,7 @@ import com.tencent.tencentmap.mapsdk.map.TencentMap;
 
 import io.virtualapp.abs.ui.VActivity;
 import io.virtualapp.R;
+import android.content.DialogInterface;
 
 public class MarkerActivity extends VActivity implements TencentMap.OnMapClickListener, TencentLocationListener {
     private TencentMap mMap;
@@ -65,17 +66,22 @@ public class MarkerActivity extends VActivity implements TencentMap.OnMapClickLi
         geocoderSearch = new TencentSearch(this);
         //
         Intent data = getIntent();
-        if (data != null) {
+        if (data != null)
+		{
             mVLocation = data.getParcelableExtra(EXTRA_LOCATION);
-            if (mVLocation != null && mVLocation.latitude != 0 && mVLocation.longitude != 0) {
+            if (mVLocation != null && mVLocation.latitude != 0 && mVLocation.longitude != 0)
+			{
                 mLatLng = new LatLng(mVLocation.latitude, mVLocation.longitude);
                 isNoPoint = false;
             }
         }
 
-        if (isNoPoint) {
+        if (isNoPoint)
+		{
             startLocation();
-        } else {
+        }
+		else
+		{
             onMapClick(mLatLng);
         }
     }
@@ -87,7 +93,8 @@ public class MarkerActivity extends VActivity implements TencentMap.OnMapClickLi
 
     public void enableBackHome() {
         ActionBar actionBar = getSupportActionBar();
-        if (actionBar != null) {
+        if (actionBar != null)
+		{
             actionBar.setDisplayHomeAsUpEnabled(true);
         }
     }
@@ -95,21 +102,25 @@ public class MarkerActivity extends VActivity implements TencentMap.OnMapClickLi
     private void startLocation() {
         Toast.makeText(this, "start location", Toast.LENGTH_SHORT).show();
         TencentLocationRequest request = TencentLocationRequest.create()
-                .setRequestLevel(TencentLocationRequest.REQUEST_LEVEL_GEO)
-                .setAllowGPS(true);
+			.setRequestLevel(TencentLocationRequest.REQUEST_LEVEL_GEO)
+			.setAllowGPS(true);
         int error = TencentLocationManager.getInstance(this)
-                .requestLocationUpdates(request, this);
-        if (error != 0) {
+			.requestLocationUpdates(request, this);
+        if (error != 0)
+		{
             VLog.w("TMap", "startLocation:error=" + error);
         }
     }
 
     @Override
     public void onLocationChanged(TencentLocation location, int error, String msg) {
-        if (location != null) {
+        if (location != null)
+		{
             TencentLocationManager.getInstance(this).removeUpdates(this);
             onMapClick(new LatLng(location.getLatitude(), location.getLongitude()));
-        } else {
+        }
+		else
+		{
             String errText = "定位失败," + error + ": " + msg;
             VLog.e("TMap", errText);
         }
@@ -128,7 +139,8 @@ public class MarkerActivity extends VActivity implements TencentMap.OnMapClickLi
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
+        switch (item.getItemId())
+		{
             case android.R.id.home:
                 finish();
                 break;
@@ -136,21 +148,33 @@ public class MarkerActivity extends VActivity implements TencentMap.OnMapClickLi
                 AlertDialog.Builder builder = new AlertDialog.Builder(this);
                 builder.setTitle("Question");
                 builder.setMessage("Clear virtual location");
-                builder.setNegativeButton(android.R.string.ok, (d, s) -> {
-                    if (mMap != null) {
-                        mMap.clearAllOverlays();
-                    }
-                    setResultOk(null);
-                    finish();
-                    d.dismiss();
-                });
-                builder.setNeutralButton(android.R.string.cancel, (d, s) -> {
-                    d.dismiss();
-                });
+                builder.setNegativeButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+
+						@Override
+						public void onClick(DialogInterface d, int s) {
+							{
+								if (mMap != null)
+								{
+									mMap.clearAllOverlays();
+								}
+								setResultOk(null);
+								finish();
+								d.dismiss();
+							}
+						}
+					});
+                builder.setNeutralButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+						@Override
+						public void onClick(DialogInterface d, int s) {
+							d.dismiss();
+						}
+					});
+
                 builder.show();
                 break;
             case R.id.action_ok:
-                if (mLatLng != null) {
+                if (mLatLng != null)
+				{
                     /**
                      * TODO edit info
                      * @see com.lody.virtual.remote.vloc.VLocation#altitude
@@ -158,7 +182,8 @@ public class MarkerActivity extends VActivity implements TencentMap.OnMapClickLi
                      * @see com.lody.virtual.remote.vloc.VLocation#speed
                      * @see com.lody.virtual.remote.vloc.VLocation#bearing
                      */
-                    if (mVLocation == null) {
+                    if (mVLocation == null)
+					{
                         mVLocation = new VLocation();
                         mVLocation.accuracy = 50;
                     }
@@ -176,37 +201,38 @@ public class MarkerActivity extends VActivity implements TencentMap.OnMapClickLi
     public void onMapClick(LatLng latLng) {
         mLatLng = latLng;
         MarkerOptions markerOption = new MarkerOptions()
-                .icon(BitmapDescriptorFactory.defaultMarker())
-                .position(mLatLng)
-                .draggable(true);
+			.icon(BitmapDescriptorFactory.defaultMarker())
+			.position(mLatLng)
+			.draggable(true);
         mMap.clearAllOverlays();
         mMap.addMarker(markerOption);
         int level = Math.min(mMap.getZoomLevel(), mMap.getMaxZoomLevel() / 3 * 2);
         mMap.moveCamera(CameraUpdateFactory.newCameraPosition(new CameraPosition(latLng, level)));
 
         //查询地理位置
-        ProgressDialog dialog = ProgressDialog.show(this, null, "get address of location");
+        final ProgressDialog dialog = ProgressDialog.show(this, null, "get address of location");
         Geo2AddressParam param = new Geo2AddressParam()
-                .location(new Location()
-                        .lat((float) latLng.getLatitude())
-                        .lng((float) latLng.getLongitude()));
+			.location(new Location()
+					  .lat((float) latLng.getLatitude())
+					  .lng((float) latLng.getLongitude()));
         geocoderSearch.geo2address(param, new HttpResponseListener() {
-            @Override
-            public void onSuccess(int i, BaseObject object) {
-                Geo2AddressResultObject oj = (Geo2AddressResultObject) object;
-                if (oj.result != null) {
-                    pathText.setText(oj.result.address);
-                    mAddress = oj.result.address;
-                }
-                dialog.dismiss();
-            }
+				@Override
+				public void onSuccess(int i, BaseObject object) {
+					Geo2AddressResultObject oj = (Geo2AddressResultObject) object;
+					if (oj.result != null)
+					{
+						pathText.setText(oj.result.address);
+						mAddress = oj.result.address;
+					}
+					dialog.dismiss();
+				}
 
-            @Override
-            public void onFailure(int i, String s, Throwable throwable) {
-                dialog.dismiss();
-                pathText.setText("error:" + s);
-            }
-        });
+				@Override
+				public void onFailure(int i, String s, Throwable throwable) {
+					dialog.dismiss();
+					pathText.setText("error:" + s);
+				}
+			});
     }
 
     /**

@@ -117,16 +117,16 @@ public class ProviderHook implements InvocationHandler {
     }
 
     public int bulkInsert(MethodBox methodBox, Uri url, ContentValues[] initialValues) throws InvocationTargetException {
-        return (int) methodBox.call();
+        return (int) methodBox.<Integer>call();
     }
 
     public int delete(MethodBox methodBox, Uri url, String selection, String[] selectionArgs) throws InvocationTargetException {
-        return (int) methodBox.call();
+        return (int) methodBox.<Integer>call();
     }
 
     public int update(MethodBox methodBox, Uri url, ContentValues values, String selection,
                       String[] selectionArgs) throws InvocationTargetException {
-        return (int) methodBox.call();
+        return (int) methodBox.<Integer>call();
     }
 
     public ParcelFileDescriptor openFile(MethodBox methodBox, Uri url, String mode) throws InvocationTargetException {

@@ -37,7 +37,7 @@
     </declare-styleable>
 
     <declare-styleable name="RippleButton">
-        <attr name="rippleColor" format="color" />
+        <attr name="rippleColor_" format="color" />
         <attr name="alphaFactor" format="float" />
         <attr name="hover" format="boolean" />
     </declare-styleable>

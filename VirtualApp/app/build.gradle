@@ -2,12 +2,12 @@ apply plugin: 'com.android.application'
 
 
 android {
-    compileSdkVersion 26
-    buildToolsVersion '26.0.2'
+    compileSdkVersion 28
+    buildToolsVersion '28.0.3'
     defaultConfig {
         applicationId "io.virtualapp"
-        minSdkVersion 15
-        targetSdkVersion 22
+        minSdkVersion 28
+        targetSdkVersion 28
         versionCode 24
         versionName "1.2.5"
         multiDexEnabled true
@@ -18,6 +18,11 @@ android {
                 }
             }
         }
+		externalNativeBuild {
+            ndkBuild {
+                abiFilters "armeabi-v7a", "x86"
+            }
+        }
     }
 
     sourceSets {
@@ -26,6 +31,12 @@ android {
         }
     }
 
+	externalNativeBuild {
+        ndkBuild {
+            path file("src/main/jni/Android.mk")
+        }
+    }
+	
     buildTypes {
         release {
             minifyEnabled false
@@ -65,4 +76,7 @@ dependencies {
     compile 'com.jonathanfinerty.once:once:1.0.3'
     compile 'com.flurry.android:analytics:6.9.2'
     compile 'com.kyleduo.switchbutton:library:1.4.6'
+	 implementation 'me.weishu:free_reflection:2.2.0'
+	//implementation 'com.github.ChickenHook:RestrictionBypass:2.2'
+
 }

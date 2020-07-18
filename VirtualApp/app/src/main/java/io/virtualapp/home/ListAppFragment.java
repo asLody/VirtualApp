@@ -27,6 +27,8 @@ import io.virtualapp.home.adapters.decorations.ItemOffsetDecoration;
 import io.virtualapp.home.models.AppInfo;
 import io.virtualapp.home.models.AppInfoLite;
 import io.virtualapp.widgets.DragSelectRecyclerView;
+import io.virtualapp.widgets.DragSelectRecyclerViewAdapter;
+import android.view.View.OnClickListener;
 
 /**
  * @author Lody
@@ -49,9 +51,11 @@ public class ListAppFragment extends VFragment<ListAppContract.ListAppPresenter>
 
     private File getSelectFrom() {
         Bundle bundle = getArguments();
-        if (bundle != null) {
+        if (bundle != null)
+		{
             String selectFrom = bundle.getString(KEY_SELECT_FROM);
-            if (selectFrom != null) {
+            if (selectFrom != null)
+			{
                 return new File(selectFrom);
             }
         }
@@ -80,39 +84,52 @@ public class ListAppFragment extends VFragment<ListAppContract.ListAppPresenter>
         mAdapter = new CloneAppListAdapter(getActivity());
         mRecyclerView.setAdapter(mAdapter);
         mAdapter.setOnItemClickListener(new CloneAppListAdapter.ItemEventListener() {
-            @Override
-            public void onItemClick(AppInfo info, int position) {
-                int count = mAdapter.getSelectedCount();
-                if (!mAdapter.isIndexSelected(position)) {
-                    if (count >= 9) {
-                        Toast.makeText(getContext(), R.string.install_too_much_once_time, Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-                }
-                mAdapter.toggleSelected(position);
-            }
+				@Override
+				public void onItemClick(AppInfo info, int position) {
+					int count = mAdapter.getSelectedCount();
+					if (!mAdapter.isIndexSelected(position))
+					{
+						if (count >= 9)
+						{
+							Toast.makeText(getContext(), R.string.install_too_much_once_time, Toast.LENGTH_SHORT).show();
+							return;
+						}
+					}
+					mAdapter.toggleSelected(position);
+				}
 
-            @Override
-            public boolean isSelectable(int position) {
-                return mAdapter.isIndexSelected(position) || mAdapter.getSelectedCount() < 9;
-            }
-        });
-        mAdapter.setSelectionListener(count -> {
-            mInstallButton.setEnabled(count > 0);
-            mInstallButton.setText(String.format(Locale.ENGLISH, getResources().getString(R.string.install_d), count));
-        });
-        mInstallButton.setOnClickListener(v -> {
-            Integer[] selectedIndices = mAdapter.getSelectedIndices();
-            ArrayList<AppInfoLite> dataList = new ArrayList<AppInfoLite>(selectedIndices.length);
-            for (int index : selectedIndices) {
-                AppInfo info = mAdapter.getItem(index);
-                dataList.add(new AppInfoLite(info.packageName, info.path, info.fastOpen));
-            }
-            Intent data = new Intent();
-            data.putParcelableArrayListExtra(VCommends.EXTRA_APP_INFO_LIST, dataList);
-            getActivity().setResult(Activity.RESULT_OK, data);
-            getActivity().finish();
-        });
+				@Override
+				public boolean isSelectable(int position) {
+					return mAdapter.isIndexSelected(position) || mAdapter.getSelectedCount() < 9;
+				}
+			});
+
+		mAdapter.setSelectionListener(new DragSelectRecyclerViewAdapter.SelectionListener() {
+				@Override
+				public void onDragSelectionChanged(int count) {
+					mInstallButton.setEnabled(count > 0);
+					mInstallButton.setText(String.format(Locale.ENGLISH, getResources().getString(R.string.install_d), count));
+				}
+			});
+
+        mInstallButton.setOnClickListener(new OnClickListener() {
+
+				@Override
+				public void onClick(View p1) {
+					Integer[] selectedIndices = mAdapter.getSelectedIndices();
+					ArrayList<AppInfoLite> dataList = new ArrayList<AppInfoLite>(selectedIndices.length);
+					for (int index : selectedIndices)
+					{
+						AppInfo info = mAdapter.getItem(index);
+						dataList.add(new AppInfoLite(info.packageName, info.path, info.fastOpen));
+					}
+					Intent data = new Intent();
+					data.putParcelableArrayListExtra(VCommends.EXTRA_APP_INFO_LIST, dataList);
+					getActivity().setResult(Activity.RESULT_OK, data);
+					getActivity().finish();
+
+				}
+			});
         new ListAppPresenterImpl(getActivity(), this, getSelectFrom()).start();
     }
 

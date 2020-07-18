@@ -39,7 +39,7 @@ public class VirtualLocationManager {
         try {
             return getService().getMode(userId, pkg);
         } catch (RemoteException e) {
-            return VirtualRuntime.crash(e);
+            return VirtualRuntime.<Integer>crash(e);
         }
     }
 

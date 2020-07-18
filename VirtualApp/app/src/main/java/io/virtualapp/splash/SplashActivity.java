@@ -12,6 +12,7 @@ import io.virtualapp.abs.ui.VUiKit;
 import io.virtualapp.home.FlurryROMCollector;
 import io.virtualapp.home.HomeActivity;
 import jonathanfinerty.once.Once;
+import org.jdeferred.DoneCallback;
 
 public class SplashActivity extends VActivity {
 
@@ -24,22 +25,33 @@ public class SplashActivity extends VActivity {
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_splash);
-        VUiKit.defer().when(() -> {
-            if (!Once.beenDone("collect_flurry")) {
-                FlurryROMCollector.startCollect();
-                Once.markDone("collect_flurry");
-            }
-            long time = System.currentTimeMillis();
-            doActionInThread();
-            time = System.currentTimeMillis() - time;
-            long delta = 3000L - time;
-            if (delta > 0) {
-                VUiKit.sleep(delta);
-            }
-        }).done((res) -> {
-            HomeActivity.goHome(this);
-            finish();
-        });
+		
+		VUiKit.defer().when(new Runnable() {
+				@Override
+				public void run() {
+					{
+						if (!Once.beenDone("collect_flurry")) {
+							FlurryROMCollector.startCollect();
+							Once.markDone("collect_flurry");
+						}
+						long time = System.currentTimeMillis();
+						doActionInThread();
+						time = System.currentTimeMillis() - time;
+						long delta = 3000L - time;
+						if (delta > 0) {
+							VUiKit.sleep(delta);
+						}
+					}
+				}
+
+			
+			}).done(new DoneCallback() {
+				@Override
+				public void onDone(Object p1) {
+					HomeActivity.goHome(SplashActivity.this);
+					finish();
+				}
+		});
     }
 
 

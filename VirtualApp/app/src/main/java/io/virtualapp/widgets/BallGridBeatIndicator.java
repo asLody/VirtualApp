@@ -53,10 +53,16 @@ public class BallGridBeatIndicator extends Indicator {
             alphaAnim.setDuration(durations[i]);
             alphaAnim.setRepeatCount(-1);
             alphaAnim.setStartDelay(delays[i]);
-            addUpdateListener(alphaAnim, animation -> {
-                ALPHAS[index] = (int) animation.getAnimatedValue();
-                postInvalidate();
-            });
+            addUpdateListener(alphaAnim, new ValueAnimator.AnimatorUpdateListener() {
+
+					@Override
+					public void onAnimationUpdate(ValueAnimator animation) {
+						ALPHAS[index] = (int) animation.getAnimatedValue();
+						postInvalidate();
+					}
+
+				
+			});
             animators.add(alphaAnim);
         }
         return animators;

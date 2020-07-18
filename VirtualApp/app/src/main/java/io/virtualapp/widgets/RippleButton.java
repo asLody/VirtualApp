@@ -57,7 +57,7 @@ public class RippleButton extends AppCompatButton {
         init();
         TypedArray a = context.obtainStyledAttributes(attrs,
                 R.styleable.RippleButton);
-        mRippleColor = a.getColor(R.styleable.RippleButton_rippleColor,
+        mRippleColor = a.getColor(R.styleable.RippleButton_rippleColor_,
                 mRippleColor);
         mAlphaFactor = a.getFloat(R.styleable.RippleButton_alphaFactor,
                 mAlphaFactor);

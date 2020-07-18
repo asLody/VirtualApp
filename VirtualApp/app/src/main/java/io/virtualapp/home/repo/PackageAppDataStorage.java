@@ -10,6 +10,8 @@ import io.virtualapp.VApp;
 import io.virtualapp.abs.Callback;
 import io.virtualapp.abs.ui.VUiKit;
 import io.virtualapp.home.models.PackageAppData;
+import org.jdeferred.DeferredRunnable;
+import org.jdeferred.DoneCallback;
 
 /**
  * @author Lody
@@ -27,26 +29,39 @@ public class PackageAppDataStorage {
 
     public PackageAppData acquire(String packageName) {
         PackageAppData data;
-        synchronized (packageDataMap) {
+        synchronized (packageDataMap)
+		{
             data = packageDataMap.get(packageName);
-            if (data == null) {
+            if (data == null)
+			{
                 data = loadAppData(packageName);
             }
         }
         return data;
     }
 
-    public void acquire(String packageName, Callback<PackageAppData> callback) {
+    public void acquire(final String packageName, final Callback<PackageAppData> callback) {
         VUiKit.defer()
-                .when(() -> acquire(packageName))
-                .done(callback::callback);
+			.when(new Runnable() {
+				@Override
+				public void run() {
+					acquire(packageName);
+				}
+			}).done(new DoneCallback() {
+				@Override
+				public void onDone(Object p1) {
+					callback.callback((PackageAppData)p1);
+				}
+			});
     }
 
     private PackageAppData loadAppData(String packageName) {
         InstalledAppInfo setting = VirtualCore.get().getInstalledAppInfo(packageName, 0);
-        if (setting != null) {
+        if (setting != null)
+		{
             PackageAppData data = new PackageAppData(VApp.getApp(), setting);
-            synchronized (packageDataMap) {
+            synchronized (packageDataMap)
+			{
                 packageDataMap.put(packageName, data);
             }
             return data;

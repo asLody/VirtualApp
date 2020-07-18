@@ -57,6 +57,7 @@ public class PackageParserEx {
             p.mSignatures = new Signature[]{new Signature(sig)};
             VLog.d(TAG, "Using fake-signature feature on : " + p.packageName);
         } else {
+			VLog.d(TAG, "Calling CollectCert");
             PackageParserCompat.collectCertificates(parser, p, PackageParser.PARSE_IS_SYSTEM);
         }
         return buildPackageCache(p);

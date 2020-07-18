@@ -32,7 +32,7 @@ public class VJobScheduler {
         try {
             return getService().schedule(job);
         } catch (RemoteException e) {
-            return VirtualRuntime.crash(e);
+            return VirtualRuntime.<Integer>crash(e);
         }
     }
 

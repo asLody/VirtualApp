@@ -39,7 +39,7 @@ public class VPackageManager {
         try {
             return getService().checkPermission(permName, pkgName, userId);
         } catch (RemoteException e) {
-            return VirtualRuntime.crash(e);
+            return VirtualRuntime.<Integer>crash(e);
         }
     }
 
@@ -200,7 +200,7 @@ public class VPackageManager {
         try {
             return getService().activitySupportsIntent(component, intent, resolvedType);
         } catch (RemoteException e) {
-            return VirtualRuntime.crash(e);
+            return VirtualRuntime.<Boolean>crash(e);
         }
     }
 
@@ -233,7 +233,7 @@ public class VPackageManager {
         try {
             return getService().getPackageUid(packageName, userId);
         } catch (RemoteException e) {
-            return VirtualRuntime.crash(e);
+            return VirtualRuntime.<Integer>crash(e);
         }
     }
 

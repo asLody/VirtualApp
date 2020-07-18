@@ -26,6 +26,10 @@ import io.virtualapp.home.models.LocationData;
 import io.virtualapp.home.repo.AppRepository;
 
 import static io.virtualapp.home.location.MarkerActivity.EXTRA_LOCATION;
+import org.jdeferred.DeferredRunnable;
+import org.jdeferred.DoneCallback;
+import java.util.concurrent.Callable;
+import org.jdeferred.FailCallback;
 
 public class VirtualLocationSettings extends VActivity implements AdapterView.OnItemClickListener {
     private static final int REQUSET_CODE = 1001;
@@ -52,45 +56,66 @@ public class VirtualLocationSettings extends VActivity implements AdapterView.On
     }
 
     private void saveLocation(LocationData locationData) {
-        if(locationData.location == null||locationData.location.isEmpty()){
+        if (locationData.location == null || locationData.location.isEmpty())
+		{
             VirtualLocationManager.get().setMode(locationData.userId, locationData.packageName, 0);
-        }else if(locationData.mode != 2){
+        }
+		else if (locationData.mode != 2)
+		{
             VirtualLocationManager.get().setMode(locationData.userId, locationData.packageName, 2);
         }
         VirtualLocationManager.get().setLocation(locationData.userId, locationData.packageName, locationData.location);
     }
 
     private void loadData() {
-        ProgressDialog dialog = ProgressDialog.show(this, null, "loading");
-        VUiKit.defer().when(() -> {
-            List<InstalledAppInfo> infos = VirtualCore.get().getInstalledApps(0);
-            List<LocationData> models = new ArrayList<>();
-            for (InstalledAppInfo info : infos) {
-                if (!VirtualCore.get().isPackageLaunchable(info.packageName)) {
-                    continue;
-                }
-                int[] userIds = info.getInstalledUsers();
-                for (int userId : userIds) {
-                    LocationData data = new LocationData(this, info, userId);
-                    readLocation(data);
-                    models.add(data);
-                }
-            }
-            return models;
-        }).done((list) -> {
-            dialog.dismiss();
-            mAppLocationAdapter.set(list);
-            mAppLocationAdapter.notifyDataSetChanged();
-        }).fail((e) -> {
-            dialog.dismiss();
-        });
-    }
+        final ProgressDialog dialog = ProgressDialog.show(this, null, "loading");
+
+		VUiKit.defer().when(new Callable<List<LocationData>>() {
+				@Override
+				public List<LocationData> call() {
+					List<InstalledAppInfo> infos = VirtualCore.get().getInstalledApps(0);
+					List<LocationData> models = new ArrayList<>();
+					for (InstalledAppInfo info : infos)
+					{
+						if (!VirtualCore.get().isPackageLaunchable(info.packageName))
+						{
+							continue;
+						}
+						int[] userIds = info.getInstalledUsers();
+						for (int userId : userIds)
+						{
+							LocationData data = new LocationData(VirtualLocationSettings.this, info, userId);
+							readLocation(data);
+							models.add(data);
+						}
+					}
+					return models;
+				}
+			}).done(new DoneCallback<List<LocationData>>() {
+				@Override
+				public void onDone(List<LocationData> list) {
+					dialog.dismiss();
+					mAppLocationAdapter.set(list);
+					mAppLocationAdapter.notifyDataSetChanged();
+				}
+			}).fail(new FailCallback<Throwable>() {
+
+				@Override
+				public void onFail(Throwable e) {
+					dialog.dismiss();
+				}
+
+
+			});
+
+	}
 
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         mSelectData = mAppLocationAdapter.getItem(position);
         Intent intent = new Intent(this, MarkerActivity.class);
-        if (mSelectData.location != null) {
+        if (mSelectData.location != null)
+		{
             intent.putExtra(EXTRA_LOCATION, mSelectData.location);
         }
         startActivityForResult(intent, REQUSET_CODE);
@@ -98,10 +123,13 @@ public class VirtualLocationSettings extends VActivity implements AdapterView.On
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == REQUSET_CODE) {
-            if (resultCode == RESULT_OK) {
+        if (requestCode == REQUSET_CODE)
+		{
+            if (resultCode == RESULT_OK)
+			{
                 VLocation location = data.getParcelableExtra(EXTRA_LOCATION);
-                if (mSelectData != null) {
+                if (mSelectData != null)
+				{
                     mSelectData.location = location;
                     VLog.i("kk", "set" + mSelectData);
                     saveLocation(mSelectData);

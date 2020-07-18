@@ -33,6 +33,9 @@ public class PackageParser {
     public static Class<?> TYPE = RefClass.load(PackageParser.class, "android.content.pm.PackageParser");
     @MethodReflectParams({"android.content.pm.PackageParser$Package", "int"})
     public static RefMethod<Void> collectCertificates;
+	
+	
+	
     @MethodParams({String.class})
     public static RefConstructor<android.content.pm.PackageParser> ctor;
     @MethodReflectParams({"android.content.pm.PackageParser$Activity", "int"})

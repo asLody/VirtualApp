@@ -31,7 +31,7 @@ public class NativeLibraryHelperCompat {
 	private static int copyNativeBinariesBeforeL(File apkFile, File sharedLibraryDir) {
 		try {
 			return Reflect.on(NativeLibraryHelper.TYPE).call("copyNativeBinariesIfNeededLI", apkFile, sharedLibraryDir)
-					.get();
+					.<Integer>get();
 		} catch (Throwable e) {
 			e.printStackTrace();
 		}

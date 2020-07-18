@@ -35,7 +35,7 @@ class MethodProxies {
             public Object afterCall(Object who, Method method, Object[] args, Object result) throws Throwable {
                 if (result != null) {
                     Reflect pwd = Reflect.on(result);
-                    int uid = pwd.get("pw_uid");
+                    int uid = pwd.<Integer>get("pw_uid");
                     if (uid == VirtualCore.get().myUid()) {
                         pwd.set("pw_uid", VClientImpl.get().getVUid());
                     }
@@ -68,7 +68,7 @@ class MethodProxies {
             public Object afterCall(Object who, Method method, Object[] args, Object result) throws Throwable {
                 if (result != null) {
                     Reflect ucred = Reflect.on(result);
-                    int uid = ucred.get("uid");
+                    int uid = ucred.<Integer>get("uid");
                     if (uid == VirtualCore.get().myUid()) {
                         ucred.set("uid", getBaseVUid());
                     }

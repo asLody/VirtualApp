@@ -164,7 +164,7 @@ class PendIntentCompat {
                         action = one.getClass().getSimpleName();
                     }
                     if ("SetOnClickPendingIntent".equalsIgnoreCase(action)) {
-                        int id = Reflect.on(one).get("viewId");
+                        int id = Reflect.on(one).<Integer>get("viewId");
                         PendingIntent intent = Reflect.on(one).get("pendingIntent");
                         map.put(id, intent);
                     }

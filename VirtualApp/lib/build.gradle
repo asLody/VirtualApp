@@ -1,12 +1,12 @@
 apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion 26
-    buildToolsVersion '26.0.2'
+    compileSdkVersion 28
+    buildToolsVersion '28.0.3'
 
     defaultConfig {
-        minSdkVersion 14
-        targetSdkVersion 22
+        minSdkVersion 28
+        targetSdkVersion 28
         versionCode 1
         versionName "1.0"
         externalNativeBuild {
@@ -30,6 +30,12 @@ android {
         //IJobService need NewApi
         warning 'NewApi','OnClick'
     }
+	
+	sourceSets {
+		main {
+			java.srcDirs=['src/main/java','src/main/aidl']
+		}
+	}
 }
 
 

@@ -232,12 +232,18 @@ public abstract class CardStackAdapter implements View.OnTouchListener, View.OnC
 				View child = mCardViews[i];
 				animations.add(getAnimatorForView(child, i, mSelectedCardPosition));
 			}
-			startAnimations(animations, () -> {
-				setScreenTouchable(true);
-				if (mParent.getOnCardSelectedListener() != null) {
-					mParent.getOnCardSelectedListener().onCardSelected(v, mSelectedCardPosition);
-				}
-			}, false);
+			startAnimations(animations, new Runnable() {
+
+					@Override
+					public void run() {
+						{
+							setScreenTouchable(true);
+							if (mParent.getOnCardSelectedListener() != null) {
+								mParent.getOnCardSelectedListener().onCardSelected(v, mSelectedCardPosition);
+							}
+						}
+					}
+				}, false);
 
 		}
 	}

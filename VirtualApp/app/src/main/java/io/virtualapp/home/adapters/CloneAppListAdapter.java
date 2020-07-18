@@ -16,6 +16,7 @@ import io.virtualapp.abs.ui.VUiKit;
 import io.virtualapp.home.models.AppInfo;
 import io.virtualapp.widgets.DragSelectRecyclerViewAdapter;
 import io.virtualapp.widgets.LabelView;
+import android.view.View.OnClickListener;
 
 /**
  * @author Lody
@@ -61,12 +62,12 @@ public class CloneAppListAdapter extends DragSelectRecyclerViewAdapter<CloneAppL
     }
 
     @Override
-    public void onBindViewHolder(ViewHolder holder, int position) {
+    public void onBindViewHolder(ViewHolder holder, final int position) {
         if (getItemViewType(position) == TYPE_FOOTER) {
             return;
         }
         super.onBindViewHolder(holder, position);
-        AppInfo info = mAppList.get(position);
+        final AppInfo info = mAppList.get(position);
         holder.iconView.setImageDrawable(info.icon);
         holder.nameView.setText(info.name);
         if (isIndexSelected(position)) {
@@ -83,8 +84,11 @@ public class CloneAppListAdapter extends DragSelectRecyclerViewAdapter<CloneAppL
             holder.labelView.setVisibility(View.INVISIBLE);
         }
 
-        holder.itemView.setOnClickListener(v -> {
-            mItemEventListener.onItemClick(info, position);
+        holder.itemView.setOnClickListener(new OnClickListener() {
+				@Override
+				public void onClick(View v) {
+					mItemEventListener.onItemClick(info, position);
+				}
         });
     }
 

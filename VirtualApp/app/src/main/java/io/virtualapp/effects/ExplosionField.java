@@ -128,7 +128,7 @@ public class ExplosionField extends View {
 		explode(view, null);
 	}
 
-	public void explode(final View view, OnExplodeFinishListener listener) {
+	public void explode(final View view, final OnExplodeFinishListener listener) {
 		Rect r = new Rect();
 		view.getGlobalVisibleRect(r);
 		int[] location = new int[2];

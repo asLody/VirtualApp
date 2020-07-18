@@ -365,7 +365,7 @@ public final class VirtualCore {
         try {
             return getService().isOutsidePackageVisible(pkg);
         } catch (RemoteException e) {
-            return VirtualRuntime.crash(e);
+            return VirtualRuntime.<Boolean>crash(e);
         }
     }
 
@@ -373,7 +373,7 @@ public final class VirtualCore {
         try {
             return getService().isAppInstalled(pkg);
         } catch (RemoteException e) {
-            return VirtualRuntime.crash(e);
+            return VirtualRuntime.<Boolean>crash(e);
         }
     }
 
@@ -526,7 +526,7 @@ public final class VirtualCore {
         try {
             return getService().getInstalledAppCount();
         } catch (RemoteException e) {
-            return VirtualRuntime.crash(e);
+            return VirtualRuntime.<Integer>crash(e);
         }
     }
 
@@ -678,7 +678,7 @@ public final class VirtualCore {
         try {
             return getService().isPackageLaunched(userId, packageName);
         } catch (RemoteException e) {
-            return VirtualRuntime.crash(e);
+            return VirtualRuntime.<Boolean>crash(e);
         }
     }
 
@@ -694,7 +694,7 @@ public final class VirtualCore {
         try {
             return getService().installPackageAsUser(userId, packageName);
         } catch (RemoteException e) {
-            return VirtualRuntime.crash(e);
+            return VirtualRuntime.<Boolean>crash(e);
         }
     }
 
@@ -702,7 +702,7 @@ public final class VirtualCore {
         try {
             return getService().isAppInstalledAsUser(userId, packageName);
         } catch (RemoteException e) {
-            return VirtualRuntime.crash(e);
+            return VirtualRuntime.<Boolean>crash(e);
         }
     }
 

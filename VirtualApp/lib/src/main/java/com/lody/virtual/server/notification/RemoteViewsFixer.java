@@ -156,7 +156,7 @@ import java.util.HashMap;
     private boolean isSingleLine(TextView textView) {
         boolean singleLine;
         try {
-            singleLine = Reflect.on(textView).get("mSingleLine");
+            singleLine = Reflect.on(textView).<Boolean>get("mSingleLine");
         } catch (Exception e) {
             singleLine = (textView.getInputType() & EditorInfo.TYPE_TEXT_FLAG_MULTI_LINE) != 0;
         }

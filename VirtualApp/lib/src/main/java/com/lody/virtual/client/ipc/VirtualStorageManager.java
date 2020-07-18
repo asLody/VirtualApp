@@ -54,7 +54,7 @@ public class VirtualStorageManager {
         try {
             return getRemote().isVirtualStorageEnable(packageName, userId);
         } catch (RemoteException e) {
-            return VirtualRuntime.crash(e);
+            return VirtualRuntime.<Boolean>crash(e);
         }
     }
 }

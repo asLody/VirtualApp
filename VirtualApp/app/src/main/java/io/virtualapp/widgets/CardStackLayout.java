@@ -116,7 +116,12 @@ public class CardStackLayout extends FrameLayout {
 		}
 
 		if (mShowInitAnimation) {
-			postDelayed(this::restoreCards, 500);
+			postDelayed(new Runnable() {
+					@Override
+					public void run() {
+						restoreCards();
+					}
+			}, 500);
 		}
 	}
 

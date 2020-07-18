@@ -143,10 +143,10 @@ import mirror.com.android.internal.R_Hide;
                         continue;
                     }
                     if (ReflectionActionCompat.isInstance(action)) {
-                        int viewId = Reflect.on(action).get("viewId");
+                        int viewId = Reflect.on(action).<Integer>get("viewId");
 
                         String methodName = Reflect.on(action).get("methodName");
-                        int type = Reflect.on(action).get("type");
+                        int type = Reflect.on(action).<Integer>get("type");
                         Object value = Reflect.on(action).get("value");
                         if (!hasIcon) {
                             hasIcon = viewId == systemIconViewId;
