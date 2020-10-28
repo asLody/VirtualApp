@@ -122,14 +122,15 @@ VA实例
 2019年3月1日起，我们将VirtualApp商业版代码更新方式升级为`GitHub私有库`方式，授权后即可加入。在授权期内可以和众多授权项目近2100多位安卓工程师一同迭代升级，反馈BUG，我们会第一时间更新解决。
 
 **2020年 10月15号 至 2020年 10月28号 商业版代码更新内容**
-286、添加系统Package缓存，优化性能
-285、修复disabled组件还能被PMS查询的BUG
-284、修复微信部分界面Launch行为异常的问题
-283、修复ContentProvider.getCallingPackage返回Host包名的BUG
-282、修复uid虚拟化的BUG，解决部分app权限检查失败的问题
-281、重写PendingIntent, IntentSender的实现
-280、优化进程管理，修复长期存在的概率性进程死锁问题
-279、重写Service实现，Service生命周期更准确，不容易被杀死
+
+286、添加系统Package缓存，优化性能<br/>
+285、修复disabled组件还能被PMS查询的BUG<br/>
+284、修复微信部分界面Launch行为异常的问题<br/>
+283、修复ContentProvider.getCallingPackage返回Host包名的BUG<br/>
+282、修复uid虚拟化的BUG，解决部分app权限检查失败的问题<br/>
+281、重写PendingIntent, IntentSender的实现<br/>
+280、优化进程管理，修复长期存在的概率性进程死锁问题<br/>
+279、重写Service实现，Service生命周期更准确，不容易被杀死<br/>
 
 
 **2020年 9月13号 至 2020年 10月15号 商业版代码更新内容**
