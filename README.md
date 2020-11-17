@@ -252,3 +252,4 @@ Notification Bar Change: Adapt 8.1 Notification Channel; Remove all notification
 3. Solve some problems of WeChat sealing<br/>
 2. Fix compatibility of some models<br/>
 1. Fix 12 minor bugs
+
