@@ -1,10 +1,12 @@
 package io.virtualapp;
 
-import android.app.Application;
 import android.content.Context;
+import android.content.SharedPreferences;
+import android.support.multidex.MultiDexApplication;
 
+import com.flurry.android.FlurryAgent;
 import com.lody.virtual.client.core.VirtualCore;
-import com.lody.virtual.client.stub.StubManifest;
+import com.lody.virtual.client.stub.VASettings;
 
 import io.virtualapp.delegate.MyAppRequestListener;
 import io.virtualapp.delegate.MyComponentDelegate;
@@ -15,10 +17,10 @@ import jonathanfinerty.once.Once;
 /**
  * @author Lody
  */
-public class VApp extends Application {
-
+public class VApp extends MultiDexApplication {
 
     private static VApp gApp;
+    private SharedPreferences mPreferences;
 
     public static VApp getApp() {
         return gApp;
@@ -27,8 +29,9 @@ public class VApp extends Application {
     @Override
     protected void attachBaseContext(Context base) {
         super.attachBaseContext(base);
-        StubManifest.ENABLE_IO_REDIRECT = true;
-        StubManifest.ENABLE_INNER_SHORTCUT = false;
+        mPreferences = base.getSharedPreferences("va", Context.MODE_MULTI_PROCESS);
+        VASettings.ENABLE_IO_REDIRECT = true;
+        VASettings.ENABLE_INNER_SHORTCUT = false;
         try {
             VirtualCore.get().startup(base);
         } catch (Throwable e) {
@@ -46,6 +49,12 @@ public class VApp extends Application {
             @Override
             public void onMainProcess() {
                 Once.initialise(VApp.this);
+                new FlurryAgent.Builder()
+                        .withLogEnabled(true)
+                        .withListener(() -> {
+                            // nothing
+                        })
+                        .build(VApp.this, "48RJJP7ZCZZBB6KMMWW5");
             }
 
             @Override
@@ -71,6 +80,10 @@ public class VApp extends Application {
                 virtualCore.addVisibleOutsidePackage("com.immomo.momo");
             }
         });
+    }
+
+    public static SharedPreferences getPreferences() {
+        return getApp().mPreferences;
     }
 
 }

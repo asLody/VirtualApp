@@ -3,15 +3,12 @@ package mirror.android.app;
 import android.content.pm.ProviderInfo;
 import android.os.IBinder;
 import android.os.IInterface;
-import android.os.Parcelable;
 
+import mirror.MethodParams;
 import mirror.RefBoolean;
 import mirror.RefClass;
-import mirror.RefConstructor;
-import mirror.RefObject;
 import mirror.RefMethod;
-import mirror.MethodParams;
-import mirror.RefStaticObject;
+import mirror.RefObject;
 
 public class IActivityManager {
     public static Class<?> TYPE = RefClass.load(IActivityManager.class, "android.app.IActivityManager");
@@ -22,11 +19,9 @@ public class IActivityManager {
     @MethodParams({IBinder.class, String.class, int.class, int.class})
     public static RefMethod<Void> overridePendingTransition;
     public static RefMethod<Integer> startActivity;
+    public static RefMethod<Integer> startActivities;
 
     public static class ContentProviderHolder {
-        @MethodParams(ProviderInfo.class)
-        public static RefConstructor<Object> ctor;
-        public static RefStaticObject<Parcelable.Creator> CREATOR;
         public static Class<?> TYPE = RefClass.load(ContentProviderHolder.class, "android.app.IActivityManager$ContentProviderHolder");
         public static RefObject<ProviderInfo> info;
         public static RefObject<IInterface> provider;

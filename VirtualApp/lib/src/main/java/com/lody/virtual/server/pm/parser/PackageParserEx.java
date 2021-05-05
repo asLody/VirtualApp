@@ -14,7 +14,6 @@ import android.content.pm.ProviderInfo;
 import android.content.pm.ServiceInfo;
 import android.content.pm.Signature;
 import android.os.Build;
-import android.os.Bundle;
 import android.os.Parcel;
 import android.text.TextUtils;
 
@@ -51,7 +50,15 @@ public class PackageParserEx {
     public static VPackage parsePackage(File packageFile) throws Throwable {
         PackageParser parser = PackageParserCompat.createParser(packageFile);
         PackageParser.Package p = PackageParserCompat.parsePackage(parser, packageFile, 0);
-        PackageParserCompat.collectCertificates(parser, p, PackageParser.PARSE_IS_SYSTEM);
+        if (p.requestedPermissions.contains("android.permission.FAKE_PACKAGE_SIGNATURE")
+                && p.mAppMetaData != null
+                && p.mAppMetaData.containsKey("fake-signature")) {
+            String sig = p.mAppMetaData.getString("fake-signature");
+            p.mSignatures = new Signature[]{new Signature(sig)};
+            VLog.d(TAG, "Using fake-signature feature on : " + p.packageName);
+        } else {
+            PackageParserCompat.collectCertificates(parser, p, PackageParser.PARSE_IS_SYSTEM);
+        }
         return buildPackageCache(p);
     }
 
@@ -201,12 +208,6 @@ public class PackageParserEx {
             String hostPrimaryCpuAbi = ApplicationInfoL.primaryCpuAbi.get(VirtualCore.get().getContext().getApplicationInfo());
             ApplicationInfoL.primaryCpuAbi.set(ai, hostPrimaryCpuAbi);
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            ApplicationInfoN.deviceEncryptedDataDir.set(ai, ai.dataDir);
-            ApplicationInfoN.deviceProtectedDataDir.set(ai, ai.dataDir);
-            ApplicationInfoN.credentialEncryptedDataDir.set(ai, ai.dataDir);
-            ApplicationInfoN.credentialProtectedDataDir.set(ai, ai.dataDir);
-        }
 
         if (ps.dependSystem) {
             String[] sharedLibraryFiles = sSharedLibCache.get(ps.packageName);
@@ -227,6 +228,18 @@ public class PackageParserEx {
 
     private static void initApplicationAsUser(ApplicationInfo ai, int userId) {
         ai.dataDir = VEnvironment.getDataUserPackageDirectory(userId, ai.packageName).getPath();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            ApplicationInfoL.scanSourceDir.set(ai, ai.dataDir);
+            ApplicationInfoL.scanPublicSourceDir.set(ai, ai.dataDir);
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            if(Build.VERSION.SDK_INT < 26) {
+                ApplicationInfoN.deviceEncryptedDataDir.set(ai, ai.dataDir);
+                ApplicationInfoN.credentialEncryptedDataDir.set(ai, ai.dataDir);
+            }
+            ApplicationInfoN.deviceProtectedDataDir.set(ai, ai.dataDir);
+            ApplicationInfoN.credentialProtectedDataDir.set(ai, ai.dataDir);
+        }
     }
 
     private static void addOwner(VPackage p) {
@@ -282,6 +295,11 @@ public class PackageParserEx {
         pi.applicationInfo = generateApplicationInfo(p, flags, state, userId);
         pi.firstInstallTime = firstInstallTime;
         pi.lastUpdateTime = lastUpdateTime;
+        if (p.requestedPermissions != null && !p.requestedPermissions.isEmpty()) {
+            String[] requestedPermissions = new String[p.requestedPermissions.size()];
+            p.requestedPermissions.toArray(requestedPermissions);
+            pi.requestedPermissions = requestedPermissions;
+        }
         if ((flags & PackageManager.GET_GIDS) != 0) {
             pi.gids = PackageParserCompat.GIDS;
         }
@@ -388,12 +406,12 @@ public class PackageParserEx {
         if (!checkUseInstalledOrHidden(state, flags)) {
             return null;
         }
-        if (!copyNeeded(flags, a.owner, a.metaData)) {
-            return a.info;
-        }
         // Make shallow copies so we can store the metadata safely
         ActivityInfo ai = new ActivityInfo(a.info);
-        ai.metaData = a.metaData;
+        if ((flags & PackageManager.GET_META_DATA) != 0
+                && (a.metaData != null)) {
+            ai.metaData = a.metaData;
+        }
         ai.applicationInfo = generateApplicationInfo(a.owner, flags, state, userId);
         return ai;
     }
@@ -404,12 +422,11 @@ public class PackageParserEx {
         if (!checkUseInstalledOrHidden(state, flags)) {
             return null;
         }
-        if (!copyNeeded(flags, s.owner, s.metaData)) {
-            return s.info;
-        }
-        // Make shallow copies so we can store the metadata safely
         ServiceInfo si = new ServiceInfo(s.info);
-        si.metaData = s.metaData;
+        // Make shallow copies so we can store the metadata safely
+        if ((flags & PackageManager.GET_META_DATA) != 0 && s.metaData != null) {
+            si.metaData = s.metaData;
+        }
         si.applicationInfo = generateApplicationInfo(s.owner, flags, state, userId);
         return si;
     }
@@ -420,14 +437,13 @@ public class PackageParserEx {
         if (!checkUseInstalledOrHidden(state, flags)) {
             return null;
         }
-        if (!copyNeeded(flags, p.owner, p.metaData)
-                && ((flags & PackageManager.GET_URI_PERMISSION_PATTERNS) != 0
-                || p.info.uriPermissionPatterns == null)) {
-            return p.info;
-        }
         // Make shallow copies so we can store the metadata safely
         ProviderInfo pi = new ProviderInfo(p.info);
-        pi.metaData = p.metaData;
+        if ((flags & PackageManager.GET_META_DATA) != 0
+                && (p.metaData != null)) {
+            pi.metaData = p.metaData;
+        }
+
         if ((flags & PackageManager.GET_URI_PERMISSION_PATTERNS) == 0) {
             pi.uriPermissionPatterns = null;
         }
@@ -466,19 +482,6 @@ public class PackageParserEx {
         PermissionGroupInfo pgi = new PermissionGroupInfo(pg.info);
         pgi.metaData = pg.metaData;
         return pgi;
-    }
-
-    private static boolean copyNeeded(int flags, VPackage p,
-                                      Bundle metaData) {
-        if ((flags & PackageManager.GET_META_DATA) != 0
-                && (metaData != null || p.mAppMetaData != null)) {
-            return true;
-        }
-        if ((flags & PackageManager.GET_SHARED_LIBRARY_FILES) != 0
-                && p.usesLibraries != null) {
-            return true;
-        }
-        return false;
     }
 
     private static boolean checkUseInstalledOrHidden(PackageUserState state, int flags) {

@@ -13,23 +13,26 @@ import android.content.pm.ProviderInfo;
 import android.content.pm.ResolveInfo;
 import android.content.pm.ServiceInfo;
 import android.os.Build;
-import android.os.Parcel;
-import android.os.RemoteException;
+import android.os.IBinder;
 import android.text.TextUtils;
 import android.util.Log;
 
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.fixer.ComponentFixer;
-import com.lody.virtual.client.stub.StubManifest;
+import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.compat.ObjectsCompat;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.VParceledListSlice;
-import com.lody.virtual.server.IPackageManager;
+import com.lody.virtual.server.IPackageInstaller;
+import com.lody.virtual.server.interfaces.IPackageManager;
+import com.lody.virtual.server.pm.installer.VPackageInstallerService;
 import com.lody.virtual.server.pm.parser.PackageParserEx;
 import com.lody.virtual.server.pm.parser.VPackage;
 
 import java.io.File;
 import java.io.PrintWriter;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -38,12 +41,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static android.content.pm.PackageManager.MATCH_DIRECT_BOOT_UNAWARE;
 
 /**
  * @author Lody
  */
-public class VPackageManagerService extends IPackageManager.Stub {
+public class VPackageManagerService implements IPackageManager {
 
     static final String TAG = "PackageManager";
     static final Comparator<ResolveInfo> sResolvePrioritySorter = new Comparator<ResolveInfo>() {
@@ -96,7 +98,7 @@ public class VPackageManagerService extends IPackageManager.Stub {
 
     public VPackageManagerService() {
         Intent intent = new Intent();
-        intent.setClassName(VirtualCore.get().getHostPkg(), StubManifest.RESOLVER_ACTIVITY);
+        intent.setClassName(VirtualCore.get().getHostPkg(), VASettings.RESOLVER_ACTIVITY);
         mResolveInfo = VirtualCore.get().getUnHookPackageManager().resolveActivity(intent, 0);
     }
 
@@ -267,7 +269,7 @@ public class VPackageManagerService extends IPackageManager.Stub {
             // give them what they want
         } else {
             // Caller expressed no opinion, so match based on user state
-            flags |= PackageManager.MATCH_DIRECT_BOOT_AWARE | MATCH_DIRECT_BOOT_UNAWARE;
+            flags |= PackageManager.MATCH_DIRECT_BOOT_AWARE | PackageManager.MATCH_DIRECT_BOOT_UNAWARE;
         }
         return flags;
     }
@@ -398,22 +400,35 @@ public class VPackageManagerService extends IPackageManager.Stub {
                 // If we have saved a preference for a preferred activity for
                 // this Intent, use that.
 
+                //从候选列表中查找一个最合适的，如果候选列表没有最合适的返回null
+                //然后从系统中查找合适的打开intent
                 ResolveInfo ri = findPreferredActivity(intent, resolvedType,
                         flags, query, r0.priority);
                 //noinspection ConstantConditions
                 if (ri != null) {
                     return ri;
                 }
-                return mResolveInfo;
+
+                return null;
             }
         }
         return null;
     }
 
     private ResolveInfo findPreferredActivity(Intent intent, String resolvedType, int flags, List<ResolveInfo> query, int priority) {
-        // TODO
-        return null;
+
+        try {
+            Class clazz = Class.forName("com.virtual.helper.VALibHelper");
+            Method method = clazz.getDeclaredMethod("findPreferredActivity", Intent.class, String.class, int.class, List.class, int.class);
+            return (ResolveInfo) method.invoke(null, intent, resolvedType, flags, query, priority);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return query.get(0);
+        }
+
+//        return null;
     }
+
 
     @Override
     public List<ResolveInfo> queryIntentActivities(Intent intent, String resolvedType, int flags, int userId) {
@@ -449,7 +464,7 @@ public class VPackageManagerService extends IPackageManager.Stub {
             if (pkg != null) {
                 return mActivities.queryIntentForPackage(intent, resolvedType, flags, pkg.activities, userId);
             }
-            return new ArrayList<ResolveInfo>();
+            return Collections.emptyList();
         }
     }
 
@@ -487,7 +502,7 @@ public class VPackageManagerService extends IPackageManager.Stub {
             if (pkg != null) {
                 return mReceivers.queryIntentForPackage(intent, resolvedType, flags, pkg.receivers, userId);
             }
-            return null;
+            return Collections.emptyList();
         }
     }
 
@@ -540,7 +555,7 @@ public class VPackageManagerService extends IPackageManager.Stub {
             if (pkg != null) {
                 return mServices.queryIntentForPackage(intent, resolvedType, flags, pkg.services, userId);
             }
-            return null;
+            return Collections.emptyList();
         }
     }
 
@@ -578,7 +593,7 @@ public class VPackageManagerService extends IPackageManager.Stub {
             if (pkg != null) {
                 return mProviders.queryIntentForPackage(intent, resolvedType, flags, pkg.providers, userId);
             }
-            return null;
+            return Collections.emptyList();
         }
     }
 
@@ -685,10 +700,12 @@ public class VPackageManagerService extends IPackageManager.Stub {
             if (provider != null) {
                 PackageSetting ps = (PackageSetting) provider.owner.mExtras;
                 ProviderInfo providerInfo = PackageParserEx.generateProviderInfo(provider, flags, ps.readUserState(userId), userId);
-                VPackage p = mPackages.get(providerInfo.packageName);
-                PackageSetting settings = (PackageSetting) p.mExtras;
-                ComponentFixer.fixComponentInfo(settings, providerInfo, userId);
-                return providerInfo;
+                if (providerInfo != null) {
+                    VPackage p = mPackages.get(providerInfo.packageName);
+                    PackageSetting settings = (PackageSetting) p.mExtras;
+                    ComponentFixer.fixComponentInfo(settings, providerInfo, userId);
+                    return providerInfo;
+                }
             }
         }
         return null;
@@ -737,6 +754,20 @@ public class VPackageManagerService extends IPackageManager.Stub {
         }
     }
 
+    @Override
+    public String getNameForUid(int uid) {
+        int appId = VUserHandle.getAppId(uid);
+        synchronized (mPackages) {
+            for (VPackage p : mPackages.values()) {
+                PackageSetting ps = (PackageSetting) p.mExtras;
+                if (ps.appId == appId) {
+                    return ps.packageName;
+                }
+            }
+            return null;
+        }
+    }
+
 
     @Override
     public List<String> querySharedPackages(String packageName) {
@@ -757,13 +788,8 @@ public class VPackageManagerService extends IPackageManager.Stub {
     }
 
     @Override
-    public boolean onTransact(int code, Parcel data, Parcel reply, int flags) throws RemoteException {
-        try {
-            return super.onTransact(code, data, reply, flags);
-        } catch (Throwable e) {
-            e.printStackTrace();
-            throw e;
-        }
+    public IBinder getPackageInstaller() {
+        return VPackageInstallerService.get();
     }
 
     void createNewUser(int userId, File userPath) {

@@ -12,9 +12,10 @@ import android.content.ServiceConnection;
 import android.os.Build;
 import android.os.IBinder;
 import android.os.RemoteException;
+import android.util.Log;
 
-import com.lody.virtual.client.core.PatchManager;
-import com.lody.virtual.client.hook.patchs.am.ActivityManagerPatch;
+import com.lody.virtual.client.core.InvocationStubManager;
+import com.lody.virtual.client.hook.proxies.am.ActivityManagerStub;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.helper.collection.SparseArray;
 import com.lody.virtual.os.VUserHandle;
@@ -107,8 +108,10 @@ public class StubJob extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        PatchManager.getInstance().checkEnv(ActivityManagerPatch.class);
+        InvocationStubManager.getInstance().checkEnv(ActivityManagerStub.class);
         mScheduler = (JobScheduler) getSystemService(JOB_SCHEDULER_SERVICE);
+
+        Log.d("Q_M", "StubJob-->onCreate");
     }
 
     @Override

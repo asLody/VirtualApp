@@ -5,6 +5,7 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 
+import com.lody.virtual.GmsSupport;
 import com.lody.virtual.client.core.InstallStrategy;
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.remote.InstallResult;
@@ -49,20 +50,23 @@ public class AppRepository implements AppDataSource {
     }
 
     private static boolean isSystemApplication(PackageInfo packageInfo) {
-        return (packageInfo.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0;
+        return (packageInfo.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0
+                && !GmsSupport.isGmsFamilyPackage(packageInfo.packageName);
     }
 
     @Override
     public Promise<List<AppData>, Throwable, Void> getVirtualApps() {
         return VUiKit.defer().when(() -> {
             List<InstalledAppInfo> infos = VirtualCore.get().getInstalledApps(0);
-            List<AppData> models = new ArrayList<AppData>();
+            List<AppData> models = new ArrayList<>();
             for (InstalledAppInfo info : infos) {
-                if (VirtualCore.get().getLaunchIntent(info.packageName, 0) == null) {
+                if (!VirtualCore.get().isPackageLaunchable(info.packageName)) {
                     continue;
                 }
                 PackageAppData data = new PackageAppData(mContext, info);
-                models.add(data);
+                if (VirtualCore.get().isAppInstalledAsUser(0, info.packageName)) {
+                    models.add(data);
+                }
                 int[] userIds = info.getInstalledUsers();
                 for (int userId : userIds) {
                     if (userId != 0) {
@@ -123,8 +127,8 @@ public class AppRepository implements AppDataSource {
             if (isSystemApplication(pkg)) {
                 continue;
             }
-            ApplicationInfo applicationInfo = pkg.applicationInfo;
-            String path = applicationInfo.sourceDir;
+            ApplicationInfo ai = pkg.applicationInfo;
+            String path = ai.publicSourceDir != null ? ai.publicSourceDir : ai.sourceDir;
             if (path == null) {
                 continue;
             }
@@ -132,8 +136,8 @@ public class AppRepository implements AppDataSource {
             info.packageName = pkg.packageName;
             info.fastOpen = fastOpen;
             info.path = path;
-            info.icon = applicationInfo.loadIcon(pm);
-            info.name = applicationInfo.loadLabel(pm);
+            info.icon = ai.loadIcon(pm);
+            info.name = ai.loadLabel(pm);
             InstalledAppInfo installedAppInfo = VirtualCore.get().getInstalledAppInfo(pkg.packageName, 0);
             if (installedAppInfo != null) {
                 info.cloneCount = installedAppInfo.getInstalledUsers().length;
@@ -145,7 +149,7 @@ public class AppRepository implements AppDataSource {
 
     @Override
     public InstallResult addVirtualApp(AppInfoLite info) {
-        int flags = InstallStrategy.COMPARE_VERSION;
+        int flags = InstallStrategy.COMPARE_VERSION | InstallStrategy.SKIP_DEX_OPT;
         if (info.fastOpen) {
             flags |= InstallStrategy.DEPEND_SYSTEM_IF_EXIST;
         }
@@ -154,7 +158,7 @@ public class AppRepository implements AppDataSource {
 
     @Override
     public boolean removeVirtualApp(String packageName, int userId) {
-        return VirtualCore.get().uninstallPackage(packageName, userId);
+        return VirtualCore.get().uninstallPackageAsUser(packageName, userId);
     }
 
 }

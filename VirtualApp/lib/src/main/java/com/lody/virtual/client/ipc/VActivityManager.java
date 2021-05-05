@@ -4,8 +4,9 @@ import android.app.Activity;
 import android.app.IServiceConnection;
 import android.app.Notification;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ProviderInfo;
 import android.os.Bundle;
@@ -15,15 +16,17 @@ import android.os.RemoteException;
 
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.env.VirtualRuntime;
+import com.lody.virtual.client.hook.secondary.ServiceConnectionDelegate;
 import com.lody.virtual.helper.compat.ActivityManagerCompat;
+import com.lody.virtual.helper.ipcbus.IPCSingleton;
 import com.lody.virtual.helper.utils.ComponentUtils;
 import com.lody.virtual.os.VUserHandle;
 import com.lody.virtual.remote.AppTaskInfo;
+import com.lody.virtual.remote.BadgerInfo;
 import com.lody.virtual.remote.PendingIntentData;
 import com.lody.virtual.remote.PendingResultData;
 import com.lody.virtual.remote.VParceledListSlice;
-import com.lody.virtual.server.IActivityManager;
-import com.lody.virtual.server.interfaces.IProcessObserver;
+import com.lody.virtual.server.interfaces.IActivityManager;
 
 import java.util.HashMap;
 import java.util.List;
@@ -39,38 +42,28 @@ public class VActivityManager {
 
     private static final VActivityManager sAM = new VActivityManager();
     private final Map<IBinder, ActivityClientRecord> mActivities = new HashMap<IBinder, ActivityClientRecord>(6);
-    private IActivityManager mRemote;
+    private IPCSingleton<IActivityManager> singleton = new IPCSingleton<>(IActivityManager.class);
 
     public static VActivityManager get() {
         return sAM;
     }
 
     public IActivityManager getService() {
-        if (mRemote == null) {
-            synchronized (VActivityManager.class) {
-                if (mRemote == null) {
-                    final Object remote = getRemoteInterface();
-                    mRemote = LocalProxyUtils.genProxy(IActivityManager.class, remote, new LocalProxyUtils.DeadServerHandler() {
-                        @Override
-                        public Object getNewRemoteInterface() {
-                            return getRemoteInterface();
-                        }
-                    });
-                }
-            }
-        }
-        return mRemote;
-    }
-
-    private Object getRemoteInterface() {
-        return IActivityManager.Stub
-                .asInterface(ServiceManagerNative.getService(ServiceManagerNative.ACTIVITY));
+        return singleton.get();
     }
 
 
     public int startActivity(Intent intent, ActivityInfo info, IBinder resultTo, Bundle options, String resultWho, int requestCode, int userId) {
         try {
             return getService().startActivity(intent, info, resultTo, options, resultWho, requestCode, userId);
+        } catch (RemoteException e) {
+            return VirtualRuntime.crash(e);
+        }
+    }
+
+    public int startActivities(Intent[] intents, String[] resolvedTypes, IBinder token, Bundle options, int userId) {
+        try {
+            return getService().startActivities(intents, resolvedTypes, token, options, userId);
         } catch (RemoteException e) {
             return VirtualRuntime.crash(e);
         }
@@ -187,11 +180,29 @@ public class VActivityManager {
         }
     }
 
-    public void setServiceForeground(ComponentName className, IBinder token, int id, Notification notification, boolean keepNotification) {
+    public void setServiceForeground(ComponentName className, IBinder token, int id, Notification notification, boolean removeNotification) {
         try {
-            getService().setServiceForeground(className, token, id, notification, keepNotification, VUserHandle.myUserId());
+            getService().setServiceForeground(className, token, id, notification,removeNotification,  VUserHandle.myUserId());
         } catch (RemoteException e) {
             e.printStackTrace();
+        }
+    }
+
+    public int bindService(Context context, Intent service, ServiceConnection connection, int flags) {
+        try {
+            IServiceConnection conn = ServiceConnectionDelegate.getDelegate(context, connection, flags);
+            return getService().bindService(null, null, service, null, conn, flags, 0);
+        } catch (RemoteException e) {
+            return VirtualRuntime.crash(e);
+        }
+    }
+
+    public boolean unbindService(Context context, ServiceConnection connection) {
+        try {
+            IServiceConnection conn = ServiceConnectionDelegate.removeDelegate(context, connection);
+            return getService().unbindService(conn, VUserHandle.myUserId());
+        } catch (RemoteException e) {
+            return VirtualRuntime.crash(e);
         }
     }
 
@@ -307,25 +318,9 @@ public class VActivityManager {
         }
     }
 
-    public void registerProcessObserver(IProcessObserver observer) {
-        try {
-            getService().registerProcessObserver(observer);
-        } catch (RemoteException e) {
-            e.printStackTrace();
-        }
-    }
-
     public void killAppByPkg(String pkg, int userId) {
         try {
             getService().killAppByPkg(pkg, userId);
-        } catch (RemoteException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void unregisterProcessObserver(IProcessObserver observer) {
-        try {
-            getService().unregisterProcessObserver(observer);
         } catch (RemoteException e) {
             e.printStackTrace();
         }
@@ -458,14 +453,6 @@ public class VActivityManager {
         }
     }
 
-    public Intent dispatchStickyBroadcast(IntentFilter filter) {
-        try {
-            return getService().dispatchStickyBroadcast(filter);
-        } catch (RemoteException e) {
-            return VirtualRuntime.crash(e);
-        }
-    }
-
     public String getPackageForIntentSender(IBinder binder) {
         try {
             return getService().getPackageForIntentSender(binder);
@@ -474,4 +461,11 @@ public class VActivityManager {
         }
     }
 
+    public void notifyBadgerChange(BadgerInfo info) {
+        try {
+            getService().notifyBadgerChange(info);
+        } catch (RemoteException e) {
+            VirtualRuntime.crash(e);
+        }
+    }
 }
