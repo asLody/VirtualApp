@@ -10,6 +10,7 @@ public class VCommends {
 
 	public static final int REQUEST_SELECT_APP = 5;
 
-	public static final String EXTRA_APP_MODEL = "io.virtualapp.extra.APP_MODEL";
+	public static final String EXTRA_APP_INFO_LIST = "va.extra.APP_INFO_LIST";
 
+	public static final String TAG_ASK_INSTALL_GMS = "va.extra.ASK_INSTALL_GMS";
 }

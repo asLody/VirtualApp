@@ -8,6 +8,14 @@ import com.lody.virtual.helper.compat.ObjectsCompat;
  */
 public class ArrayUtils {
 
+	public static Object[] push(Object[] array, Object item)
+	{
+		Object[] longer = new Object[array.length + 1];
+		System.arraycopy(array, 0, longer, 0, array.length);
+		longer[array.length] = item;
+		return longer;
+	}
+
 	public static <T> boolean contains(T[] array, T value) {
 		return indexOf(array, value) != -1;
 	}
@@ -121,6 +129,7 @@ public class ArrayUtils {
 		}
 		return null;
 	}
+
 
 	public static void checkOffsetAndCount(int arrayLength, int offset, int count) throws ArrayIndexOutOfBoundsException {
 		if ((offset | count) < 0 || offset > arrayLength || arrayLength - offset < count) {

@@ -1,10 +1,12 @@
 package io.virtualapp.home;
 
+
 import java.util.List;
 
 import io.virtualapp.abs.BasePresenter;
 import io.virtualapp.abs.BaseView;
-import io.virtualapp.home.models.AppModel;
+import io.virtualapp.home.models.AppData;
+import io.virtualapp.home.models.AppInfoLite;
 
 /**
  * @author Lody
@@ -13,41 +15,40 @@ import io.virtualapp.home.models.AppModel;
 
 	/* package */ interface HomeView extends BaseView<HomePresenter> {
 
+        void showBottomAction();
+
+        void hideBottomAction();
+
 		void showLoading();
 
-		void loadFinish(List<AppModel> appModels);
+		void hideLoading();
+
+		void loadFinish(List<AppData> appModels);
 
 		void loadError(Throwable err);
 
 		void showGuide();
 
-		void showFab();
+		void addAppToLauncher(AppData model);
 
-		void hideFab();
+        void removeAppToLauncher(AppData model);
 
-		void setCrashShadow(boolean show);
+		void refreshLauncherItem(AppData model);
 
-		void waitingAppOpen();
-
-		void refreshPagerView();
-
-		void addAppToLauncher(AppModel model);
+		void askInstallGms();
 	}
 
 	/* package */ interface HomePresenter extends BasePresenter {
-		void launchApp(AppModel model, int userId);
+
+		void launchApp(AppData data);
 
 		void dataChanged();
 
-		void dragChange(boolean isStart);
+		void addApp(AppInfoLite info);
 
-		void dragNearCrash(boolean canDel);
+		void deleteApp(AppData data);
 
-		void addApp(AppModel model);
-
-		void deleteApp(AppModel model);
-
-		void wantAddApp();
-	}
+        void createShortcut(AppData data);
+    }
 
 }

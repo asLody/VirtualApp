@@ -1,10 +1,9 @@
 package com.lody.virtual.server.am;
 
-import android.content.pm.PackageParser;
-
 import com.lody.virtual.helper.utils.FileUtils;
 import com.lody.virtual.helper.utils.VLog;
 import com.lody.virtual.os.VEnvironment;
+import com.lody.virtual.server.pm.parser.VPackage;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -62,7 +61,11 @@ public class UidSystem {
             if (bakUidFile.exists() && !bakUidFile.delete()) {
                 VLog.w(TAG, "Warning: Unable to delete the expired file --\n " + bakUidFile.getPath());
             }
-            FileUtils.copyFile(uidFile, bakUidFile);
+            try {
+                FileUtils.copyFile(uidFile, bakUidFile);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
         try {
             ObjectOutputStream os = new ObjectOutputStream(new FileOutputStream(uidFile));
@@ -74,7 +77,7 @@ public class UidSystem {
         }
     }
 
-    public int getOrCreateUid(PackageParser.Package pkg) {
+    public int getOrCreateUid(VPackage pkg) {
         String sharedUserId = pkg.mSharedUserId;
         if (sharedUserId == null) {
             sharedUserId = pkg.packageName;

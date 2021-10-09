@@ -3,22 +3,23 @@ package com.lody.virtual.server.job;
 import android.annotation.TargetApi;
 import android.app.job.JobInfo;
 import android.app.job.JobScheduler;
+import android.app.job.JobWorkItem;
 import android.content.ComponentName;
 import android.content.Context;
 import android.os.Build;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.os.PersistableBundle;
-import android.os.RemoteException;
 import android.text.TextUtils;
+import android.util.Log;
 
 import com.lody.virtual.client.core.VirtualCore;
 import com.lody.virtual.client.ipc.VJobScheduler;
-import com.lody.virtual.client.stub.StubManifest;
+import com.lody.virtual.client.stub.VASettings;
 import com.lody.virtual.helper.utils.Singleton;
 import com.lody.virtual.os.VBinder;
 import com.lody.virtual.os.VEnvironment;
-import com.lody.virtual.server.IJobScheduler;
+import com.lody.virtual.server.interfaces.IJobService;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -28,13 +29,14 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 
 /**
  * @author Lody
  */
 @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-public class VJobSchedulerService extends IJobScheduler.Stub {
+public class VJobSchedulerService implements IJobService {
 
     private static final String TAG = VJobScheduler.class.getSimpleName();
 
@@ -48,7 +50,7 @@ public class VJobSchedulerService extends IJobScheduler.Stub {
     private final ComponentName mJobProxyComponent;
 
     private VJobSchedulerService() {
-        mJobProxyComponent = new ComponentName(VirtualCore.get().getHostPkg(), StubManifest.STUB_JOB);
+        mJobProxyComponent = new ComponentName(VirtualCore.get().getHostPkg(), VASettings.STUB_JOB);
         readJobs();
     }
 
@@ -179,7 +181,7 @@ public class VJobSchedulerService extends IJobScheduler.Stub {
 
 
     @Override
-    public int schedule(JobInfo job) throws RemoteException {
+    public int schedule(JobInfo job) {
         int vuid = VBinder.getCallingUid();
         int id = job.getId();
         ComponentName service = job.getService();
@@ -257,7 +259,7 @@ public class VJobSchedulerService extends IJobScheduler.Stub {
     }
 
     @Override
-    public void cancel(int jobId) throws RemoteException {
+    public void cancel(int jobId) {
         int vuid = VBinder.getCallingUid();
         synchronized (mJobStore) {
             boolean changed = false;
@@ -280,7 +282,7 @@ public class VJobSchedulerService extends IJobScheduler.Stub {
     }
 
     @Override
-    public void cancelAll() throws RemoteException {
+    public void cancelAll() {
         int vuid = VBinder.getCallingUid();
         synchronized (mJobStore) {
             boolean changed = false;
@@ -303,14 +305,14 @@ public class VJobSchedulerService extends IJobScheduler.Stub {
     }
 
     @Override
-    public List<JobInfo> getAllPendingJobs() throws RemoteException {
+    public List<JobInfo> getAllPendingJobs() {
         int vuid = VBinder.getCallingUid();
         List<JobInfo> jobs = mScheduler.getAllPendingJobs();
         synchronized (mJobStore) {
             Iterator<JobInfo> iterator = jobs.listIterator();
             while (iterator.hasNext()) {
                 JobInfo job = iterator.next();
-                if (!StubManifest.STUB_JOB.equals(job.getService().getClassName())) {
+                if (!VASettings.STUB_JOB.equals(job.getService().getClassName())) {
                     // Schedule by Host, invisible in VA.
                     iterator.remove();
                     continue;
@@ -343,6 +345,49 @@ public class VJobSchedulerService extends IJobScheduler.Stub {
             }
             return null;
         }
+    }
+
+    @TargetApi(24)
+    public JobInfo getPendingJob(int jobId) {
+        int callingUid = VBinder.getCallingUid();
+        JobInfo jobInfo = null;
+        synchronized (this.mJobStore) {
+            for (Entry key : this.mJobStore.entrySet()) {
+                JobId jobId2 = (JobId) key.getKey();
+                if (jobId2.vuid == callingUid && jobId2.clientJobId == jobId) {
+                    jobInfo = this.mScheduler.getPendingJob(jobId2.clientJobId);
+                    break;
+                }
+            }
+        }
+        return jobInfo;
+    }
+
+    @TargetApi(26)
+    public int enqueue(JobInfo job, Parcelable workItem) {
+        if (!(workItem instanceof JobWorkItem)) {
+            Log.d("Q_M","!(workItem instanceof JobWorkItem)");
+            return -1;
+        }
+        Log.d("Q_M","(workItem instanceof JobWorkItem)");
+        int callingUid = VBinder.getCallingUid();
+        int id = job.getId();
+        ComponentName service = job.getService();
+        JobId jobId = new JobId(callingUid, service.getPackageName(), id);
+        JobConfig jobConfig = (JobConfig) this.mJobStore.get(jobId);
+        if (jobConfig == null) {
+            int i = this.mGlobalJobId;
+            this.mGlobalJobId = i + 1;
+            jobConfig = new JobConfig(i, service.getClassName(), job.getExtras());
+            this.mJobStore.put(jobId, jobConfig);
+        } else {
+            jobConfig.serviceName = service.getClassName();
+            jobConfig.extras = job.getExtras();
+        }
+        saveJobs();
+        mirror.android.app.job.JobInfo.jobId.set(job, jobConfig.virtualJobId);
+        mirror.android.app.job.JobInfo.service.set(job, this.mJobProxyComponent);
+        return this.mScheduler.enqueue(job, (JobWorkItem) workItem);
     }
 
 }

@@ -61,6 +61,7 @@
     <uses-permission android:name="android.permission.EXPAND_STATUS_BAR" />
     <uses-permission android:name="android.permission.FLASHLIGHT" />
     <uses-permission android:name="android.permission.GET_ACCOUNTS" />
+    <uses-permission android:name="android.permission.GET_CLIPS" />
     <uses-permission android:name="android.permission.GET_PACKAGE_SIZE" />
     <uses-permission android:name="android.permission.GET_TASKS" />
     <uses-permission android:name="android.permission.KILL_BACKGROUND_PROCESSES" />
@@ -72,6 +73,7 @@
     <uses-permission android:name="android.permission.READ_CALENDAR" />
     <uses-permission android:name="android.permission.READ_CALL_LOG" />
     <uses-permission android:name="android.permission.READ_CELL_BROADCASTS" />
+    <uses-permission android:name="android.permission.READ_CLIPS" />
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_INSTALL_SESSIONS" />
@@ -102,6 +104,7 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.WRITE_CALENDAR" />
     <uses-permission android:name="android.permission.WRITE_CALL_LOG" />
+    <uses-permission android:name="android.permission.WRITE_CLIPS" />
     <uses-permission android:name="android.permission.WRITE_CONTACTS" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_PROFILE" />
@@ -222,33 +225,49 @@
     <application>
         <service
             android:name="com.lody.virtual.client.stub.DaemonService"
-            android:process=":x" />
+            android:process="@string/engine_process_name" />
 
         <service
             android:name="com.lody.virtual.client.stub.DaemonService$InnerService"
-            android:process=":x" />
+            android:process="@string/engine_process_name" />
 
         <activity
             android:name="com.lody.virtual.client.stub.ShortcutHandleActivity"
             android:exported="true"
-            android:process=":x"
+            android:process="@string/engine_process_name"
             android:theme="@android:style/Theme.Translucent.NoTitleBar" />
 
         <activity
             android:name=".client.stub.StubPendingActivity"
-            android:process=":x" />
+            android:process="@string/engine_process_name" />
 
         <service
             android:name=".client.stub.StubPendingService"
-            android:process=":x" />
+            android:process="@string/engine_process_name" />
         <receiver
             android:name=".client.stub.StubPendingReceiver"
-            android:process=":x" />
+            android:process="@string/engine_process_name" />
 
         <service
             android:name=".client.stub.StubJob"
             android:permission="android.permission.BIND_JOB_SERVICE"
-            android:process=":x" />
+            android:process="@string/engine_process_name" />
+
+        <activity
+            android:name=".client.stub.ChooseAccountTypeActivity"
+            android:configChanges="keyboard|keyboardHidden|orientation"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:process="@string/engine_process_name"
+            android:screenOrientation="portrait" />
+
+        <activity
+            android:name=".client.stub.ChooseTypeAndAccountActivity"
+            android:configChanges="keyboard|keyboardHidden|orientation"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:process="@string/engine_process_name"
+            android:screenOrientation="portrait" />
 
         <activity
             android:name=".client.stub.ChooserActivity"
@@ -256,6 +275,17 @@
             android:excludeFromRecents="true"
             android:exported="true"
             android:finishOnCloseSystemDialogs="true"
+            android:process="@string/engine_process_name"
+            android:screenOrientation="portrait"
+            android:theme="@style/VAAlertTheme" />
+
+        <activity
+            android:name=".client.stub.ResolverActivity"
+            android:configChanges="keyboard|keyboardHidden|orientation"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:finishOnCloseSystemDialogs="true"
+            android:process="@string/engine_process_name"
             android:screenOrientation="portrait"
             android:theme="@style/VAAlertTheme" />
 
@@ -263,7 +293,7 @@
             android:name="com.lody.virtual.server.BinderProvider"
             android:authorities="${applicationId}.virtual.service.BinderProvider"
             android:exported="false"
-            android:process=":x" />
+            android:process="@string/engine_process_name" />
 
         <activity
             android:name="com.lody.virtual.client.stub.StubActivity$C0"
