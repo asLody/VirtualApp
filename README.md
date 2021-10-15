@@ -14,7 +14,7 @@ VirtualApp(简称：VA)是一款运行于Android系统的沙盒产品，可以�
 <br/>
 
 ## VA技术架构 ##
-![](https://github.com/asLody/VirtualApp/blob/master/doc/va_architecture.jpg)  
+![](https://cdn.jsdelivr.net/gh/xxxyanchenxxx/temp@1.0/doc/va_architecture.jpg)  
 VA技术一共涉及到了Android的APP层，Framework层以及Native层。  
 一个APP想要在Android系统上运行，必须要安装后系统才会接纳。安装到VA内部的APP实际上并没有安装到系统中，所以正常情况下是无法运行的。那如何才能让它运行呢？  
 答：那就只有“欺骗”系统，让系统认为已经安装。而这个“欺骗”过程就是VA Framework的核心工作内容，也是整个VA的核心技术原理。  
@@ -34,7 +34,7 @@ VA已将其内部APP的全部系统请求进行拦截，通过这项技术也能
 
 
 ## VA进程架构 #
-![](https://github.com/asLody/VirtualApp/blob/master/doc/va_process.jpg)    
+![](https://cdn.jsdelivr.net/gh/xxxyanchenxxx/temp@1.0/doc/va_process.jpg)    
 VA运行时有5类进程：CHILD进程，VA Host Main进程，VA Host Plugin进程，VAPP Client进程，VAServer进程。
 VA为了同时支持32位APP与64位APP，需要安装2个包：一个主包，一个插件包(在本文档中主包是32位，插件包是64位)。
 2个包也是必须的，因为一个包只能运行在一种模式下，要么32位，要么64位。所以对于32位的APP，VA使用32位的主包去运行，对于64位的APP，VA则使用64位的插件包去运行。
