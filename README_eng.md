@@ -247,8 +247,28 @@ Major updates of the business version
 2017 - 2021 Business Edition Code Update Details
 ------
 
-**September 21, 2021 to October 27, 2021 Business Edition Code Updates**
+**December 30, 2021 to January 21, 2022 Business Edition Code Updates**
 
+382、Sandhook adapter 12.0<br/>
+381、Fix the problem that Sandhook does not work on some 11.0<br/>
+380、Added the compile option VA_FULL_EXT to control whether to compile the VA source code into the VA-EXT<br/>
+
+**November 24, 2021 to December 29, 2021 Business Edition Code Updates**
+
+379、Adapter Android 12.0<br/>
+378、Add file permission check <br/>
+377、Fixed the issue that static broadcast receivers could not receive broadcasts in independent processes<br/>
+376、Fix the problem that WeChat may crash when logging in for the first time<br/>
+375、Fix some App some apps could not display avatars<br/>
+374、Fix VA crash on some oppo devices<br/>
+
+<details>
+<summary>December 2017 to August 21, 2021 Business Edition code updates (Drop down to open)</summary>
+
+**September 21, 2021 to November 23, 2021 Business Edition Code Updates**
+
+373、Fix WhatsApp crash on some devices<br/>
+372、Add broadcast test for VA<br/>
 371、Fix the compatibility problem of Tik Tok Speed version<br/>
 370、Fix readlinkat return value precision<br/>
 369、Fix the problem of installing APP from outside, not referencing org.apache.http.legacy<br/>
@@ -276,8 +296,6 @@ Major updates of the business version
 351、Use cmake to replace gradle task in compile script.<br/>
 350、Remove obsolete documents<br/>
 
-<details>
-<summary>December 2017 to August 21, 2021 Business Edition code updates (Drop down to open)</summary>
 	
 **August 7, 2021 to August 21, 2021 Business Edition code Updates**
 
