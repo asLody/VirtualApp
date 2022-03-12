@@ -254,13 +254,14 @@ VirtualApp虚拟机技术归属于：济宁市罗盒网络科技有限公司，�
 
 **2021年 1月22号 至 2022年 3月12号 商业版代码更新内容**
 
-390、修复华为手机上StorageManager没有被hook的问题<br/>
-389、修复最新版微信无法从SD卡启动的问题<br/>
-388、PackageInfo中增加对requestedPermissionsFlags字段的处理<br/>
-387、新增VSettingsProvider，避免内置应用没有权限操作settings provider导致异常<br/>
-386、修复微信等APP启动黑屏，ANR等问题<br/>
-385、新增对MediaProvider的hook<br/>
-384、新增对插件shareUserId的处理，从而可以配置将插件的数据放到主包中。<br/>
+391、修复华为手机上StorageManager没有被hook的问题<br/>
+390、修复最新版微信无法从SD卡启动的问题<br/>
+389、PackageInfo中增加对requestedPermissionsFlags字段的处理<br/>
+388、新增VSettingsProvider，避免内置应用没有权限操作settings provider导致异常<br/>
+387、修复微信等APP启动黑屏，ANR等问题<br/>
+386、新增对MediaProvider的hook<br/>
+385、新增对插件shareUserId的处理，从而可以配置将插件的数据放到主包中<br/>
+384、新增可以配置是否将Tinker禁用<br/>
 383、修复Android 12权限处理适配<br/>
 
 **2021年 12月30号 至 2022年 1月21号 商业版代码更新内容**
