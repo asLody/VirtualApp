@@ -249,8 +249,6 @@ Major updates of the business version
 ------
 **July 27, 2022 to August 19, 2022 Business Edition Code Updatest**
 
-**July 27, 2022 to August 19, 2022 Business Edition Code Updatest**
-
 413、Android 13.0 continues to adapt<br/>
 412、Adjust the main version to 64bit<br/>
 411、Fix the problem that the App cannot be opened on some Huawei mobile phones<br/>
