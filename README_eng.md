@@ -232,7 +232,7 @@ If you use VirtualApp for **internal use, business profit or upload it to the ap
 Major updates of the business version
 ------
 
-1. Compatible with the latest Android S
+1. Support Android 13.0
 2. Not easily misreported by anti-virus software
 3. Framework optimization, performance greatly improved
 4. Mobile system and APP compatibility greatly improved
@@ -247,6 +247,62 @@ Major updates of the business version
 
 2017 - 2021 Business Edition Code Update Details
 ------
+**July 27, 2022 to August 19, 2022 Business Edition Code Updatest**
+
+413. Android 13.0 continues to adapt<br/>
+412. Adjust the main version to 64bit<br/>
+411. Fix the problem that the App cannot be opened on some Huawei mobile phones<br/>
+410. Fix the problem that the application cannot be opened on OPPO 13.0<br/>
+409. Fix the calling problem of Baidu Voice TTS<br/>
+408. Fix the problem that the root directory of sdcard can still be accessed after data isolation<br/>
+407. Repair the crash problem on Harmony mobile phone<br/>
+406. Fix the problem of Hook failure in Debug mode<br/>
+405. Add obfuscation of BinderInvocationStub to avoid the crash problem after obfuscation<br/>
+404. Fix the problem that the native layer may crash when calling the free function<br/>
+403. Fix the crash problem of WeChat due to the virtual file system<br/>
+
+
+**July 9, 2022 to July 26, 2022 Business Edition Code Updatest**
+
+402, Android 13.0 adaptation<br/>
+401. Fix the problem of file path processing after virtual storage is enabled<br/>
+400. Fix the problem that Notification does not prompt on 12.0<br/>
+
+<details>
+<summary>December 2017 to May 31, 2022 Business Edition code updates (Drop down to open)</summary><br/>
+
+
+**April 28, 2022 to May 31, 2022 Business Edition Code Updatest**
+
+399. Fix the crash caused by onGetCallingUid hook<br/>
+398. Repair the problem of WeChat 8.0.22 startup crash<br/>
+
+
+**April 5, 2022 to April 27, 2022 Business Edition Code Updatest**
+
+397. Remove some redundant hook codes in sandhook to prevent some apps from failing to start<br/>
+
+
+**March 13, 2022 to April 5, 2022 Business Edition Code Updatest**
+
+396. New function: Implement built-in media provider in VA to support media library isolation and other requirements<br/>
+395. Fix WeChat/QQ crash when using voice<br/>
+394. Bluetooth crash problem adaptation<br/>
+393. Add some Log<br/>
+392. Delete some useless codes<br/>
+
+
+**January 22, 2022 to March 12, 2022 Business Edition Code Updatest**
+
+391. Fix the problem that StorageManager is not hooked on Huawei mobile phones<br/>
+390. Fix the problem that the latest version of WeChat cannot be started from the SD card<br/>
+389. Add the processing of the requestedPermissionsFlags field in PackageInfo<br/>
+388. Added VSettingsProvider to avoid exceptions caused by built-in applications without permission to operate settings provider<br/>
+387. Fix WeChat and other APP startup black screen, ANR and other problems<br/>
+386. Add hook to MediaProvider<br/>
+385. Added the processing of plug-in shareUserId, so that the data of the plug-in can be configured to be placed in the main package<br/>
+384. Added option to configure whether to disable Tinker<br/>
+383. Fix Android 12 permission processing adaptation<br/>
 
 **December 30, 2021 to January 21, 2022 Business Edition Code Updates**
 
@@ -262,9 +318,6 @@ Major updates of the business version
 376、Fix the problem that WeChat may crash when logging in for the first time<br/>
 375、Fix some App some apps could not display avatars<br/>
 374、Fix VA crash on some oppo devices<br/>
-
-<details>
-<summary>December 2017 to August 21, 2021 Business Edition code updates (Drop down to open)</summary>
 
 **September 21, 2021 to November 23, 2021 Business Edition Code Updates**
 
