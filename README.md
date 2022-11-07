@@ -254,6 +254,16 @@ VirtualApp虚拟机技术归属于：济宁市罗盒网络科技有限公司，�
 ------
 
 
+**2022年10月9号 至 2022年 11月8号 商业版代码更新内容**
+
+429、修复当VA_AUTHORITY_PREFIX不等于包名时找不到Provider的问题："Failed to find provider info ..."<br/>
+428、getPermissionActivityIntent处理<br/>
+427、修复特殊情况下,检查权限无限弹窗<br/>
+426、强调Intent使用外部通讯录(如果被第三方接管,建议使用外部可见)<br/>
+425、新增几个Java API适配<br/>
+424、修复修复部分后台Activity跳转问题<br/>
+423、修复在10.0+上后台Activity无法启动的问题<br/>
+
 **2022年 8月20号 至 2022年 10月8号 商业版代码更新内容**
 
 422、新功能:增加启动插件Activity代理，绕过后台5s限制<br/>
