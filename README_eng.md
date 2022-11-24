@@ -216,7 +216,6 @@ VirtualApp virtual machine technology belongs to: Jining Luohe Network Technolog
 
 <br/>
 Person in charge: Mr. Zhang <br/>
-Telephone: +86 130-321-77777 <br/>
 WeChat：10890 <br/>
 <br/>
 
