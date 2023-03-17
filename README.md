@@ -263,6 +263,9 @@ VirtualApp虚拟机技术归属于：济宁市罗盒网络科技有限公司，�
 435、修复VAPP返回主页的Intent crash<br/>
 434、TelecomManagerStub API适配<br/>
 
+<details>
+<summary>2017年 12月 至 2023年 1 月 26 日 商业版代码更新内容(下拉打开)</summary>
+	
 **2022年12月9号 至 2023年 1月26号 商业版代码更新内容**
 
 433、修复PendingIntent flag处理问题<br/>
@@ -273,9 +276,6 @@ VirtualApp虚拟机技术归属于：济宁市罗盒网络科技有限公司，�
 431、启动外部App时，排除对VA自身的判断<br/>
 430、修复queryIntentServices过滤规则<br/>
 
-
-<details>
-<summary>2017年 12月 至 2022年 11 月 8 日 商业版代码更新内容(下拉打开)</summary>
 
 **2022年10月9号 至 2022年 11月8号 商业版代码更新内容**
 
