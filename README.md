@@ -252,6 +252,14 @@ VirtualApp虚拟机技术归属于：济宁市罗盒网络科技有限公司，�
 2017年-2023年商业版代码更新详细
 ------
 
+**2023年3月18号 至 2023年 4月27号 商业版代码更新内容**
+
+443、修复GMS支持，修复各种crash，权限等问题<br/>
+442、修复GooglePlay无法打开的问题<br/>
+441、修复GooglePlay无法登录Google账号的问题<br/>
+440、修复Youtube,WhatsApp等APP无法登录Google账号的问题<br/>
+439、修复Facebook无法打开的问题<br/>
+
 **2023年2月17号 至 2023年 3月17号 商业版代码更新内容**
 
 438、修setPictureInPictureParams crash<br/>
