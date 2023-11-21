@@ -253,6 +253,24 @@ VirtualApp虚拟机技术归属于：山东盒一网络科技有限公司（原�
 2017年-2023年商业版代码更新详细
 ------
 
+**2023年10月24号 至 2023年 11月22号 商业版代码更新内容**
+
+490、取消对Xposed依赖<br/>
+489、适配最新版微信<br/>
+488、适配setCompatibilityVersion<br/>
+487、取消hookGetCallingUid对xposed的依赖<br/>
+486、蓝牙适配<br/>
+485、AddToDisplayAsUser处理<br/>
+478、PendingIntent适配<br/>
+484、MediaRecorder适配<br/>
+483、处理dispatchVolumeKeyEvent API<br/>
+482、修复AttributionSource cast crash<br/>
+481、增加配置：是否优先使用外部app<br/>
+480、修复启动前台service crash<br/>
+479、修复14.0上renameat太短导致hook后覆盖其他函数的问题<br/>
+
+
+
 **2023年10月8号 至 2023年 10月23号 商业版代码更新内容**
 
 478、修复Annotation依赖包为空的问题<br/>
@@ -265,6 +283,9 @@ VirtualApp虚拟机技术归属于：山东盒一网络科技有限公司（原�
 471、修复APK安装模式下某些APP拍照黑屏<br/>
 470、修复APK安装模式下微信小程序无法使用的问题<br/>
 
+<details>
+<summary>2017年 12月 至 2023年 10 月 7 日 商业版代码更新内容(下拉打开)</summary>  <br/>
+	
 **2023年9月16号 至 2023年 10月7号 商业版代码更新内容**
 
 469、移除已经废弃的虚拟定位代码<br/>
@@ -274,8 +295,6 @@ VirtualApp虚拟机技术归属于：山东盒一网络科技有限公司（原�
 465、修复WhatsApp等部分APP启动后界面白屏问题<br/>
 464、适配Alarms 相关API
 
-<details>
-<summary>2017年 12月 至 2023年 9 月 15 日 商业版代码更新内容(下拉打开)</summary>  <br/>
 
 **2023年9月6号 至 2023年 9月15号 商业版代码更新内容**
 
