@@ -257,7 +257,7 @@ VirtualApp虚拟机技术归属于：山东盒一网络科技有限公司（原�
 
 516、适配华为账户登录和授权登录等功能 <br/>
 515、适配荣耀账户登录和授权登录等功能 <br/>
-514、修改Service中getApplicationContext返回Null的问题<br/>
+514、修复Service中getApplicationContext返回Null的问题<br/>
 
 
 **2024年4月4号 至 2024年 4月19号 商业版代码更新内容**
