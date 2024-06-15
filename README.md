@@ -255,8 +255,8 @@ VirtualApp虚拟机技术归属于：山东盒一网络科技有限公司（原�
 
 **2024年6月4号 至 2024年 6月16号 商业版代码更新内容**
 
-518、将内置的Java hook框架SandHook调整为可选配置 <br/>
-517、修复VA_ENABLE_EXT_FULL_SOURCE_CODE功能选项开启时，加载so错误的问题<br/>
+520、将内置的Java hook框架SandHook调整为可选配置 <br/>
+519、修复VA_ENABLE_EXT_FULL_SOURCE_CODE功能选项开启时，加载so错误的问题<br/>
 
 
 **2024年5月8号 至 2024年 6月3号 商业版代码更新内容**
