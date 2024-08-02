@@ -253,6 +253,22 @@ VirtualApp虚拟机技术归属于：山东盒一网络科技有限公司（原�
 2017年-2024年商业版代码更新详细
 ------
 
+**2024年7月19号 至 2024年 8月2号 商业版代码更新内容**
+
+538、修复sandhook崩溃问题<br/>
+537、修复sandhook hook不起效问题<br/>
+536、替换sandhook中inline hook部分<br/>
+535、修复android.permission.DETECT_SCREEN_CAPTURE权限导致的crash问题<br/>
+534、修复静态广播导致的crash问题<br/>
+533、修复百度搜索crash的问题<br/>
+532、修复ResolveActivity跳转到外部应用时没有过滤export为false的场景导致crash<br/>
+531、修复在某些华为设备上微信白屏的问题<br/>
+530、修复微信流量异常的问题<br/>
+529、class_linker适配android 15<br/>
+528、修复 readlinkat参数问题导致的crash<br/>
+527、解决某些unity路径检测的问题<br/>
+
+
 **2024年7月3号 至 2024年 7月18号 商业版代码更新内容**
 
 526、对数个地方的几十个API进行了适配,提升了稳定性<br/>
@@ -260,14 +276,14 @@ VirtualApp虚拟机技术归属于：山东盒一网络科技有限公司（原�
 524、修复 startprocess启动App后再次进入VActivityManagerService导致死锁的问题<br/>
 523、修复锁屏/亮屏广播引起的crash问题<br/>
 
+<details>
+<summary>2017年 12月 至 2024年 7 月 2 日 商业版代码更新内容(下拉打开)</summary>  <br/>
 
 **2024年6月17号 至 2024年 7月2号 商业版代码更新内容**
 
 522、AttributionSoure中的uid调整 <br/>
 521、修复微信注册，找回账号等几个界面白屏的问题<br/>
 
-<details>
-<summary>2017年 12月 至 2024年 6 月 16 日 商业版代码更新内容(下拉打开)</summary>  <br/>
 
 **2024年6月4号 至 2024年 6月16号 商业版代码更新内容**
 
