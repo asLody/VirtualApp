@@ -131,7 +131,7 @@ VA Other features
 Process-level "virtual machine", VA's unique implementation model makes its performance almost the same as that of the native APP, and does not need a long startup of ordinary virtual machines.
 
 - Full version support<br/>
-Support 5.0-14.0, 32-bit/64-bit APP, ARM and X86 processor. And support Android version in the future which will be updated.
+Support 5.0-15.0, 32-bit/64-bit APP, ARM and X86 processor. And support Android version in the future which will be updated.
 
 - Easy Expansion and Integration<br/>
 The integration of VA is similar to the normal Android library, even if your APP has been online, you can conveniently integrate VA and enjoy the capability brought by VA.
@@ -177,7 +177,7 @@ System version | Whether to support
 11.0 | support
 12.0 | support
 13.0 | support
-14.0 | support
+15.0 | support
 <br/>
 
 
@@ -232,7 +232,7 @@ If you use VirtualApp for **internal use, business profit or upload it to the ap
 Major updates of the business version
 ------
 
-1. Support Android 14.0
+1. Support Android 15.0
 2. Not easily misreported by anti-virus software
 3. Framework optimization, performance greatly improved
 4. Mobile system and APP compatibility greatly improved
