@@ -275,8 +275,8 @@ VirtualApp虚拟机技术归属于：山东盒一网络科技有限公司（原�
 
 **2024年7月3号 至 2024年 7月18号 商业版代码更新内容**
 
-526、对数个地方的几十个API进行了适配,提升了稳定性<br/>
-525、调整stopService不再走initProcess流程<br/>
+526、适配了几十个API,很大程度提升了稳定性<br/>
+525、调整stopService不再走initProcess流程，解决了某些情况下的死锁问题<br/>
 524、修复 startprocess启动App后再次进入VActivityManagerService导致死锁的问题<br/>
 523、修复锁屏/亮屏广播引起的crash问题<br/>
 
