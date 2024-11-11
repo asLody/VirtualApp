@@ -234,15 +234,16 @@ Major updates of the business version
 ------
 
 1. Support Android 15.0
-2. Not easily misreported by anti-virus software
-3. Framework optimization, performance greatly improved
-4. Mobile system and APP compatibility greatly improved
-5. Run Google services perfectly
-6. Supports running pure 64-bit Apps
-7. Built-in `XPosed Hook` framework
-8. Add positioning mock code
-9. Add code to change device 
-10. Nearly 500 other fixes and improvements
+2. Seccomp-Bpf Support.
+3. Not easily misreported by anti-virus software
+4. Framework optimization, performance greatly improved
+5. Mobile system and APP compatibility greatly improved
+6. Run Google services perfectly
+7. Supports running pure 64-bit Apps
+8. Built-in `XPosed Hook` framework
+9. Add positioning mock code
+10. Add code to change device 
+11. Nearly 500 other fixes and improvements
 <br>
 
 
