@@ -257,7 +257,7 @@ VirtualApp虚拟机技术归属于：山东盒一网络科技有限公司（原�
 
 **2024年11月12号 至 2024年 11月26号 商业版代码更新内容**
 
-560、重定向路径调整<br/>
+560、重定向路径调整，区分/data/data/com.xxx以及/data/user/0/com.xxx，使其更符合APP使用实际使用的路径<br/>
 559、适配fixupAppDir<br/>
 558、reverseRedirectedPath增加检查，防止路径多次重复转换<br/>
 557、修复splitNames信息缺失导致部分应用无法正常使用<br/>
