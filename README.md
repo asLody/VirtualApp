@@ -255,6 +255,15 @@ VirtualApp虚拟机技术归属于：山东盒一网络科技有限公司（原�
 2017年-2024年商业版代码更新详细
 ------
 
+**2024年11月27号 至 2024年 12月6号 商业版代码更新内容**
+
+566、修复release打包后IJobService中的onNetworkChanged等几个函数被混淆导致找不到crash的问题<br/>
+565、修复由于BluetoothAdapter.sService为null导致IBluetooth hook失败的问题<br/>
+564、修复packagesettings被覆盖的问题<br/>
+563、删除getCallingUid()中的缓存代码<br/>
+562、Seccomp条件判断时处理Application.name为Null的情况<br/>
+561、AGP升级到8.2.0<br/>
+
 **2024年11月12号 至 2024年 11月26号 商业版代码更新内容**
 
 560、重定向路径调整，区分/data/data/com.xxx以及/data/user/0/com.xxx，使其更符合APP使用实际使用的路径<br/>
@@ -263,14 +272,15 @@ VirtualApp虚拟机技术归属于：山东盒一网络科技有限公司（原�
 557、修复splitNames信息缺失导致部分应用无法正常使用<br/>
 556、补充一批normal权限,解决部分APP因为权限丢失无法正常使用的问题<br/>
 
+<details>
+<summary>2017年 12月 至 2024年 11 月 11 日 商业版代码更新内容(下拉打开)</summary>  <br/>
+
 **2024年10月31号 至 2024年 11月11号 商业版代码更新内容**
 
 555、新功能：增加Seccomp-Bpf支持，实现更底层的拦截<br/>
 554、增加对部分加固APP的支持<br/>
 553、系统OTA升级时对Split Apks重新安装<br/>
 
-<details>
-<summary>2017年 12月 至 2024年 10 月 31 日 商业版代码更新内容(下拉打开)</summary>  <br/>
 
 **2024年10月14号 至 2024年 10月29号 商业版代码更新内容**
 
