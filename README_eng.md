@@ -243,7 +243,7 @@ Major updates of the business version
 8. Built-in `XPosed Hook` framework
 9. Add positioning mock code
 10. Add code to change device 
-11. Nearly 500 other fixes and improvements
+11. Nearly 600 other fixes and improvements
 <br>
 
 
