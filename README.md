@@ -258,7 +258,7 @@ VirtualApp虚拟机技术归属于：山东盒一网络科技有限公司（原�
 **2025年2月18号 至 2025年 3月19号 商业版代码更新内容**
 
 586、seccomp 相关的调整<br/>
-585、修改微信在14.0+上开启seccomp-bpfcrash的问题<br/>
+585、修复微信在14.0+上开启seccomp-bpf无法打开的问题<br/>
 584、新增对StorageStatsManager的适配<br/>
 583、UsageStatsManager相关API适配<br/>
 
