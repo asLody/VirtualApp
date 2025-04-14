@@ -255,12 +255,22 @@ VirtualApp虚拟机技术归属于：山东盒一网络科技有限公司（原�
 2017年-2025年商业版代码更新详细
 ------
 
+**2025年3月27号 至 2025年 4月15号 商业版代码更新内容**
+
+594、修复GMS无法调起登录的问题<br/>
+593、增加对IInputMethodManagerGlobalInvoker的hook<br/>
+592、修复工作空间中无法打开VAPP的问题<br/>
+591、适配微信8.0.57<br/>
+
 **2025年3月20号 至 2025年 3月26号 商业版代码更新内容**
 
 590、增加对AppSearchManager的适配<br/>
 589、增加对DomainVerificationManager的适配<br/>
 588、增加对SystemUpdateManager的适配<br/>
 587、修复多个进程同时启动同一个进程时的crash问题<br/>
+
+<details>
+<summary>2017年 12月 至 2025年 3 月 19 日 商业版代码更新内容(下拉打开)</summary>  <br/>
 
 
 **2025年2月28号 至 2025年 3月19号 商业版代码更新内容**
@@ -269,9 +279,6 @@ VirtualApp虚拟机技术归属于：山东盒一网络科技有限公司（原�
 585、修复微信在14.0+上开启seccomp-bpf无法打开的问题<br/>
 584、新增对StorageStatsManager的适配<br/>
 583、UsageStatsManager相关API适配<br/>
-
-<details>
-<summary>2017年 12月 至 2025年 2 月 27 日 商业版代码更新内容(下拉打开)</summary>  <br/>
 
 **2025年2月11号 至 2025年 2月27号 商业版代码更新内容**
 
