@@ -257,21 +257,29 @@ VirtualApp虚拟机技术归属于：山东盒一网络科技有限公司（原�
 2017年-2025年商业版代码更新详细
 ------
 
-**2025年7月22号 至 2025年 8月8 商业版代码更新内容**
+**2025年8月9号 至 2025年 9月1号 商业版代码更新内容**
+
+616、增加对setxattr/lsetxattr/bind/connect/syscall等几个libc api处理<br/>
+615、增加对execve启动的进程实现inline hook<br/>
+614、增加可对application中的全部路径模拟为系统安装路径<br/>
+613、增加对logcat等命令的过滤处理<br/>
+612、修复app 崩溃/anr等系列问题<br/>
+611、修复ParceledListSlice.getList返回Null的问题<br/>
+
+**2025年7月22号 至 2025年 8月8号 商业版代码更新内容**
 
 610、增加对INetworkScoreService的处理<br/>
 609、修复新功能在release下的一些错误<br/>
 608、修复某些手机上新功能无法打开APP	<br/>
 607、修复Tethering相关的crash
 
+<details>
+<summary>2017年 12月 至 2025年 7 月 21 日 商业版代码更新内容(下拉打开)</summary>  <br/>
 
 **2025年7月3号 至 2025年 7月21 商业版代码更新内容**
 
 606、与新功能相关的路径处理<br/>
 605、一些bug处理<br/>
-
-<details>
-<summary>2017年 12月 至 2025年 7 月 2 日 商业版代码更新内容(下拉打开)</summary>  <br/>
 
 **2025年5月1号 至 2025年 7月2号 商业版代码更新内容**
 
