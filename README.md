@@ -257,6 +257,21 @@ VirtualApp虚拟机技术归属于：山东盒一网络科技有限公司（原�
 2017年-2025年商业版代码更新详细
 ------
 
+**2025年9月2号 至 2025年 9月17号 商业版代码更新内容**
+
+627、Android 16kb page size 适配<br/>
+626、fix蓝牙几个代理类的代码错误<br/>
+625、处理某些APP在Application->attach中获取到宿主Application的场景<br/>
+624、处理Activity referrer相关的<br/>
+623、处理processOutsideIntent时intent包含vapp class的情况<br/>
+622、针对某些oppo 13.0机型适配<br/>
+621、处理调用ArrayUtils.indexOf时，有的地方按0开始起步有的地方按1开始起步导致异常，都统一为1<br/>
+620、适配LockSettings/WifiScanner/NetworkScoreManager/WifiManager/SensitiveContentProtectionManager等几个manager<br/>
+619、新功能模式下BinderProxyInjectManager.addInjector增加判断，避免有些因为class不存在导致crash<br/>
+618、新功能模式下支持Instrumentation注入<br/>
+617、增加对native层获取宿主信息的处理<br/>
+
+
 **2025年8月9号 至 2025年 9月1号 商业版代码更新内容**
 
 616、增加对setxattr/lsetxattr/bind/connect/syscall等几个libc api处理<br/>
@@ -266,6 +281,9 @@ VirtualApp虚拟机技术归属于：山东盒一网络科技有限公司（原�
 612、修复app 崩溃/anr等系列问题<br/>
 611、修复ParceledListSlice.getList返回Null的问题<br/>
 
+<details>
+<summary>2017年 12月 至 2025年 7 月 21 日 商业版代码更新内容(下拉打开)</summary>  <br/>
+
 **2025年7月22号 至 2025年 8月8号 商业版代码更新内容**
 
 610、增加对INetworkScoreService的处理<br/>
@@ -273,8 +291,6 @@ VirtualApp虚拟机技术归属于：山东盒一网络科技有限公司（原�
 608、修复某些手机上新功能无法打开APP	<br/>
 607、修复Tethering相关的crash
 
-<details>
-<summary>2017年 12月 至 2025年 7 月 21 日 商业版代码更新内容(下拉打开)</summary>  <br/>
 
 **2025年7月3号 至 2025年 7月21 商业版代码更新内容**
 
