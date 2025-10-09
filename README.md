@@ -257,6 +257,16 @@ VirtualApp虚拟机技术归属于：山东盒一网络科技有限公司（原�
 2017年-2025年商业版代码更新详细
 ------
 
+**2025年9月18号 至 2025年 10月10号 商业版代码更新内容**
+
+633、处理onNewIntent()中的activity Referrer<br/>
+632、适配NotificationProviderPublic<br/>
+631、修复15.0+上isDirectlyHandlingTransaction()的多线程处理<br/>
+630、隐藏Libcore.os的反射获取<br/>
+629、binderproxy模式支持IBatteryStats<br/>
+628、适配某些加固APP<br/>
+
+
 **2025年9月2号 至 2025年 9月17号 商业版代码更新内容**
 
 627、Android 16kb page size 适配<br/>
@@ -271,6 +281,9 @@ VirtualApp虚拟机技术归属于：山东盒一网络科技有限公司（原�
 618、新功能模式下支持Instrumentation注入<br/>
 617、增加对native层获取宿主信息的处理<br/>
 
+<details>
+<summary>2017年 12月 至 2025年 9 月 1 日 商业版代码更新内容(下拉打开)</summary>  <br/>
+
 
 **2025年8月9号 至 2025年 9月1号 商业版代码更新内容**
 
@@ -280,9 +293,6 @@ VirtualApp虚拟机技术归属于：山东盒一网络科技有限公司（原�
 613、增加对logcat等命令的过滤处理<br/>
 612、修复app 崩溃/anr等系列问题<br/>
 611、修复ParceledListSlice.getList返回Null的问题<br/>
-
-<details>
-<summary>2017年 12月 至 2025年 7 月 21 日 商业版代码更新内容(下拉打开)</summary>  <br/>
 
 **2025年7月22号 至 2025年 8月8号 商业版代码更新内容**
 
