@@ -1,0 +1,23 @@
+<resources>
+    <string name="wait">Aguarde…</string>
+    <string name="desktop">Área de trabalho</string>
+    <string name="add_app">Adicionar app</string>
+    <string name="preparing">Abrindo o app…</string>
+    <string name="delete">Excluir</string>
+    <string name="create_shortcut">Criar atalho</string>
+    <string name="new_user">Novo usuário</string>
+    <string name="enable">Ativar</string>
+    <string name="save">Salvar</string>
+    <string name="save_success">Salvo com sucesso!</string>
+    <string name="manufacturer">Fabricante</string>
+    <string name="brand">Marca</string>
+    <string name="device">Dispositivo</string>
+    <string name="fake_device_info">Falsificar informações do dispositivo</string>
+    <string name="wifi_status">Status do Wi-Fi</string>
+    <string name="config_device_info">Informações do dispositivo</string>
+    <string name="about">Sobre</string>
+    <string name="clone_apps">Clonar apps</string>
+    <string name="external_storage">Armazenamento externo</string>
+    <string name="install_d">Instalar (%d)</string>
+    <string name="install_too_much_once_time">Não é possível escolher mais de 9 apps de uma vez!</string>
+</resources>
